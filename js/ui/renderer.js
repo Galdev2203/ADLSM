@@ -44,13 +44,13 @@ export function renderMatches(container, matches, options = {}) {
 
   container.querySelectorAll('[data-match-id]').forEach(item => {
     item.addEventListener('click', event => {
-      if (event.target.closest('input, button, a')) return;
+      if (event.target.closest('.selection-check, input, button, a')) return;
       onToggleSelection?.(item.dataset.matchId);
     });
 
     item.addEventListener('keydown', event => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
-      if (event.target.closest('input, button, a')) return;
+      if (event.target.closest('.selection-check, input, button, a')) return;
       event.preventDefault();
       onToggleSelection?.(item.dataset.matchId);
     });
