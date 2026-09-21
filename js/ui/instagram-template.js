@@ -32,6 +32,7 @@ export function getTemplatePages(matches) {
 }
 
 export function createTemplateCanvas(matches, template = DEFAULT_TEMPLATE) {
+  ensureDistributionControls();
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -59,10 +60,6 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
     const distribution = getDistributionSettings();
     const gap = getMatchGap(distribution.mode, distribution.customGap, count, availableHeight, totalRowsHeight);
 
-    // Un solo partido siempre empieza arriba. Para varios partidos, el modo
-    // seleccionado controla únicamente la separación vertical: el tamaño de
-    // cada tarjeta permanece exactamente igual.
-    const blockHeight = totalRowsHeight + gap * Math.max(0, count - 1);
     const startY = contentTop;
 
     for (let index = 0; index < count; index += 1) {
@@ -84,7 +81,6 @@ function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
   if (count <= 1) return 0;
 
   if (mode === 'equal') {
-    // space-between: el primer partido queda arriba y el último abajo.
     return Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
   }
 
@@ -92,7 +88,6 @@ function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
     return customGap;
   }
 
-  // top: partidos agrupados arriba con una separación visual mínima.
   return 12;
 }
 
@@ -137,9 +132,6 @@ function ensureDistributionControls() {
     gap.disabled = !custom;
     gapField.classList.toggle('is-disabled', !custom);
     gapValue.textContent = `${gap.value} px`;
-
-    // app.js ya escucha el input del título para regenerar la vista previa.
-    // Reutilizamos ese evento para no duplicar la lógica de renderizado.
     document.querySelector('#templateMainTitle')?.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
