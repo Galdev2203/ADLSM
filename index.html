@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADLSM · Generador de horarios FAB</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">ADLSM · HERRAMIENTA INTERNA</p>
+        <h1>Generador de horarios FAB</h1>
+        <p class="subtitle">Obtén los partidos de tu club desde la FAB y prepara los datos para publicar.</p>
+      </div>
+      <button id="refreshFab" class="primary">Buscar en FAB</button>
+    </header>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Fuente de datos</h2>
+          <p id="sourceStatus" class="muted">Listo para consultar.</p>
+        </div>
+        <label class="date-control">
+          Jornada
+          <input id="matchDate" type="date" value="2026-09-20">
+        </label>
+      </div>
+
+      <div id="message" class="message hidden"></div>
+
+      <div class="fallback">
+        <div>
+          <strong>Plan B: subir PDF</strong>
+          <p class="muted">Usaremos el mismo parser cuando la conexión directa con FAB no sea posible.</p>
+        </div>
+        <label class="upload">
+          <span>Seleccionar PDF</span>
+          <input id="pdfInput" type="file" accept="application/pdf">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Partidos detectados</h2>
+          <p id="matchCount" class="muted">0 partidos</p>
+        </div>
+      </div>
+      <div id="matches" class="matches empty">
+        <div class="empty-state">
+          <div class="empty-icon">🏀</div>
+          <h3>Aún no hay partidos</h3>
+          <p>Busca una jornada en FAB o carga un PDF manualmente.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
