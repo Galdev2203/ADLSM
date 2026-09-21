@@ -1,457 +1,50 @@
-const WIDTH = 1080;
-const HEIGHT = 1920;
-const MAX_MATCHES_PER_PAGE = 8;
-const CONTENT_TOP = 292;
-const CONTENT_BOTTOM = 1818;
-const ROW_HEIGHT = 171;
-const MAX_CUSTOM_GAP = 120;
-const DEFAULT_CUSTOM_GAP = 24;
-
-const COLORS = {
-  blue: '#2455a4',
-  darkBlue: '#173f80',
-  yellow: '#ffe000',
-  white: '#ffffff',
-  mutedBlue: '#5f78a4',
-  softWhite: '#f7f8fb'
-};
-
-const FONTS = {
-  title: 'Georgia, Times New Roman, serif',
-  body: 'Trebuchet MS, Arial, sans-serif'
-};
-
-const DEFAULT_TEMPLATE = {
-  title: 'HORARIOS BALONCESTO',
-  subtitle: 'FEDERADOS'
-};
-
-export function getTemplatePages(matches = []) {
-  const safeMatches = Array.isArray(matches) ? matches : [];
-  const pages = [];
-  for (let i = 0; i < safeMatches.length; i += MAX_MATCHES_PER_PAGE) {
-    pages.push(safeMatches.slice(i, i + MAX_MATCHES_PER_PAGE));
-  }
-  return pages;
-}
-
-export function createTemplateCanvas(matches = [], template = DEFAULT_TEMPLATE) {
-  ensureDistributionControls();
-  syncDistributionControlLimit(Math.min(matches.length, MAX_MATCHES_PER_PAGE));
-
-  const canvas = document.createElement('canvas');
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
-  drawTemplate(canvas, matches, template);
-  return canvas;
-}
-
-export function drawTemplate(canvas, matches = [], template = DEFAULT_TEMPLATE) {
-  const ctx = canvas?.getContext?.('2d');
-  if (!ctx) throw new Error('El navegador no ha podido crear el lienzo de la plantilla.');
-
-  const scale = canvas.width / WIDTH;
-  ctx.save();
-  ctx.scale(scale, scale);
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-  drawBackground(ctx);
-  drawHeader(ctx, template);
-
-  const count = Math.min(Array.isArray(matches) ? matches.length : 0, MAX_MATCHES_PER_PAGE);
-  if (count) {
-    const availableHeight = CONTENT_BOTTOM - CONTENT_TOP;
-    const totalRowsHeight = count * ROW_HEIGHT;
-    const distribution = getDistributionSettings();
-    const gap = getMatchGap(
-      distribution.mode,
-      distribution.customGap,
-      count,
-      availableHeight,
-      totalRowsHeight
-    );
-
-    const startY = CONTENT_TOP;
-    for (let index = 0; index < count; index += 1) {
-      drawMatch(ctx, matches[index] || {}, startY + index * (ROW_HEIGHT + gap), ROW_HEIGHT);
-    }
-  }
-
-  ctx.restore();
-}
-
-function getMaxCustomGap(count) {
-  if (count <= 1) return 0;
-  const availableHeight = CONTENT_BOTTOM - CONTENT_TOP;
-  const freeHeight = availableHeight - count * ROW_HEIGHT;
-  return Math.max(0, Math.min(MAX_CUSTOM_GAP, Math.floor(freeHeight / (count - 1))));
-}
-
-function getDistributionSettings() {
-  const mode = document.querySelector('#templateDistributionMode')?.value || 'top';
-  const rawGap = Number(document.querySelector('#templateDistributionGap')?.value);
-  const count = Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length || 0);
-  const maxGap = getMaxCustomGap(Math.min(count, MAX_MATCHES_PER_PAGE));
-  const customGap = Number.isFinite(rawGap)
-    ? Math.min(maxGap, Math.max(0, rawGap))
-    : Math.min(DEFAULT_CUSTOM_GAP, maxGap);
-  return { mode, customGap };
-}
-
-function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
-  if (count <= 1) return 0;
-
-  const maxSafeGap = Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
-
-  if (mode === 'equal') {
-    return maxSafeGap;
-  }
-
-  if (mode === 'custom') {
-    return Math.min(Math.max(0, customGap), maxSafeGap);
-  }
-
-  return Math.min(12, maxSafeGap);
-}
-
-function ensureDistributionControls() {
-  if (document.querySelector('#templateDistributionMode')) return;
-
-  const header = document.querySelector('.editor-matches-header');
-  if (!header?.parentNode) return;
-
-  if (!document.querySelector('#templateDistributionStyles')) {
-    const style = document.createElement('style');
-    style.id = 'templateDistributionStyles';
-    style.textContent = `
-      .template-distribution-controls {
-        margin-top: 14px;
-        padding: 12px;
-        border: 1px solid #dfe6f0;
-        border-radius: 12px;
-        background: #f7f9fc;
-      }
-      .template-distribution-title {
-        display: grid;
-        gap: 3px;
-        margin-bottom: 10px;
-        color: #263b60;
-      }
-      .template-distribution-title strong { font-size: 12px; }
-      .template-distribution-title span { font-size: 11px; color: #68758a; }
-      .template-distribution-fields {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
-        gap: 10px;
-        align-items: end;
-      }
-      .template-distribution-fields select {
-        width: 100%;
-        min-height: 38px;
-        padding: 8px 9px;
-        border: 1px solid #d7deea;
-        border-radius: 8px;
-        background: white;
-        color: #172033;
-        outline: none;
-      }
-      .template-distribution-fields select:focus {
-        border-color: #7896c5;
-        box-shadow: 0 0 0 3px rgba(36,85,164,.10);
-      }
-      .template-distribution-fields input[type="range"] {
-        width: 100%;
-        min-height: 38px;
-        accent-color: #2455a4;
-      }
-      .template-distribution-fields output { color: #2455a4; font-weight: 800; }
-      .template-distribution-fields .is-disabled { opacity: .55; }
-      @media (max-width: 680px) {
-        .template-distribution-fields { grid-template-columns: 1fr; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'template-distribution-controls';
-  wrapper.innerHTML = `
-    <div class="template-distribution-title">
-      <strong>Distribución de partidos</strong>
-      <span>Las tarjetas mantienen siempre el mismo tamaño y nunca salen del lienzo.</span>
-    </div>
-    <div class="template-distribution-fields">
-      <label class="editor-field">
-        <span>Posición</span>
-        <select id="templateDistributionMode">
-          <option value="top">Juntos arriba</option>
-          <option value="equal">Distribuir equitativamente</option>
-          <option value="custom">Separación personalizada</option>
-        </select>
-      </label>
-      <label class="editor-field" id="templateDistributionGapField">
-        <span>Separación <output id="templateDistributionGapValue">24 px</output></span>
-        <input id="templateDistributionGap" type="range" min="0" max="${MAX_CUSTOM_GAP}" step="1" value="${DEFAULT_CUSTOM_GAP}">
-      </label>
-    </div>
-  `;
-
-  header.parentNode.insertBefore(wrapper, header);
-
-  const mode = wrapper.querySelector('#templateDistributionMode');
-  const gap = wrapper.querySelector('#templateDistributionGap');
-  const gapField = wrapper.querySelector('#templateDistributionGapField');
-  const gapValue = wrapper.querySelector('#templateDistributionGapValue');
-
-  const refresh = ({ rerender = true } = {}) => {
-    const custom = mode.value === 'custom';
-    gap.disabled = !custom;
-    gapField.classList.toggle('is-disabled', !custom);
-    syncDistributionControlLimit();
-    if (rerender) document.dispatchEvent(new CustomEvent('template-distribution-change'));
-  };
-
-  mode.addEventListener('change', () => refresh());
-  gap.addEventListener('input', () => refresh());
-  refresh({ rerender: false });
-}
-
-function syncDistributionControlLimit(count = null) {
-  const slider = document.querySelector('#templateDistributionGap');
-  const output = document.querySelector('#templateDistributionGapValue');
-  if (!slider) return;
-
-  const resolvedCount = count ?? Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length || 0);
-  const maxGap = getMaxCustomGap(Math.min(resolvedCount, MAX_MATCHES_PER_PAGE));
-  const currentValue = Number(slider.value);
-  const nextValue = Number.isFinite(currentValue) ? Math.min(currentValue, maxGap) : Math.min(DEFAULT_CUSTOM_GAP, maxGap);
-
-  slider.max = String(maxGap);
-  slider.value = String(nextValue);
-  if (output) output.textContent = `${nextValue} px`;
-}
-
-function drawBackground(ctx) {
-  const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  gradient.addColorStop(0, '#6f84a8');
-  gradient.addColorStop(.45, '#59729e');
-  gradient.addColorStop(1, '#435f8f');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  ctx.globalAlpha = .06;
-  for (let y = 0; y < HEIGHT; y += 90) {
-    for (let x = (y / 90 % 2) * 45; x < WIDTH; x += 90) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x, y, 3, 3);
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawHeader(ctx, template) {
-  const title = cleanTeamName(template?.title) || DEFAULT_TEMPLATE.title;
-  const subtitle = cleanTeamName(template?.subtitle) || DEFAULT_TEMPLATE.subtitle;
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = COLORS.yellow;
-
-  const titleLines = fitTitleLines(ctx, title.toUpperCase(), 850);
-  const titleSize = titleLines.length === 1 ? 70 : 60;
-  const titleLineHeight = titleSize + 8;
-  const titleStartY = titleLines.length === 1 ? 92 : 62;
-  ctx.font = `italic 700 ${titleSize}px ${FONTS.title}`;
-  titleLines.forEach((line, index) => {
-    ctx.fillText(line, WIDTH / 2, titleStartY + index * titleLineHeight);
-  });
-
-  const subtitleY = titleLines.length === 1 ? 166 : 192;
-  roundRect(ctx, 126, subtitleY, 828, 54, 0, COLORS.white);
-  ctx.fillStyle = COLORS.blue;
-  fitText(ctx, subtitle.toUpperCase(), WIDTH / 2, subtitleY + 27, 770, 30, 'center', 9, 700);
-}
-
-function fitTitleLines(ctx, text, maxWidth) {
-  ctx.font = `italic 700 64px ${FONTS.title}`;
-  if (ctx.measureText(text).width <= maxWidth) return [text];
-
-  const words = text.split(' ').filter(Boolean);
-  const lines = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (!current || ctx.measureText(candidate).width <= maxWidth) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-  if (current) lines.push(current);
-  return lines.slice(0, 2);
-}
-
-function drawMatch(ctx, match, y, rowHeight) {
-  const x = 104;
-  const w = 872;
-  const centerX = WIDTH / 2;
-  const circleY = y + 67;
-  const circleR = 49;
-  const timeR = 57;
-
-  roundRect(ctx, x, y, w, rowHeight, 30, COLORS.white);
-  ctx.fillStyle = COLORS.yellow;
-  ctx.fillRect(x + 32, y, w - 64, 7);
-
-  const info = `${formatCompetition(match.competition)}${match.venue ? ` / ${formatVenue(match.venue)}` : ''}`;
-  const pillW = Math.min(720, Math.max(390, measurePillWidth(ctx, info)));
-  roundRect(ctx, centerX - pillW / 2, y + rowHeight - 30, pillW, 45, 23, COLORS.yellow);
-  ctx.fillStyle = COLORS.blue;
-  fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 7, pillW - 34, 15, 'center', 8, 700);
-
-  drawBadge(ctx, 178, circleY, circleR, match.homeTeam, true);
-  drawBadge(ctx, 902, circleY, circleR, match.awayTeam, false);
-
-  drawTeamName(ctx, match.homeTeam, 250, circleY, 150, false);
-  drawTeamName(ctx, match.awayTeam, 830, circleY, 150, true);
-
-  ctx.beginPath();
-  ctx.arc(centerX, circleY, timeR, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.yellow;
-  ctx.fill();
-
-  ctx.fillStyle = COLORS.blue;
-  fitText(ctx, match.time || '--:--', centerX, circleY - 9, 100, 29, 'center', 9, 800);
-  fitText(ctx, formatDay(match.date), centerX, circleY + 24, 100, 12, 'center', 8, 700);
-}
-
-function drawBadge(ctx, x, y, r, team, isHome) {
-  ctx.beginPath();
-  ctx.arc(x, y, r + 7, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.white;
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = isHome ? COLORS.blue : COLORS.softWhite;
-  ctx.fill();
-
-  ctx.fillStyle = isHome ? COLORS.yellow : COLORS.blue;
-  fitText(ctx, isHome ? 'ADLSM' : initials(team), x, y - 4, 78, 21, 'center', 8, 800);
-  fitText(ctx, isHome ? 'BALONCESTO' : 'RIVAL', x, y + 21, 76, 10, 'center', 7, 700);
-}
-
-function drawTeamName(ctx, value, x, y, maxWidth, right) {
-  const text = cleanTeamName(value) || 'SIN EQUIPO';
-  let size = 23;
-  while (size > 16) {
-    ctx.font = `700 ${size}px ${FONTS.body}`;
-    const lines = wrapText(ctx, text, maxWidth, 2);
-    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) break;
-    size -= 1;
-  }
-
-  ctx.fillStyle = COLORS.blue;
-  ctx.textAlign = right ? 'right' : 'left';
-  ctx.textBaseline = 'middle';
-  const lines = wrapText(ctx, text, maxWidth, 2);
-  const lineHeight = size * 1.18;
-  const startY = y - ((lines.length - 1) * lineHeight) / 2;
-  lines.forEach((line, index) => ctx.fillText(line, x, startY + index * lineHeight));
-}
-
-function wrapText(ctx, text, maxWidth, maxLines = 2) {
-  const words = text.split(' ').filter(Boolean);
-  const lines = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (ctx.measureText(candidate).width <= maxWidth || !current) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-  if (current) lines.push(current);
-  if (lines.length <= maxLines) return lines;
-
-  const kept = lines.slice(0, maxLines);
-  let last = kept[maxLines - 1];
-  while (last.length > 3 && ctx.measureText(`${last}…`).width > maxWidth) {
-    last = last.slice(0, -1);
-  }
-  kept[maxLines - 1] = `${last}…`;
-  return kept;
-}
-
-function fitText(ctx, text, x, y, maxWidth, initialSize, align = 'center', minSize = 8, weight = 700) {
-  let size = initialSize;
-  while (size > minSize) {
-    ctx.font = `${weight} ${size}px ${FONTS.body}`;
-    if (ctx.measureText(text).width <= maxWidth) break;
-    size -= 1;
-  }
-  ctx.textAlign = align;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y);
-}
-
-function roundRect(ctx, x, y, w, h, r, fill) {
-  const radius = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + radius, y, radius);
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-}
-
-function initials(team = '') {
-  const words = cleanTeamName(team).split(' ').filter(Boolean);
-  if (!words.length) return '?';
-  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
-  return words.slice(0, 3).map(word => word[0]).join('').toUpperCase();
-}
-
-function cleanTeamName(value = '') {
-  return String(value).replace(/\s+/g, ' ').trim();
-}
-
-function formatCompetition(value = '') {
-  return cleanTeamName(value) || 'BALONCESTO FEDERADO';
-}
-
-function formatVenue(value = '') {
-  return cleanTeamName(value).replace(/^PISTA\s*:?\s*/i, '');
-}
-
-function formatDay(value = '') {
-  if (!value) return '';
-
-  let date;
-  const iso = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const european = String(value).match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?$/);
-
-  if (iso) {
-    date = new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12));
-  } else if (european?.[3]) {
-    date = new Date(Date.UTC(Number(european[3]), Number(european[2]) - 1, Number(european[1]), 12));
-  } else {
-    return '';
-  }
-
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: 'UTC' }).format(date).toUpperCase();
-}
-
-function measurePillWidth(ctx, text) {
-  ctx.font = `700 15px ${FONTS.body}`;
-  return ctx.measureText(text.toUpperCase()).width + 42;
-}
-
-export { WIDTH, HEIGHT, MAX_MATCHES_PER_PAGE, DEFAULT_TEMPLATE, getMaxCustomGap };
+const WIDTH=1080,HEIGHT=1920,MAX_MATCHES_PER_PAGE=8;
+const CONTENT_TOP=270,CONTENT_BOTTOM=1818,ROW_HEIGHT=156,MAX_CUSTOM_GAP=120,DEFAULT_CUSTOM_GAP=28;
+const CUSTOM_LOGOS_KEY='adlsm.template.customLogos.v1', LOGO_SELECTIONS_KEY='adlsm.template.logoSelections.v2';
+const COLORS={blue:'#174a9a',yellow:'#ffe000',white:'#fff',soft:'#f7f8fb'};
+const FONT='Arial Black, Arial, Helvetica, sans-serif';
+const DEFAULT_TEMPLATE={title:'HORARIOS BALONCESTO',subtitle:'FEDERADOS'};
+const LOGOS=[
+ {id:'adlsm',name:'A.D. La Salle Montemolín',src:'assets/logos/adlsm.svg',aliases:['la salle','montemolin','montemolín','adlsm']},
+ {id:'old-school',name:'Old School Basket Zaragoza',src:'assets/logos/old-school.svg',aliases:['old school','osb']},
+ {id:'st-casablanca',name:'St. Casablanca',src:'assets/logos/st-casablanca.svg',aliases:['casablanca','st. casablanca','st casablanca']},
+ {id:'basket',name:'Balón de baloncesto',src:'assets/logos/basket.svg',aliases:['cba','basket']},
+ {id:'la-muela',name:'La Muela / Frivalca',src:'assets/logos/la-muela.svg',aliases:['la muela','frivalca']}
+];
+const imageCache=new Map();
+
+export function getTemplatePages(matches=[]){const safe=Array.isArray(matches)?matches:[];const pages=[];for(let i=0;i<safe.length;i+=MAX_MATCHES_PER_PAGE)pages.push(safe.slice(i,i+MAX_MATCHES_PER_PAGE));return pages;}
+export async function createTemplateCanvas(matches=[],template=DEFAULT_TEMPLATE){ensureDistributionControls();syncDistributionControlLimit(Math.min(matches.length,MAX_MATCHES_PER_PAGE));ensureLogoPickers();const canvas=document.createElement('canvas');canvas.width=WIDTH;canvas.height=HEIGHT;await drawTemplate(canvas,matches,template);return canvas;}
+export async function drawTemplate(canvas,matches=[],template=DEFAULT_TEMPLATE){const ctx=canvas?.getContext?.('2d');if(!ctx)throw new Error('El navegador no ha podido crear el lienzo de la plantilla.');ctx.clearRect(0,0,WIDTH,HEIGHT);await drawBackground(ctx);drawHeader(ctx,template);const count=Math.min(Array.isArray(matches)?matches.length:0,MAX_MATCHES_PER_PAGE);if(count){const available=CONTENT_BOTTOM-CONTENT_TOP,total=count*ROW_HEIGHT,{mode,customGap}=getDistributionSettings(count),gap=getMatchGap(mode,customGap,count,available,total);const imgs=await Promise.all(matches.slice(0,count).map(m=>Promise.all([loadImage(resolveLogoSource(m.homeLogo,m.homeTeam,true)),loadImage(resolveLogoSource(m.awayLogo,m.awayTeam,false))])));for(let i=0;i<count;i++)drawMatch(ctx,matches[i]||{},CONTENT_TOP+i*(ROW_HEIGHT+gap),ROW_HEIGHT,imgs[i]?.[0],imgs[i]?.[1]);}drawFooter(ctx);return canvas;}
+function maxGap(count){if(count<=1)return 0;return Math.max(0,Math.min(MAX_CUSTOM_GAP,Math.floor((CONTENT_BOTTOM-CONTENT_TOP-count*ROW_HEIGHT)/(count-1))));}
+function getDistributionSettings(count){const mode=document.querySelector('#templateDistributionMode')?.value||'top',raw=Number(document.querySelector('#templateDistributionGap')?.value),m=maxGap(count);return{mode,customGap:Number.isFinite(raw)?Math.min(m,Math.max(0,raw)):Math.min(DEFAULT_CUSTOM_GAP,m)};}
+function getMatchGap(mode,custom,count,available,total){if(count<=1)return 0;const safe=Math.max(0,(available-total)/(count-1));if(mode==='equal')return safe;if(mode==='custom')return Math.min(custom,safe);return Math.min(16,safe);}
+function ensureDistributionControls(){if(document.querySelector('#templateDistributionMode'))return;const header=document.querySelector('.editor-matches-header');if(!header?.parentNode)return;const style=document.createElement('style');style.id='templateDistributionStyles';style.textContent=`.template-distribution-controls{margin-top:14px;padding:12px;border:1px solid #dfe6f0;border-radius:12px;background:#f7f9fc}.template-distribution-title{display:grid;gap:3px;margin-bottom:10px;color:#263b60}.template-distribution-title strong{font-size:12px}.template-distribution-title span{font-size:11px;color:#68758a}.template-distribution-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,1fr);gap:10px}.template-distribution-fields select{width:100%;min-height:38px;padding:8px;border:1px solid #d7deea;border-radius:8px;background:#fff}.template-distribution-fields input[type=range]{width:100%;accent-color:#2455a4}@media(max-width:680px){.template-distribution-fields{grid-template-columns:1fr}}`;document.head.appendChild(style);const wrap=document.createElement('div');wrap.className='template-distribution-controls';wrap.innerHTML='<div class="template-distribution-title"><strong>Distribución de partidos</strong><span>El límite se adapta automáticamente al número de partidos.</span></div><div class="template-distribution-fields"><label class="editor-field"><span>Posición</span><select id="templateDistributionMode"><option value="top">Juntos arriba</option><option value="equal">Distribuir equitativamente</option><option value="custom">Separación personalizada</option></select></label><label class="editor-field" id="templateDistributionGapField"><span>Separación <output id="templateDistributionGapValue">0 px</output></span><input id="templateDistributionGap" type="range" min="0" max="120" value="28"></label></div>';header.parentNode.insertBefore(wrap,header);const mode=wrap.querySelector('#templateDistributionMode'),gap=wrap.querySelector('#templateDistributionGap'),field=wrap.querySelector('#templateDistributionGapField');const refresh=()=>{gap.disabled=mode.value!=='custom';field.classList.toggle('is-disabled',gap.disabled);syncDistributionControlLimit();document.dispatchEvent(new CustomEvent('template-distribution-change'));};mode.addEventListener('change',refresh);gap.addEventListener('input',refresh);refresh();}
+function syncDistributionControlLimit(count=null){const slider=document.querySelector('#templateDistributionGap'),out=document.querySelector('#templateDistributionGapValue');if(!slider)return;const c=count??Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length||0),m=maxGap(Math.min(c,MAX_MATCHES_PER_PAGE)),v=Math.min(Number(slider.value)||0,m);slider.max=String(m);slider.value=String(v);if(out)out.textContent=`${v} px`;}
+async function drawBackground(ctx){const bg=await loadImage('assets/background.svg');if(bg)ctx.drawImage(bg,0,0,WIDTH,HEIGHT);else{const g=ctx.createLinearGradient(0,0,0,HEIGHT);g.addColorStop(0,'#5873a1');g.addColorStop(1,'#31588d');ctx.fillStyle=g;ctx.fillRect(0,0,WIDTH,HEIGHT);}}
+function drawHeader(ctx,template){const title=clean(template?.title)||DEFAULT_TEMPLATE.title,sub=clean(template?.subtitle)||DEFAULT_TEMPLATE.subtitle;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=COLORS.yellow;const lines=fitTitleLines(ctx,title.toUpperCase(),830),size=lines.length===1?72:61;ctx.font=`italic 900 ${size}px ${FONT}`;const lh=size*.9,start=lines.length===1?82:61;lines.forEach((line,i)=>ctx.fillText(line,WIDTH/2,start+i*lh));const sy=lines.length===1?151:177;ctx.fillStyle=COLORS.white;ctx.fillRect(126,sy,828,54);ctx.fillStyle=COLORS.blue;fitText(ctx,sub.toUpperCase(),WIDTH/2,sy+27,760,28,8,900);}
+function fitTitleLines(ctx,text,max){ctx.font=`italic 900 64px ${FONT}`;if(ctx.measureText(text).width<=max)return[text];const words=text.split(' '),lines=[];let cur='';for(const w of words){const n=cur?`${cur} ${w}`:w;if(!cur||ctx.measureText(n).width<=max)cur=n;else{lines.push(cur);cur=w;}}if(cur)lines.push(cur);return lines.slice(0,2);}
+function drawMatch(ctx,m,y,row,homeImg,awayImg){const x=218,w=644,cy=y+62,cx=WIDTH/2,cardY=y+8,cardH=108,logoR=66,timeR=56;roundRect(ctx,x,cardY,w,cardH,27,COLORS.white);ctx.fillStyle=COLORS.yellow;ctx.fillRect(x+32,cardY,w-64,7);drawBadge(ctx,188,cy,logoR,homeImg,true);drawBadge(ctx,892,cy,logoR,awayImg,false);drawTeamName(ctx,m.homeTeam,305,cy,165,false);drawTeamName(ctx,m.awayTeam,775,cy,165,true);ctx.beginPath();ctx.arc(cx,cy,timeR,0,Math.PI*2);ctx.fillStyle=COLORS.yellow;ctx.fill();ctx.fillStyle=COLORS.blue;fitText(ctx,m.time||'--:--',cx,cy-8,100,29,9,900);fitText(ctx,formatDay(m.date),cx,cy+22,100,12,8,900);const info=`${clean(m.competition)||'COMPETICIÓN'}${m.venue?` / ${clean(m.venue)}`:''}`,pw=Math.min(700,Math.max(330,measurePill(ctx,info)));roundRect(ctx,cx-pw/2,cardY+104,pw,43,21,COLORS.yellow);ctx.fillStyle=COLORS.blue;fitText(ctx,info.toUpperCase(),cx,cardY+126,pw-26,14,7,900);}
+function drawBadge(ctx,x,y,r,img,isHome){ctx.save();ctx.beginPath();ctx.arc(x,y,r+8,0,Math.PI*2);ctx.fillStyle=COLORS.white;ctx.fill();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();if(img){const s=r*2,scale=Math.max(s/img.width,s/img.height);ctx.drawImage(img,x-img.width*scale/2,y-img.height*scale/2,img.width*scale,img.height*scale);}else{ctx.fillStyle=isHome?COLORS.blue:COLORS.soft;ctx.fillRect(x-r,y-r,r*2,r*2);ctx.fillStyle=isHome?COLORS.yellow:COLORS.blue;fitText(ctx,isHome?'ADLSM':'RIVAL',x,y,80,22,8,900);}ctx.restore();}
+function drawTeamName(ctx,value,x,y,maxWidth,right){const text=clean(value)||'SIN EQUIPO';let size=24,lines=[];while(size>=16){ctx.font=`900 ${size}px ${FONT}`;lines=wrap(ctx,text,maxWidth,2);if(lines.every(l=>ctx.measureText(l).width<=maxWidth))break;size--;}ctx.fillStyle=COLORS.blue;ctx.textAlign=right?'right':'left';ctx.textBaseline='middle';const lh=size*1.08,start=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>ctx.fillText(l,x,start+i*lh));}
+function wrap(ctx,text,max,limit){const words=text.split(/\s+/).filter(Boolean),lines=[];let cur='';for(const w of words){const n=cur?`${cur} ${w}`:w;if(ctx.measureText(n).width<=max||!cur)cur=n;else{lines.push(cur);cur=w;}}if(cur)lines.push(cur);if(lines.length<=limit)return lines;const out=lines.slice(0,limit);let last=out[limit-1];while(last.length>3&&ctx.measureText(`${last}…`).width>max)last=last.slice(0,-1);out[limit-1]=`${last}…`;return out;}
+function fitText(ctx,text,x,y,max,start,min=8,weight=800){let s=start;while(s>min){ctx.font=`${weight} ${s}px ${FONT}`;if(ctx.measureText(text).width<=max)break;s--;}ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y);}
+function measurePill(ctx,text){ctx.font=`900 14px ${FONT}`;return ctx.measureText(text.toUpperCase()).width+52;}
+function roundRect(ctx,x,y,w,h,r,fill){ctx.beginPath();const q=Math.min(r,w/2,h/2);ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath();ctx.fillStyle=fill;ctx.fill();}
+function drawFooter(ctx){const y=1838;ctx.strokeStyle=COLORS.yellow;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(110,y);ctx.lineTo(285,y);ctx.stroke();ctx.beginPath();ctx.moveTo(795,y);ctx.lineTo(970,y);ctx.stroke();ctx.fillStyle=COLORS.white;ctx.font=`500 18px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('MÁS QUE UN CLUB',540,y);}
+function clean(v){return String(v??'').replace(/\s+/g,' ').trim();}
+function norm(v){return clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function formatDay(v){const m={lunes:'LUNES',martes:'MARTES',miércoles:'MIÉRCOLES',miercoles:'MIÉRCOLES',jueves:'JUEVES',viernes:'VIERNES',sábado:'SÁBADO',sabado:'SÁBADO',domingo:'DOMINGO'};return m[clean(v).toLowerCase()]||clean(v).toUpperCase();}
+function customLogos(){try{const x=JSON.parse(localStorage.getItem(CUSTOM_LOGOS_KEY)||'[]');return Array.isArray(x)?x.filter(v=>v?.id&&v?.src):[];}catch{return[];}}
+function logoOptions(){return [...LOGOS,...customLogos().map(x=>({...x,custom:true}))];}
+function defaultLogo(team,isHome){const n=norm(team);if(isHome)return'adlsm';return LOGOS.find(l=>l.aliases?.some(a=>n.includes(norm(a))))?.id||'basket';}
+function selections(){try{return JSON.parse(localStorage.getItem(LOGO_SELECTIONS_KEY)||'{}')||{};}catch{return{};}}
+function selection(key,side){return selections()[`${key}:${side}`]||'';}
+function saveSelection(key,side,id){try{const x=selections();x[`${key}:${side}`]=id;localStorage.setItem(LOGO_SELECTIONS_KEY,JSON.stringify(x));}catch{}}
+function editorKey(item){return [...item.querySelectorAll('input')].map(i=>i.value||'').join('|')||item.dataset.index;}
+function resolveLogoSource(id,team,isHome){const options=logoOptions(),selected=id||defaultLogo(team,isHome);return options.find(x=>x.id===selected)?.src||options[0]?.src;}
+function loadImage(src){if(!src)return Promise.resolve(null);if(imageCache.has(src))return imageCache.get(src);const p=new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src;});imageCache.set(src,p);return p;}
+function ensureLogoPickers(){if(!document.querySelector('#templateLogoPickerStyles')){const s=document.createElement('style');s.id='templateLogoPickerStyles';s.textContent=`.template-logo-pickers{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.logo-picker{position:relative}.logo-picker-button{width:100%;min-height:48px;display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:8px;padding:6px 9px;border:1px solid #d7deea;border-radius:9px;background:#fff;color:#263b60;cursor:pointer;text-align:left}.logo-picker-button img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#f1f4f8}.logo-picker-button span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800}.logo-picker-panel{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 6px);padding:8px;background:#fff;border:1px solid #d6deea;border-radius:12px;box-shadow:0 16px 40px rgba(25,43,72,.18);max-height:270px;overflow:auto}.logo-picker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.logo-option{min-height:82px;padding:7px 5px;display:grid;justify-items:center;align-content:center;gap:5px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;cursor:pointer}.logo-option img{width:42px;height:42px;object-fit:contain}.logo-option span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:800}.logo-option-add{border-style:dashed;color:#2455a4}.template-preview-loading{min-height:300px;display:grid;place-items:center;padding:24px;color:#68758a;background:#fff;border:1px dashed #ccd6e5;border-radius:12px}.template-preview-error{min-height:220px;display:grid;align-content:center;gap:8px;padding:24px;text-align:center;color:#7d3131;background:#fff7f7;border:1px solid #edcaca;border-radius:12px}.template-preview-error span{font-size:13px}@media(max-width:680px){.template-logo-pickers{grid-template-columns:1fr}.logo-picker-panel{position:fixed;left:12px;right:12px;bottom:12px;top:auto;max-height:55vh}}`;document.head.appendChild(s);}const items=document.querySelectorAll('#editorMatches .editor-match');items.forEach(item=>{if(item.querySelector('.template-logo-pickers'))return;const fields=item.querySelector('.editor-fields');if(!fields)return;const key=editorKey(item),home=fields.querySelector('input[data-key="homeTeam"]')?.value||'',away=fields.querySelector('input[data-key="awayTeam"]')?.value||'',h=selection(key,'home')||defaultLogo(home,true),a=selection(key,'away')||defaultLogo(away,false);item.dataset.logoHome=h;item.dataset.logoAway=a;const wrap=document.createElement('div');wrap.className='template-logo-pickers';wrap.append(createLogoPicker(item,'home',h),createLogoPicker(item,'away',a));fields.after(wrap);});}
+function createLogoPicker(owner,side,current){const field=document.createElement('label');field.className='logo-picker-field editor-field';const span=document.createElement('span');span.textContent=side==='home'?'Logo local':'Logo visitante';const wrap=document.createElement('div');wrap.className='logo-picker';const button=document.createElement('button');button.type='button';button.className='logo-picker-button';const panel=document.createElement('div');panel.className='logo-picker-panel hidden';let selected=current;const renderButton=()=>{const opt=logoOptions().find(x=>x.id===selected)||logoOptions()[0];button.replaceChildren();const img=document.createElement('img');img.src=opt?.src||'';const text=document.createElement('span');text.textContent=opt?.name||'Elegir logo';const arrow=document.createElement('span');arrow.textContent='▾';button.append(img,text,arrow);};const renderPanel=()=>{panel.replaceChildren();const grid=document.createElement('div');grid.className='logo-picker-grid';logoOptions().forEach(opt=>{const b=document.createElement('button');b.type='button';b.className='logo-option';const img=document.createElement('img');img.src=opt.src;const name=document.createElement('span');name.textContent=opt.name;b.append(img,name);b.addEventListener('click',()=>{selected=opt.id;owner.dataset[side==='home'?'logoHome':'logoAway']=selected;saveSelection(editorKey(owner),side,selected);panel.classList.add('hidden');renderButton();document.dispatchEvent(new CustomEvent('template-logo-change'));});grid.appendChild(b);});const add=document.createElement('button');add.type='button';add.className='logo-option logo-option-add';add.innerHTML='<span style="font-size:24px">＋</span><span>Añadir imagen</span>';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.addEventListener('change',async()=>{const file=input.files?.[0];if(!file)return;try{const src=await fileToDataUrl(file),name=clean(file.name.replace(/\.[^.]+$/,''))||'Logo personalizado',id=`custom-${Date.now()}`;const list=[...customLogos(),{id,name,src}].slice(-20);localStorage.setItem(CUSTOM_LOGOS_KEY,JSON.stringify(list));selected=id;owner.dataset[side==='home'?'logoHome':'logoAway']=id;saveSelection(editorKey(owner),side,id);renderPanel();renderButton();panel.classList.remove('hidden');document.dispatchEvent(new CustomEvent('template-logo-change'));}catch(e){window.alert(errorMessage(e));}finally{input.value='';}});add.appendChild(input);add.addEventListener('click',()=>input.click());grid.appendChild(add);panel.appendChild(grid);};button.addEventListener('click',e=>{e.stopPropagation();const open=!panel.classList.contains('hidden');document.querySelectorAll('.logo-picker-panel').forEach(p=>p.classList.add('hidden'));if(!open){renderPanel();panel.classList.remove('hidden');}});document.addEventListener('click',e=>{if(!wrap.contains(e.target))panel.classList.add('hidden');});wrap.append(button,panel);field.append(span,wrap);renderButton();return field;}
+async function fileToDataUrl(file){const raw=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result||''));r.onerror=()=>rej(new Error('No se pudo leer la imagen.'));r.readAsDataURL(file);});const img=await loadImage(raw);if(!img)throw new Error('La imagen seleccionada no es válida.');const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d'),scale=Math.min(256/img.width,256/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(256-w)/2,(256-h)/2,w,h);return c.toDataURL('image/webp',.84);}
+function errorMessage(e){return e instanceof Error?e.message:String(e||'Error desconocido.');}
