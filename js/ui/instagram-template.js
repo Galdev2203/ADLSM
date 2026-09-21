@@ -86,43 +86,35 @@ function drawMatch(ctx, match, y, rowHeight) {
   const x = 104;
   const w = 872;
   const centerX = WIDTH / 2;
-  const timeX = centerX;
   const circleY = y + 88;
   const circleR = 74;
   const timeR = 78;
 
-  // White match body with yellow top accent.
   roundRect(ctx, x, y, w, rowHeight, 34, COLORS.white);
   ctx.fillStyle = COLORS.yellow;
   ctx.fillRect(x + 34, y, w - 68, 8);
 
-  // Bottom information pill.
   const info = `${formatCompetition(match.competition)}${match.venue ? ` / ${formatVenue(match.venue)}` : ''}`;
   const pillW = Math.min(720, Math.max(430, measurePillWidth(ctx, info)));
   roundRect(ctx, centerX - pillW / 2, y + rowHeight - 31, pillW, 52, 26, COLORS.yellow);
   ctx.fillStyle = COLORS.blue;
-  ctx.font = '900 18px Arial, sans-serif';
   fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 5, pillW - 42, 18, 'center');
 
-  // Team badges.
   drawBadge(ctx, 196, circleY, circleR, match.homeTeam, true);
   drawBadge(ctx, 884, circleY, circleR, match.awayTeam, false);
 
-  // Team names.
-  drawTeamName(ctx, match.homeTeam, 306, circleY, 190, false);
-  drawTeamName(ctx, match.awayTeam, 774, circleY, 190, true);
+  // Reserve a clear text area on each side of the time circle.
+  drawTeamName(ctx, match.homeTeam, 274, circleY, 150, false);
+  drawTeamName(ctx, match.awayTeam, 806, circleY, 150, true);
 
-  // Time/day circle.
   ctx.beginPath();
-  ctx.arc(timeX, circleY, timeR, 0, Math.PI * 2);
+  ctx.arc(centerX, circleY, timeR, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.yellow;
   ctx.fill();
 
   ctx.fillStyle = COLORS.blue;
-  ctx.font = '900 39px Arial, sans-serif';
-  ctx.fillText(match.time || '--:--', timeX, circleY - 14);
-  ctx.font = '900 18px Arial, sans-serif';
-  ctx.fillText(formatDay(match.date), timeX, circleY + 25);
+  fitText(ctx, match.time || '--:--', centerX, circleY - 13, 118, 39, 'center');
+  fitText(ctx, formatDay(match.date), centerX, circleY + 28, 118, 17, 'center');
 }
 
 function drawBadge(ctx, x, y, r, team, isHome) {
@@ -146,12 +138,21 @@ function drawBadge(ctx, x, y, r, team, isHome) {
 }
 
 function drawTeamName(ctx, value, x, y, maxWidth, right) {
+  const text = cleanTeamName(value) || 'SIN EQUIPO';
+  let size = 28;
+  while (size > 19) {
+    ctx.font = `900 ${size}px Arial, sans-serif`;
+    if (wrapText(ctx, text, maxWidth, 2).every(line => ctx.measureText(line).width <= maxWidth)) break;
+    size -= 1;
+  }
+
   ctx.fillStyle = COLORS.blue;
   ctx.textAlign = right ? 'right' : 'left';
-  ctx.font = '900 27px Arial, sans-serif';
-  const lines = wrapText(ctx, cleanTeamName(value), maxWidth, 2);
-  const startY = y - ((lines.length - 1) * 17);
-  lines.forEach((line, index) => ctx.fillText(line, x, startY + index * 38));
+  ctx.textBaseline = 'middle';
+  const lines = wrapText(ctx, text, maxWidth, 2);
+  const lineHeight = size * 1.2;
+  const startY = y - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, index) => ctx.fillText(line, x, startY + index * lineHeight));
 }
 
 function wrapText(ctx, text, maxWidth, maxLines = 2) {
@@ -169,14 +170,19 @@ function wrapText(ctx, text, maxWidth, maxLines = 2) {
   }
   if (current) lines.push(current);
   if (lines.length <= maxLines) return lines;
+
   const kept = lines.slice(0, maxLines);
-  kept[maxLines - 1] = `${kept[maxLines - 1].slice(0, Math.max(1, 24 - kept[maxLines - 1].length))}…`;
+  let last = kept[maxLines - 1];
+  while (last.length > 3 && ctx.measureText(`${last}…`).width > maxWidth) {
+    last = last.slice(0, -1);
+  }
+  kept[maxLines - 1] = `${last}…`;
   return kept;
 }
 
 function fitText(ctx, text, x, y, maxWidth, initialSize, align = 'center') {
   let size = initialSize;
-  while (size > 12) {
+  while (size > 10) {
     ctx.font = `900 ${size}px Arial, sans-serif`;
     if (ctx.measureText(text).width <= maxWidth) break;
     size -= 1;
@@ -207,7 +213,7 @@ function initials(team = '') {
 }
 
 function cleanTeamName(value = '') {
-  return value.replace(/\s+/g, ' ').trim();
+  return String(value).replace(/\s+/g, ' ').trim();
 }
 
 function formatCompetition(value = '') {
@@ -220,9 +226,21 @@ function formatVenue(value = '') {
 
 function formatDay(value = '') {
   if (!value) return '';
-  const date = new Date(`${value}T12:00:00`);
+
+  let date;
+  const iso = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const european = String(value).match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?$/);
+
+  if (iso) {
+    date = new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12));
+  } else if (european?.[3]) {
+    date = new Date(Date.UTC(Number(european[3]), Number(european[2]) - 1, Number(european[1]), 12));
+  } else {
+    return '';
+  }
+
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('es-ES', { weekday: 'long' }).format(date).toUpperCase();
+  return new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: 'UTC' }).format(date).toUpperCase();
 }
 
 function measurePillWidth(ctx, text) {
