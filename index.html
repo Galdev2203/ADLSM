@@ -32,21 +32,23 @@
       <div id="message" class="message hidden"></div>
 
       <div class="filters">
+        <label class="filter-control search-control">
+          Equipo o club
+          <input id="teamSearch" type="search" placeholder="Ej.: La Salle Montemolín, Alierta…" autocomplete="off" disabled>
+        </label>
         <label class="filter-control">
-          Buscar por
-          <select id="filterType" disabled>
-            <option value="family">Club / grupo de equipos</option>
-            <option value="team">Equipo concreto</option>
-            <option value="category">Categoría / competición</option>
+          Competición
+          <select id="competitionFilter" disabled>
+            <option value="">Todas las competiciones</option>
           </select>
         </label>
         <label class="filter-control">
-          Selección
-          <select id="filterValue" disabled>
-            <option value="">Carga primero un PDF</option>
+          Fecha
+          <select id="dateFilter" disabled>
+            <option value="">Todas las fechas</option>
           </select>
         </label>
-        <button id="clearTeam" class="secondary" type="button" disabled>Mostrar todos</button>
+        <button id="clearTeam" class="secondary" type="button" disabled>Limpiar</button>
       </div>
 
       <div class="fallback">
@@ -67,7 +69,7 @@
           <h2>Partidos detectados</h2>
           <p id="matchCount" class="muted">0 partidos</p>
         </div>
-        <div class="view-toggle" aria-label="Vista de resultados">
+        <div class="view-toggle" role="group" aria-label="Vista de resultados">
           <button id="viewCards" type="button" class="view-button active">▦ Tarjetas</button>
           <button id="viewTable" type="button" class="view-button">☷ Tabla</button>
         </div>
