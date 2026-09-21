@@ -4,16 +4,21 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 
 const DATE_RE = /^(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?$/;
 const TIME_RE = /^(\d{1,2}):(\d{2})$/;
-const COMPETITION_RE = /COPA|LIGA|ARAGONESA|NACIONAL|JUNIOR|CADETE|INFANTIL|ALEVIN|BENJAMIN|MINIBASKET|SUPERCOPA|FEB|SOCIAL|PREINFANTIL|PREMINI/i;
+const DATE_IN_TEXT_RE = /\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/;
+const TIME_IN_TEXT_RE = /\b(\d{1,2}:\d{2})\b/;
 
 function clean(value = '') { return String(value).replace(/\s+/g, ' ').trim(); }
-function normaliseDate(day, month, sourceYear) { const year = sourceYear ? Number(sourceYear.length === 2 ? `20${sourceYear}` : sourceYear) : new Date().getFullYear(); return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
+function normaliseDate(day, month, sourceYear = '') { const year = sourceYear ? Number(String(sourceYear).length === 2 ? `20${sourceYear}` : sourceYear) : new Date().getFullYear(); return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
+function dateFromMatch(match, sourceYear = '') { return normaliseDate(match[1], match[2], match[3] || sourceYear); }
 function isDate(value) { return DATE_RE.test(clean(value)); }
 function isTime(value) { return TIME_RE.test(clean(value)); }
-function findDateInText(value) { return clean(value).match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/); }
-function findTimeInText(value) { return clean(value).match(/\b(\d{1,2}):(\d{2})\b/); }
-function dateFromMatch(match, sourceYear = '') { return normaliseDate(match[1], match[2], match[3] || sourceYear); }
+function findDateInText(value) { return clean(value).match(DATE_IN_TEXT_RE); }
+function findTimeInText(value) { return clean(value).match(TIME_IN_TEXT_RE); }
 function dedupeMatches(matches) { const seen = new Set(); return matches.filter(match => { const key = [match.date, match.time, match.homeTeam, match.awayTeam, match.venue].join('|'); if (seen.has(key)) return false; seen.add(key); return true; }); }
+function compact(value) { return clean(value).toUpperCase().replace(/\s+/g, ''); }
+function isTableHeader(value) { const text = compact(value); return text.includes('LOCALVISITANTEFECHAHORA') || (text.includes('LOCAL') && text.includes('VISITANTE') && text.includes('FECHA') && text.includes('HORA')); }
+function isFooter(value) { const text = compact(value); return text.includes('FEDERACIONARAGONESA') || text.includes('PLAZAHERRERADELOSNAVARROS') || text.includes('HORARIOSJORNADA'); }
+function extractYear(source, fallback = '') { const match = String(source || '').match(/(?:JORNADA|HORARIOS)[^\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i); return match?.[1] || fallback; }
 
 function groupTextItems(items) {
   const positioned = items.filter(item => item.str?.trim()).map(item => ({ text: clean(item.str), x: item.transform[4], y: item.transform[5] })).sort((a, b) => b.y - a.y || a.x - b.x);
@@ -22,194 +27,148 @@ function groupTextItems(items) {
   return rows.sort((a, b) => b.y - a.y).map(row => ({ y: row.y, items: row.items.sort((a, b) => a.x - b.x), text: row.items.map(item => item.text).join(' ') }));
 }
 
-function joinColumn(items, minX, maxX) { return clean(items.filter(item => item.x >= minX && item.x < maxX).map(item => item.text).join(' ')); }
-function findCell(items, predicate) { return items.find(item => predicate(item.text)); }
-function extractSourceYear(rows) { const text = rows.map(row => row.text).join(' '); const match = text.match(/JORNADA\s*:?\s*\d{1,2}[\/-]\d{1,2}[\/-](\d{2,4})/i); return match?.[1] || ''; }
-function isHeaderOrNoise(row) { const text = row.text.toUpperCase(); return text.includes('LOCAL VISITANTE') || text.includes('FEDERACIÓN ARAGONESA') || text.includes('HORARIOS - JORNADA'); }
-
-function parsePageRows(rows, sourceName, sourceYear) {
+function parsePdfRows(rows, sourceName, fallbackYear) {
   const matches = [];
   let section = '';
+  let header = null;
   for (const row of rows) {
-    if (!row?.items?.length || isHeaderOrNoise(row)) continue;
-    const dateItem = findCell(row.items, isDate);
-    const timeItem = findCell(row.items, isTime);
-    if (!dateItem && !timeItem && COMPETITION_RE.test(row.text) && row.text.length < 150) { section = clean(row.text); continue; }
-    if (!dateItem || !timeItem) continue;
-    const dateMatch = dateItem.text.match(DATE_RE); if (!dateMatch) continue;
-    const homeTeam = joinColumn(row.items, 30, 198); const awayTeam = joinColumn(row.items, 198, 355); const venue = joinColumn(row.items, 435, 650);
-    if (!homeTeam || /^(LOCAL|VISITANTE|FECHA|HORA|PISTA|JUEGO)$/i.test(homeTeam)) continue;
-    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, sourceYear), time: timeItem.text, venue, source: sourceName });
-  }
-  return matches;
-}
-
-function cellsFromHtml(source) {
-  if (!/<table\b/i.test(source)) return [];
-  const doc = new DOMParser().parseFromString(source, 'text/html');
-  return [...doc.querySelectorAll('tr')].map(row => [...row.querySelectorAll('th,td')].map(cell => clean(cell.textContent)).filter(Boolean)).filter(cells => cells.length >= 4);
-}
-
-function cellsFromMarkdown(source) {
-  return source.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
-    if (!line.includes('|')) return [];
-    return line.replace(/^\|\s*/, '').replace(/\s*\|$/, '').split('|').map(clean).filter(Boolean);
-  }).filter(cells => cells.length >= 4 && !cells.every(cell => /^:?-{2,}:?$/.test(cell)));
-}
-
-function parseReaderCells(rows, sourceName, fallbackYear) {
-  const matches = [];
-  let section = '';
-  let detectedYear = fallbackYear;
-  const joined = rows.flat().join(' ');
-  const yearMatch = joined.match(/(?:JORNADA|HORARIOS)[^\n\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i);
-  if (yearMatch) detectedYear = yearMatch[1];
-
-  for (const cells of rows) {
-    const plain = cells.map(clean);
-    if (!plain.length) continue;
-    const upper = plain.join(' ').toUpperCase();
-    if (upper.includes('LOCAL') && upper.includes('VISITANTE') && upper.includes('FECHA')) continue;
-    const dateIndex = plain.findIndex(isDate);
-    const timeIndex = plain.findIndex(isTime);
-    if (dateIndex < 0 || timeIndex < 0) {
-      const text = plain.join(' ');
-      if (COMPETITION_RE.test(text) && text.length < 180) section = clean(text.replace(/^#+\s*/, ''));
+    if (!row.items?.length || isFooter(row.text)) continue;
+    if (isTableHeader(row.text)) { header = row.items; continue; }
+    const dateItem = row.items.find(item => isDate(item.text));
+    const timeItem = row.items.find(item => isTime(item.text));
+    if (!dateItem || !timeItem) {
+      if (header && row.text.trim()) section = clean(row.text);
       continue;
     }
-    const dateMatch = plain[dateIndex].match(DATE_RE);
+    const dateMatch = dateItem.text.match(DATE_RE);
     if (!dateMatch) continue;
-    const homeTeam = clean(plain[0]);
-    const awayTeam = clean(plain[1] || '');
-    if (!homeTeam || /^(LOCAL|VISITANTE|FECHA|HORA|PISTA|JUEGO)$/i.test(homeTeam)) continue;
-    const venue = clean(plain[timeIndex + 1] || plain[plain.length - 1] || '');
-    matches.push({ competition: clean(section), homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: clean(plain[timeIndex]), venue, source: sourceName });
+    let localStart = 0, visitorStart = 0, dateStart = 0, venueStart = 0;
+    const upper = header?.map(item => ({ text: compact(item.text), x: item.x })) || [];
+    const local = upper.find(item => item.text === 'LOCAL');
+    const visitor = upper.find(item => item.text === 'VISITANTE');
+    const date = upper.find(item => item.text === 'FECHA');
+    const venue = upper.find(item => item.text === 'PISTAJUEGO' || item.text === 'PISTA');
+    localStart = local?.x ?? 0; visitorStart = visitor?.x ?? 0; dateStart = date?.x ?? dateItem.x; venueStart = venue?.x ?? timeItem.x + 35;
+    const homeTeam = clean(row.items.filter(item => item.x >= localStart && item.x < visitorStart).map(item => item.text).join(' '));
+    const awayTeam = clean(row.items.filter(item => item.x >= visitorStart && item.x < dateStart).map(item => item.text).join(' '));
+    const venueText = clean(row.items.filter(item => item.x >= venueStart).map(item => item.text).join(' '));
+    if (!homeTeam || isTableHeader(homeTeam)) continue;
+    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, fallbackYear), time: clean(timeItem.text), venue: venueText, source: sourceName });
   }
-  return matches;
+  return dedupeMatches(matches);
 }
 
-function parseFixedWidthReaderText(source, sourceName, fallbackYear) {
-  const rawLines = String(source || '').replace(/\r/g, '').split('\n');
-  const headerIndex = rawLines.findIndex(line => {
-    const text = line.toUpperCase();
-    return text.includes('LOCAL') && text.includes('VISITANTE') && text.includes('FECHA') && text.includes('HORA') && text.includes('PISTA');
-  });
-  if (headerIndex < 0) return [];
-  const header = rawLines[headerIndex];
-  const positions = { local: header.toUpperCase().indexOf('LOCAL'), visitor: header.toUpperCase().indexOf('VISITANTE'), date: header.toUpperCase().indexOf('FECHA'), time: header.toUpperCase().indexOf('HORA'), venue: header.toUpperCase().indexOf('PISTA') };
-  if (Object.values(positions).some(value => value < 0)) return [];
-  let detectedYear = fallbackYear;
-  const yearMatch = source.match(/(?:JORNADA|HORARIOS)[^\n\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i);
-  if (yearMatch) detectedYear = yearMatch[1];
+function parseHtmlTables(source, sourceName, fallbackYear) {
+  if (!/<table\b/i.test(source)) return [];
+  const doc = new DOMParser().parseFromString(source, 'text/html');
   const matches = [];
   let section = '';
-  for (let index = headerIndex + 1; index < rawLines.length; index += 1) {
-    const raw = rawLines[index]; if (!raw.trim()) continue;
-    const dateMatch = findDateInText(raw); const timeMatch = findTimeInText(raw);
-    if (!dateMatch || !timeMatch) { const compact = clean(raw); if (compact && COMPETITION_RE.test(compact) && compact.length < 180) section = compact; continue; }
-    const dateStart = raw.indexOf(dateMatch[0]); const timeStart = raw.indexOf(timeMatch[0], dateStart + dateMatch[0].length); if (dateStart < 0 || timeStart < 0) continue;
-    let homeTeam = raw.slice(positions.local, positions.visitor).trim(); let awayTeam = raw.slice(positions.visitor, positions.date).trim(); let venue = raw.slice(timeStart + timeMatch[0].length).trim();
-    if (!homeTeam || homeTeam.toUpperCase().includes('LOCAL VISITANTE')) { const prefix = raw.slice(0, dateStart).trim(); const parts = prefix.split(/\s{2,}/).map(clean).filter(Boolean); homeTeam = parts[0] || ''; awayTeam = parts[1] || ''; }
-    if (!venue) venue = clean(raw.slice(positions.venue)); if (!homeTeam) continue;
-    matches.push({ competition: section, homeTeam: clean(homeTeam), awayTeam: clean(awayTeam), date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(venue), source: sourceName });
+  const detectedYear = extractYear(source, fallbackYear);
+  for (const row of doc.querySelectorAll('tr')) {
+    const cells = [...row.querySelectorAll('th,td')].map(cell => clean(cell.textContent)).filter(Boolean);
+    if (!cells.length) continue;
+    const joined = cells.join(' ');
+    if (isTableHeader(joined)) continue;
+    const dateIndex = cells.findIndex(cell => isDate(cell));
+    const timeIndex = cells.findIndex(cell => isTime(cell));
+    if (dateIndex < 0 || timeIndex < 0) { if (!isFooter(joined)) section = joined; continue; }
+    const dateMatch = cells[dateIndex].match(DATE_RE);
+    if (!dateMatch) continue;
+    const homeTeam = clean(cells[0] || '');
+    const awayTeam = clean(cells[1] || '');
+    const venue = clean(cells[timeIndex + 1] || cells[cells.length - 1] || '');
+    if (!homeTeam || isTableHeader(homeTeam)) continue;
+    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: clean(cells[timeIndex]), venue, source: sourceName });
   }
   return dedupeMatches(matches);
 }
 
-// Jina can flatten the PDF table into one long Markdown/text line. In that form
-// the most reliable markers are the repeated column labels themselves.
-function parseJinaFlattenedTable(source, sourceName, fallbackYear) {
-  const text = String(source || '').replace(/\r/g, ' ').replace(/\n/g, ' ');
-  const headerLike = /L\s*O\s*C\s*A\s*L\s+.*V\s*I\s*S\s*I\s*T\s*A\s*N\s*T\s*E/i.test(text) || /\bLOCAL\b.*\bVISITANTE\b.*\bFECHA\b.*\bHORA\b/i.test(text);
-  if (!headerLike) return [];
+function splitTeams(prefix) {
+  const value = String(prefix || '').replace(/\u00a0/g, ' ').trim();
+  const pipeParts = value.split(/\s*\|\s*/).map(clean).filter(Boolean);
+  if (pipeParts.length >= 2) return [pipeParts[0], pipeParts[1]];
+  const spaced = value.split(/\s{2,}/).map(clean).filter(Boolean);
+  if (spaced.length >= 2) return [spaced[0], spaced[1]];
+  return [clean(value), ''];
+}
 
-  let detectedYear = fallbackYear;
-  const yearMatch = text.match(/(?:JORNADA|HORARIOS)[^\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i);
-  if (yearMatch) detectedYear = yearMatch[1];
-
-  // A FAB row is emitted by the PDF reader as:
-  // LOCAL <home> | VISITANTE <away> | FECHA <date> | HORA <time> | PISTA JUEGO <venue>
-  // The labels may have spaces between letters ("L O C A L").
-  const rowRe = /L\s*O\s*C\s*A\s*L\s+([^|]+?)\s*\|\s*V\s*I\s*S\s*I\s*T\s*A\s*N\s*T\s*E\s*([^|]*?)\s*\|\s*FECHA\s*(\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?)\s*\|\s*HORA\s*(\d{1,2}:\d{2})\s*\|\s*PISTA\s*JUEGO\s*([^|]+?)(?=\s+L\s*O\s*C\s*A\s*L\s+|$)/gi;
+function parseReaderRows(source, sourceName, fallbackYear) {
+  const rawLines = String(source || '').replace(/\r/g, '').split('\n').map(line => line.trimEnd()).filter(line => line.trim());
+  const detectedYear = extractYear(source, fallbackYear);
   const matches = [];
-  let match;
-  while ((match = rowRe.exec(text)) !== null) {
-    const homeTeam = clean(match[1]);
-    const awayTeam = clean(match[2]);
-    const venue = clean(match[5]);
-    if (!homeTeam || /^(LOCAL|VISITANTE|FECHA|HORA|PISTA|JUEGO)$/i.test(homeTeam)) continue;
-    matches.push({ competition: '', homeTeam, awayTeam, date: dateFromMatch(match[3].match(DATE_RE), detectedYear), time: match[4], venue, source: sourceName });
+  let section = '';
+  let headerFound = false;
+
+  for (const raw of rawLines) {
+    const line = raw.trim();
+    if (!headerFound) {
+      if (isTableHeader(line)) headerFound = true;
+      continue;
+    }
+    if (isFooter(line)) break;
+
+    const dateMatch = findDateInText(line);
+    const timeMatch = findTimeInText(line);
+
+    // This is the key rule for FAB: rows without both date and time are category rows.
+    if (!dateMatch || !timeMatch) {
+      if (line && !isTableHeader(line)) section = clean(line);
+      continue;
+    }
+
+    const dateIndex = line.indexOf(dateMatch[0]);
+    const timeIndex = line.indexOf(timeMatch[0], dateIndex + dateMatch[0].length);
+    if (dateIndex < 0 || timeIndex < 0) continue;
+
+    const prefix = line.slice(0, dateIndex).trim();
+    const suffix = line.slice(timeIndex + timeMatch[0].length).trim();
+    const [homeTeam, awayTeam] = splitTeams(prefix);
+    if (!homeTeam || isTableHeader(homeTeam)) continue;
+
+    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(suffix), source: sourceName });
   }
+
   return dedupeMatches(matches);
 }
 
-function parseLinearReaderText(source, sourceName, fallbackYear) {
-  const rawLines = String(source || '').replace(/\r/g, '').split('\n').map(clean).filter(Boolean);
+async function parsePdfBytes(bytes, sourceName) {
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
   const matches = [];
-  let detectedYear = fallbackYear;
-  const yearMatch = source.match(/(?:JORNADA|HORARIOS)[^\n\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i);
-  if (yearMatch) detectedYear = yearMatch[1];
-  const compactHeader = line => clean(line).toUpperCase().replace(/\s+/g, '');
-  const headerIndex = rawLines.findIndex(line => { const upper = compactHeader(line); return upper.includes('LOCALVISITANTEFECHAHORA'); });
-  if (headerIndex < 0) return [];
-  const isHeader = line => { const upper = compactHeader(line); return /^(LOCAL|VISITANTE|FECHA|HORA|PISTAJUEGO)$/.test(upper) || upper.includes('LOCALVISITANTEFECHAHORA'); };
-  const dateAt = index => findDateInText(rawLines[index]); const timeAt = index => findTimeInText(rawLines[index]);
-  let boundary = headerIndex + 1; let previousVenue = ''; let section = '';
-  for (let i = headerIndex + 1; i < rawLines.length; i += 1) {
-    const dateMatch = dateAt(i); let timeMatch = timeAt(i); let dateIndex = i; let timeIndex = i;
-    if (dateMatch && !timeMatch && i + 1 < rawLines.length) { timeMatch = timeAt(i + 1); timeIndex = i + 1; }
-    if (!dateMatch || !timeMatch) continue;
-    const before = rawLines.slice(boundary, dateIndex).filter(line => !isHeader(line));
-    if (previousVenue && before[0] === previousVenue) before.shift();
-    const candidates = before.filter(line => line.length > 1);
-    if (!candidates.length) continue;
-    const separator = candidates.slice(0, Math.max(0, candidates.length - 2));
-    const separatorCompetition = separator.filter(line => COMPETITION_RE.test(line)).join(' ');
-    if (separatorCompetition) section = clean(separatorCompetition);
-    let homeTeam = candidates[candidates.length - 2] || candidates[candidates.length - 1];
-    let awayTeam = candidates[candidates.length - 2] ? candidates[candidates.length - 1] : '';
-    if (COMPETITION_RE.test(homeTeam) && !awayTeam) { section = homeTeam; continue; }
-    if (isHeader(homeTeam) || isHeader(awayTeam)) continue;
-    const venueIndex = timeIndex + 1; const venue = rawLines[venueIndex] || '';
-    if (venue && !findDateInText(venue) && !findTimeInText(venue)) previousVenue = venue;
-    matches.push({ competition: clean(section), homeTeam: clean(homeTeam), awayTeam: clean(awayTeam), date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(venue), source: sourceName });
-    boundary = venueIndex + 1; i = timeIndex;
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const rows = groupTextItems(content.items);
+    const sourceYear = extractYear(rows.map(row => row.text).join('\n'));
+    matches.push(...parsePdfRows(rows, sourceName, sourceYear));
   }
   return dedupeMatches(matches);
 }
 
-function parseLooseReaderText(source, sourceName, fallbackYear) {
-  const lines = source.split('\n').map(clean).filter(Boolean); const matches = []; let section = ''; let detectedYear = fallbackYear;
-  const yearMatch = source.match(/(?:JORNADA|HORARIOS)[^\n\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i); if (yearMatch) detectedYear = yearMatch[1];
-  for (let i = 0; i < lines.length; i += 1) {
-    const dateMatch = findDateInText(lines[i]); const timeMatch = findTimeInText(lines[i]); if (!dateMatch || !timeMatch) continue;
-    const before = lines.slice(Math.max(0, i - 5), i).filter(line => !findDateInText(line) && !findTimeInText(line) && !/^LOCAL|^VISITANTE|^FECHA|^HORA|^PISTA|^JUEGO/i.test(line));
-    if (!before.length) continue;
-    const homeTeam = before[before.length - 2] || before[before.length - 1]; const awayTeam = before.length >= 2 ? before[before.length - 1] : '';
-    const venue = lines[i + 1] && !findDateInText(lines[i + 1]) && !findTimeInText(lines[i + 1]) ? lines[i + 1] : '';
-    if (COMPETITION_RE.test(homeTeam) && !awayTeam) { section = homeTeam; continue; }
-    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue, source: sourceName });
+export async function parsePdfFile(input, sourceName = '') {
+  if (typeof input === 'string') {
+    const source = input;
+    const htmlMatches = parseHtmlTables(source, sourceName, '');
+    if (htmlMatches.length) return htmlMatches;
+    const readerMatches = parseReaderRows(source, sourceName, '');
+    if (readerMatches.length) return readerMatches;
+    throw new Error('No se encontraron filas de partidos en el documento de FAB.');
   }
-  return matches;
-}
 
-export function parseFabReaderText(input, sourceName = 'FAB Reader', fallbackYear = '') {
-  const source = String(input || '').replace(/\r/g, '');
-  const flattenedMatches = parseJinaFlattenedTable(source, sourceName, fallbackYear);
-  if (flattenedMatches.length) return flattenedMatches;
-  const linearMatches = parseLinearReaderText(source, sourceName, fallbackYear);
-  if (linearMatches.length) return linearMatches;
-  const htmlRows = cellsFromHtml(source); const markdownRows = cellsFromMarkdown(source);
-  const tableMatches = parseReaderCells([...htmlRows, ...markdownRows], sourceName, fallbackYear);
-  if (tableMatches.length) return dedupeMatches(tableMatches);
-  const fixedMatches = parseFixedWidthReaderText(source, sourceName, fallbackYear);
-  if (fixedMatches.length) return fixedMatches;
-  return dedupeMatches(parseLooseReaderText(source, sourceName, fallbackYear));
-}
+  let bytes;
+  if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
+  else if (ArrayBuffer.isView(input)) bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  else if (input?.arrayBuffer) bytes = new Uint8Array(await input.arrayBuffer());
+  else throw new Error('Formato de documento no compatible.');
 
-export async function parsePdfFile(input, sourceName = 'PDF') {
-  if (typeof input === 'string') return parseFabReaderText(input, sourceName);
-  const loadingTask = pdfjsLib.getDocument({ data: input }); const pdf = await loadingTask.promise; const allMatches = [];
-  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) { const page = await pdf.getPage(pageNumber); const content = await page.getTextContent(); const rows = groupTextItems(content.items); const sourceYear = extractSourceYear(rows); allMatches.push(...parsePageRows(rows, sourceName, sourceYear)); }
-  return dedupeMatches(allMatches);
+  const header = new TextDecoder().decode(bytes.slice(0, 8));
+  if (!header.startsWith('%PDF')) {
+    const text = new TextDecoder().decode(bytes);
+    const htmlMatches = parseHtmlTables(text, sourceName, '');
+    if (htmlMatches.length) return htmlMatches;
+    const readerMatches = parseReaderRows(text, sourceName, '');
+    if (readerMatches.length) return readerMatches;
+    throw new Error('El documento recibido no es un PDF válido ni contiene una tabla de FAB reconocible.');
+  }
+
+  return parsePdfBytes(bytes, sourceName);
 }
