@@ -1,5 +1,5 @@
-import { findFabDocuments } from './fab/fab-source.js?v=20260922-05';
-import { parsePdfFile } from './fab/fab-parser.js?v=20260922-05';
+import { findFabDocuments } from './fab/fab-source.js?v=20260922-06';
+import { parsePdfFile } from './fab/fab-parser.js?v=20260922-06';
 import { normalizeTeamName } from './fab/fab-normalizer.js';
 import { renderMatches } from './ui/renderer.js';
 import { createTemplateCanvas, getTemplatePages } from './ui/instagram-template.js';
