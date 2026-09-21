@@ -1,3 +1,14 @@
 {
-  "logos": []
+  "logos": [
+    {
+      "id": "adlsm",
+      "name": "ADLSM",
+      "src": "assets/logos/ADLSM.jpg",
+      "aliases": [
+        "ADLSM",
+        "La Salle Montemolin",
+        "La Salle Montemolín"
+      ]
+    }
+  ]
 }
