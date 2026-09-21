@@ -1,6 +1,6 @@
 const WIDTH = 1080;
 const HEIGHT = 1920;
-const MAX_MATCHES_PER_PAGE = 5;
+const MAX_MATCHES_PER_PAGE = 8;
 
 const COLORS = {
   blue: '#2455a4',
@@ -8,6 +8,11 @@ const COLORS = {
   yellow: '#ffe000',
   white: '#ffffff',
   mutedBlue: '#5f78a4'
+};
+
+const DEFAULT_TEMPLATE = {
+  title: 'HORARIOS BALONCESTO',
+  subtitle: 'FEDERADOS'
 };
 
 export function getTemplatePages(matches) {
@@ -18,15 +23,15 @@ export function getTemplatePages(matches) {
   return pages;
 }
 
-export function createTemplateCanvas(matches) {
+export function createTemplateCanvas(matches, template = DEFAULT_TEMPLATE) {
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
-  drawTemplate(canvas, matches);
+  drawTemplate(canvas, matches, template);
   return canvas;
 }
 
-export function drawTemplate(canvas, matches) {
+export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
   const ctx = canvas.getContext('2d');
   const scale = canvas.width / WIDTH;
   ctx.save();
@@ -34,13 +39,13 @@ export function drawTemplate(canvas, matches) {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
   drawBackground(ctx);
-  drawHeader(ctx);
+  drawHeader(ctx, template);
 
   const count = Math.min(matches.length, MAX_MATCHES_PER_PAGE);
   if (count) {
-    const top = 305;
-    const gap = 22;
-    const rowHeight = count <= 4 ? 270 : 252;
+    const top = 292;
+    const rowHeight = 171;
+    const gap = 10;
     for (let index = 0; index < count; index += 1) {
       drawMatch(ctx, matches[index], top + index * (rowHeight + gap), rowHeight);
     }
@@ -67,45 +72,71 @@ function drawBackground(ctx) {
   ctx.globalAlpha = 1;
 }
 
-function drawHeader(ctx) {
+function drawHeader(ctx, template) {
+  const title = cleanTeamName(template?.title) || DEFAULT_TEMPLATE.title;
+  const subtitle = cleanTeamName(template?.subtitle) || DEFAULT_TEMPLATE.subtitle;
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-
   ctx.fillStyle = COLORS.yellow;
-  ctx.font = 'italic 900 72px Georgia, serif';
-  ctx.fillText('HORARIOS', WIDTH / 2, 92);
-  ctx.fillText('BALONCESTO', WIDTH / 2, 168);
 
-  roundRect(ctx, 126, 206, 828, 58, 0, COLORS.white);
+  const titleLines = fitTitleLines(ctx, title.toUpperCase(), 850);
+  const titleSize = titleLines.length === 1 ? 72 : 64;
+  const titleStartY = titleLines.length === 1 ? 92 : 65;
+  ctx.font = `italic 900 ${titleSize}px Georgia, serif`;
+  titleLines.forEach((line, index) => {
+    ctx.fillText(line, WIDTH / 2, titleStartY + index * (titleSize + 6));
+  });
+
+  const subtitleY = titleLines.length === 1 ? 166 : 196;
+  roundRect(ctx, 126, subtitleY, 828, 54, 0, COLORS.white);
   ctx.fillStyle = COLORS.blue;
-  ctx.font = '900 32px Arial, sans-serif';
-  ctx.fillText('FEDERADOS', WIDTH / 2, 236);
+  fitText(ctx, subtitle.toUpperCase(), WIDTH / 2, subtitleY + 27, 770, 31, 'center');
+}
+
+function fitTitleLines(ctx, text, maxWidth) {
+  ctx.font = 'italic 900 64px Georgia, serif';
+  const words = text.split(' ').filter(Boolean);
+  if (ctx.measureText(text).width <= maxWidth) return [text];
+
+  const lines = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (!current || ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, 2);
 }
 
 function drawMatch(ctx, match, y, rowHeight) {
   const x = 104;
   const w = 872;
   const centerX = WIDTH / 2;
-  const circleY = y + 88;
-  const circleR = 74;
-  const timeR = 78;
+  const circleY = y + 67;
+  const circleR = 49;
+  const timeR = 57;
 
-  roundRect(ctx, x, y, w, rowHeight, 34, COLORS.white);
+  roundRect(ctx, x, y, w, rowHeight, 30, COLORS.white);
   ctx.fillStyle = COLORS.yellow;
-  ctx.fillRect(x + 34, y, w - 68, 8);
+  ctx.fillRect(x + 32, y, w - 64, 7);
 
   const info = `${formatCompetition(match.competition)}${match.venue ? ` / ${formatVenue(match.venue)}` : ''}`;
-  const pillW = Math.min(720, Math.max(430, measurePillWidth(ctx, info)));
-  roundRect(ctx, centerX - pillW / 2, y + rowHeight - 31, pillW, 52, 26, COLORS.yellow);
+  const pillW = Math.min(720, Math.max(390, measurePillWidth(ctx, info)));
+  roundRect(ctx, centerX - pillW / 2, y + rowHeight - 30, pillW, 45, 23, COLORS.yellow);
   ctx.fillStyle = COLORS.blue;
-  fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 5, pillW - 42, 18, 'center');
+  fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 7, pillW - 34, 15, 'center');
 
-  drawBadge(ctx, 196, circleY, circleR, match.homeTeam, true);
-  drawBadge(ctx, 884, circleY, circleR, match.awayTeam, false);
+  drawBadge(ctx, 178, circleY, circleR, match.homeTeam, true);
+  drawBadge(ctx, 902, circleY, circleR, match.awayTeam, false);
 
-  // Reserve a clear text area on each side of the time circle.
-  drawTeamName(ctx, match.homeTeam, 274, circleY, 150, false);
-  drawTeamName(ctx, match.awayTeam, 806, circleY, 150, true);
+  drawTeamName(ctx, match.homeTeam, 250, circleY, 150, false);
+  drawTeamName(ctx, match.awayTeam, 830, circleY, 150, true);
 
   ctx.beginPath();
   ctx.arc(centerX, circleY, timeR, 0, Math.PI * 2);
@@ -113,13 +144,13 @@ function drawMatch(ctx, match, y, rowHeight) {
   ctx.fill();
 
   ctx.fillStyle = COLORS.blue;
-  fitText(ctx, match.time || '--:--', centerX, circleY - 13, 118, 39, 'center');
-  fitText(ctx, formatDay(match.date), centerX, circleY + 28, 118, 17, 'center');
+  fitText(ctx, match.time || '--:--', centerX, circleY - 9, 100, 29, 'center');
+  fitText(ctx, formatDay(match.date), centerX, circleY + 24, 100, 12, 'center');
 }
 
 function drawBadge(ctx, x, y, r, team, isHome) {
   ctx.beginPath();
-  ctx.arc(x, y, r + 10, 0, Math.PI * 2);
+  ctx.arc(x, y, r + 7, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.white;
   ctx.fill();
 
@@ -129,20 +160,17 @@ function drawBadge(ctx, x, y, r, team, isHome) {
   ctx.fill();
 
   ctx.fillStyle = isHome ? COLORS.yellow : COLORS.blue;
-  ctx.font = '900 24px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(isHome ? 'ADLSM' : initials(team), x, y - 3);
-  ctx.font = 'bold 15px Arial, sans-serif';
-  ctx.fillText(isHome ? 'BALONCESTO' : 'RIVAL', x, y + 27);
+  fitText(ctx, isHome ? 'ADLSM' : initials(team), x, y - 4, 78, 21, 'center');
+  fitText(ctx, isHome ? 'BALONCESTO' : 'RIVAL', x, y + 21, 76, 10, 'center');
 }
 
 function drawTeamName(ctx, value, x, y, maxWidth, right) {
   const text = cleanTeamName(value) || 'SIN EQUIPO';
-  let size = 28;
-  while (size > 19) {
+  let size = 22;
+  while (size > 16) {
     ctx.font = `900 ${size}px Arial, sans-serif`;
-    if (wrapText(ctx, text, maxWidth, 2).every(line => ctx.measureText(line).width <= maxWidth)) break;
+    const lines = wrapText(ctx, text, maxWidth, 2);
+    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) break;
     size -= 1;
   }
 
@@ -150,7 +178,7 @@ function drawTeamName(ctx, value, x, y, maxWidth, right) {
   ctx.textAlign = right ? 'right' : 'left';
   ctx.textBaseline = 'middle';
   const lines = wrapText(ctx, text, maxWidth, 2);
-  const lineHeight = size * 1.2;
+  const lineHeight = size * 1.18;
   const startY = y - ((lines.length - 1) * lineHeight) / 2;
   lines.forEach((line, index) => ctx.fillText(line, x, startY + index * lineHeight));
 }
@@ -182,7 +210,7 @@ function wrapText(ctx, text, maxWidth, maxLines = 2) {
 
 function fitText(ctx, text, x, y, maxWidth, initialSize, align = 'center') {
   let size = initialSize;
-  while (size > 10) {
+  while (size > 8) {
     ctx.font = `900 ${size}px Arial, sans-serif`;
     if (ctx.measureText(text).width <= maxWidth) break;
     size -= 1;
@@ -244,8 +272,8 @@ function formatDay(value = '') {
 }
 
 function measurePillWidth(ctx, text) {
-  ctx.font = '900 18px Arial, sans-serif';
-  return ctx.measureText(text.toUpperCase()).width + 54;
+  ctx.font = '900 15px Arial, sans-serif';
+  return ctx.measureText(text.toUpperCase()).width + 42;
 }
 
-export { WIDTH, HEIGHT, MAX_MATCHES_PER_PAGE };
+export { WIDTH, HEIGHT, MAX_MATCHES_PER_PAGE, DEFAULT_TEMPLATE };
