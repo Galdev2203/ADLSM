@@ -82,7 +82,7 @@
         </div>
         <div class="selection-actions">
           <button id="clearSelection" class="secondary" type="button">Limpiar selección</button>
-          <button id="generateTemplate" class="primary" type="button">Generar plantilla</button>
+          <button id="generateTemplate" class="primary" type="button">Editar plantilla</button>
         </div>
       </div>
 
@@ -97,23 +97,46 @@
   </main>
 
   <div id="templateModal" class="template-modal hidden" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
-    <div class="template-dialog">
+    <div class="template-dialog template-editor-dialog">
       <div class="template-header">
         <div>
           <p class="eyebrow">ADLSM · INSTAGRAM</p>
-          <h2 id="templateTitle">Vista previa de plantilla</h2>
+          <h2 id="templateTitle">Editor de plantilla</h2>
           <p id="templatePageInfo" class="muted"></p>
         </div>
         <button id="closeTemplate" class="modal-close" type="button" aria-label="Cerrar">×</button>
       </div>
 
-      <div id="templatePreview" class="template-preview"></div>
+      <div class="template-editor-layout">
+        <section class="editor-panel">
+          <div class="editor-section-header">
+            <div>
+              <h3>Partidos de la publicación</h3>
+              <p class="muted">Ordena los partidos y modifica cualquier dato antes de generar la imagen.</p>
+            </div>
+            <span id="editorMatchCount" class="editor-count">0</span>
+          </div>
+          <div id="editorMatches" class="editor-matches"></div>
+        </section>
 
-      <div class="template-actions">
-        <div class="template-page-buttons">
-          <button id="templatePrev" class="secondary" type="button">‹ Anterior</button>
-          <button id="templateNext" class="secondary" type="button">Siguiente ›</button>
-        </div>
+        <section class="preview-panel">
+          <div class="preview-panel-header">
+            <div>
+              <h3>Vista previa</h3>
+              <p class="muted">La imagen se actualiza automáticamente.</p>
+            </div>
+            <div class="template-page-buttons">
+              <button id="templatePrev" class="secondary" type="button">‹</button>
+              <button id="templateNext" class="secondary" type="button">›</button>
+            </div>
+          </div>
+          <div id="templatePreview" class="template-preview"></div>
+          <p id="templatePageLabel" class="preview-page-label"></p>
+        </section>
+      </div>
+
+      <div class="template-actions editor-actions">
+        <button id="cancelTemplate" class="secondary" type="button">Volver</button>
         <button id="downloadTemplate" class="primary" type="button">Descargar PNG</button>
       </div>
     </div>
