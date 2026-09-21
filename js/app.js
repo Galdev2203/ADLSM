@@ -44,7 +44,7 @@ async function loadFromFab() {
     const matches = await parsePdfFile(result.bytes, result.url);
     updateResults(matches);
     els.status.textContent = `Fuente: ${result.url}`;
-    setMessage(`Documento cargado correctamente. Se han extraído ${matches.length} bloques de partido.`, true);
+    setMessage(`Documento cargado correctamente. Se han extraído ${matches.length} partidos.`, true);
   } catch (error) {
     console.error(error);
     els.status.textContent = 'No se pudo obtener el PDF directamente desde FAB.';
@@ -63,7 +63,7 @@ async function loadLocalPdf(file) {
     const bytes = await file.arrayBuffer();
     const matches = await parsePdfFile(bytes, file.name);
     updateResults(matches);
-    setMessage(`PDF procesado correctamente. Se han extraído ${matches.length} bloques de partido.`, true);
+    setMessage(`PDF procesado correctamente. Se han extraído ${matches.length} partidos.`, true);
   } catch (error) {
     console.error(error);
     setMessage(`No se ha podido leer el PDF: ${error.message}`, true);
