@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ADLSM · Generador de horarios FAB</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260921-07">
+  <link rel="stylesheet" href="css/styles.css?v=20260921-08">
 </head>
 <body>
   <main class="app">
@@ -25,7 +25,7 @@
         <label class="filter-control">Fecha<select id="dateFilter" disabled><option value="">Todas las fechas</option></select></label>
         <button id="clearTeam" class="secondary" type="button" disabled>Limpiar</button>
       </div>
-      <div class="fallback"><div><strong>Plan B: subir PDF</strong><p class="muted">Usaremos el mismo parser cuando la conexión directa con FAB no sea posible.</p></div><label class="upload"><span>Seleccionar PDF</span><input id="pdfInput" type="file" accept="application/pdf"></label></div>
+      <div class="fallback"><div><strong>Plan B: subir PDF</strong><p class="muted">Usaremos el mismo parser cuando la conexión con FAB no sea posible.</p></div><label class="upload"><span>Seleccionar PDF</span><input id="pdfInput" type="file" accept="application/pdf"></label></div>
     </section>
     <section class="panel">
       <div class="panel-header results-header"><div><h2>Partidos detectados</h2><p id="matchCount" class="muted">0 partidos</p></div><div class="results-actions"><div class="view-toggle" role="group" aria-label="Vista de resultados"><button id="viewCards" type="button" class="view-button active">▦ Tarjetas</button><button id="viewTable" type="button" class="view-button">☷ Tabla</button></div><button id="manualTemplate" class="primary" type="button">Crear plantilla manual</button></div></div>
@@ -48,7 +48,7 @@
       <div class="template-actions editor-actions"><button id="cancelTemplate" class="secondary" type="button">Volver</button><button id="downloadTemplate" class="primary" type="button">Descargar PNG</button></div>
     </div>
   </div>
-  <footer class="app-footer">ADLSM · <strong>v0.14.0</strong> · build 2026.09.21.07</footer>
-  <script type="module" src="js/app.js?v=20260921-07"></script>
+  <footer class="app-footer">ADLSM · <strong>v0.14.1</strong> · build 2026.09.21.08</footer>
+  <script type="module" src="js/app.js?v=20260921-08"></script>
 </body>
 </html>
