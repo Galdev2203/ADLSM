@@ -20,7 +20,7 @@
       <button id="refreshFab" class="primary">Buscar en FAB</button>
     </header>
     <section class="panel">
-      <div class="panel-header"><div><h2>Fuente de datos</h2><p id="sourceStatus" class="muted">Listo para consultar.</p></div><label class="date-control">Jornada<input id="matchDate" type="date" value="2026-09-20"></label></div>
+      <div class="panel-header"><div><h2>Fuente de datos</h2><p id="sourceStatus" class="muted">Listo para consultar.</p></div><label class="date-control">Jornada<input id="matchDate" type="date"></label></div>
       <div id="message" class="message hidden"></div>
       <div class="filters">
         <label class="filter-control search-control">Equipo o club<input id="teamSearch" type="search" placeholder="Ej.: La Salle Montemolín, Alierta…" autocomplete="off" disabled></label>
@@ -52,6 +52,11 @@
     </div>
   </div>
   <footer class="app-footer">ADLSM · <strong>v0.16.0</strong> · build 2026.09.22.06</footer>
+  <script>
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    document.querySelector('#matchDate').value = today.toISOString().slice(0, 10);
+  </script>
   <script type="module" src="js/app.js?v=20260922-06"></script>
 </body>
 </html>
