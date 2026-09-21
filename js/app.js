@@ -2,6 +2,7 @@ import { findFabDocuments } from './fab/fab-source.js';
 import { parsePdfFile } from './fab/fab-parser.js';
 import { normalizeTeamName } from './fab/fab-normalizer.js';
 import { renderMatches } from './ui/renderer.js';
+import { createTemplateCanvas, getTemplatePages } from './ui/instagram-template.js';
 
 const els = {
   refresh: document.querySelector('#refreshFab'),
@@ -19,13 +20,23 @@ const els = {
   viewTable: document.querySelector('#viewTable'),
   selectionBar: document.querySelector('#selectionBar'),
   selectedCount: document.querySelector('#selectedCount'),
-  clearSelection: document.querySelector('#clearSelection')
+  clearSelection: document.querySelector('#clearSelection'),
+  generateTemplate: document.querySelector('#generateTemplate'),
+  templateModal: document.querySelector('#templateModal'),
+  templatePreview: document.querySelector('#templatePreview'),
+  templatePageInfo: document.querySelector('#templatePageInfo'),
+  templatePrev: document.querySelector('#templatePrev'),
+  templateNext: document.querySelector('#templateNext'),
+  downloadTemplate: document.querySelector('#downloadTemplate'),
+  closeTemplate: document.querySelector('#closeTemplate')
 };
 
 let allMatches = [];
 let currentMatches = [];
 let currentPage = 1;
 let currentView = 'cards';
+let templatePages = [];
+let currentTemplatePage = 0;
 const selectedIds = new Set();
 
 function setMessage(text = '', visible = Boolean(text)) {
@@ -42,6 +53,7 @@ function updateSelectionUI() {
   const count = selectedIds.size;
   els.selectedCount.textContent = String(count);
   els.selectionBar.classList.toggle('hidden', count === 0);
+  els.generateTemplate.disabled = count === 0;
 }
 
 function updateResults(matches, resetPage = false) {
@@ -186,6 +198,54 @@ function setView(view) {
   updateResults(currentMatches, false);
 }
 
+function getSelectedMatches() {
+  return allMatches.filter(match => selectedIds.has(match.id));
+}
+
+function openTemplateGenerator() {
+  const selected = getSelectedMatches();
+  if (!selected.length) return;
+
+  templatePages = getTemplatePages(selected);
+  currentTemplatePage = 0;
+  renderTemplatePreview();
+  els.templateModal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function renderTemplatePreview() {
+  const matches = templatePages[currentTemplatePage] || [];
+  els.templatePreview.replaceChildren(createTemplateCanvas(matches));
+  els.templatePageInfo.textContent = templatePages.length > 1
+    ? `Página ${currentTemplatePage + 1} de ${templatePages.length} · ${getSelectedMatches().length} partidos seleccionados`
+    : `${matches.length} partidos seleccionados`;
+  els.templatePrev.disabled = currentTemplatePage === 0;
+  els.templateNext.disabled = currentTemplatePage >= templatePages.length - 1;
+}
+
+function closeTemplateGenerator() {
+  els.templateModal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+function downloadCurrentTemplate() {
+  const matches = templatePages[currentTemplatePage] || [];
+  if (!matches.length) return;
+
+  const canvas = createTemplateCanvas(matches);
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `horarios-baloncesto-${currentTemplatePage + 1}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
 els.refresh.addEventListener('click', loadFromFab);
 els.pdf.addEventListener('change', event => loadLocalPdf(event.target.files?.[0]));
 els.teamSearch.addEventListener('input', filterMatches);
@@ -200,6 +260,25 @@ els.clearFilter.addEventListener('click', () => {
 els.clearSelection.addEventListener('click', () => {
   selectedIds.clear();
   updateResults(currentMatches);
+});
+els.generateTemplate.addEventListener('click', openTemplateGenerator);
+els.closeTemplate.addEventListener('click', closeTemplateGenerator);
+els.templateModal.addEventListener('click', event => {
+  if (event.target === els.templateModal) closeTemplateGenerator();
+});
+els.templatePrev.addEventListener('click', () => {
+  if (currentTemplatePage <= 0) return;
+  currentTemplatePage -= 1;
+  renderTemplatePreview();
+});
+els.templateNext.addEventListener('click', () => {
+  if (currentTemplatePage >= templatePages.length - 1) return;
+  currentTemplatePage += 1;
+  renderTemplatePreview();
+});
+els.downloadTemplate.addEventListener('click', downloadCurrentTemplate);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !els.templateModal.classList.contains('hidden')) closeTemplateGenerator();
 });
 els.viewCards.addEventListener('click', () => setView('cards'));
 els.viewTable.addEventListener('click', () => setView('table'));
