@@ -1,6 +1,8 @@
 const WIDTH = 1080;
 const HEIGHT = 1920;
 const MAX_MATCHES_PER_PAGE = 8;
+const MAX_CUSTOM_GAP = 120;
+const DEFAULT_CUSTOM_GAP = 24;
 
 const COLORS = {
   blue: '#2455a4',
@@ -54,16 +56,14 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
     const rowHeight = 171;
     const availableHeight = contentBottom - contentTop;
     const totalRowsHeight = count * rowHeight;
+    const distribution = getDistributionSettings();
+    const gap = getMatchGap(distribution.mode, distribution.customGap, count, availableHeight, totalRowsHeight);
 
-    // The cards always keep the same height. Only the vertical spacing changes
-    // so the block fills the available area for any number of selected matches.
-    const gap = count > 1
-      ? Math.max(12, (availableHeight - totalRowsHeight) / (count - 1))
-      : 0;
+    // Un solo partido siempre empieza arriba. Para varios partidos, el modo
+    // seleccionado controla únicamente la separación vertical: el tamaño de
+    // cada tarjeta permanece exactamente igual.
     const blockHeight = totalRowsHeight + gap * Math.max(0, count - 1);
-    const startY = count === 1
-      ? contentTop + (availableHeight - rowHeight) / 2
-      : contentTop + Math.max(0, (availableHeight - blockHeight) / 2);
+    const startY = contentTop;
 
     for (let index = 0; index < count; index += 1) {
       drawMatch(ctx, matches[index], startY + index * (rowHeight + gap), rowHeight);
@@ -71,6 +71,81 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
   }
 
   ctx.restore();
+}
+
+function getDistributionSettings() {
+  const mode = document.querySelector('#templateDistributionMode')?.value || 'top';
+  const rawGap = Number(document.querySelector('#templateDistributionGap')?.value);
+  const customGap = Number.isFinite(rawGap) ? Math.min(MAX_CUSTOM_GAP, Math.max(0, rawGap)) : DEFAULT_CUSTOM_GAP;
+  return { mode, customGap };
+}
+
+function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
+  if (count <= 1) return 0;
+
+  if (mode === 'equal') {
+    // space-between: el primer partido queda arriba y el último abajo.
+    return Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
+  }
+
+  if (mode === 'custom') {
+    return customGap;
+  }
+
+  // top: partidos agrupados arriba con una separación visual mínima.
+  return 12;
+}
+
+function ensureDistributionControls() {
+  if (document.querySelector('#templateDistributionMode')) return;
+
+  const header = document.querySelector('.editor-matches-header');
+  if (!header) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'template-distribution-controls';
+  wrapper.innerHTML = `
+    <div class="template-distribution-title">
+      <strong>Distribución de partidos</strong>
+      <span>El tamaño de las tarjetas se mantiene siempre igual.</span>
+    </div>
+    <div class="template-distribution-fields">
+      <label class="editor-field">
+        <span>Posición</span>
+        <select id="templateDistributionMode">
+          <option value="top">Juntos arriba</option>
+          <option value="equal">Distribuir equitativamente</option>
+          <option value="custom">Separación personalizada</option>
+        </select>
+      </label>
+      <label class="editor-field" id="templateDistributionGapField">
+        <span>Separación <output id="templateDistributionGapValue">24 px</output></span>
+        <input id="templateDistributionGap" type="range" min="0" max="${MAX_CUSTOM_GAP}" step="1" value="${DEFAULT_CUSTOM_GAP}">
+      </label>
+    </div>
+  `;
+
+  header.parentNode.insertBefore(wrapper, header);
+
+  const mode = wrapper.querySelector('#templateDistributionMode');
+  const gap = wrapper.querySelector('#templateDistributionGap');
+  const gapField = wrapper.querySelector('#templateDistributionGapField');
+  const gapValue = wrapper.querySelector('#templateDistributionGapValue');
+
+  const refresh = () => {
+    const custom = mode.value === 'custom';
+    gap.disabled = !custom;
+    gapField.classList.toggle('is-disabled', !custom);
+    gapValue.textContent = `${gap.value} px`;
+
+    // app.js ya escucha el input del título para regenerar la vista previa.
+    // Reutilizamos ese evento para no duplicar la lógica de renderizado.
+    document.querySelector('#templateMainTitle')?.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  mode.addEventListener('change', refresh);
+  gap.addEventListener('input', refresh);
+  refresh();
 }
 
 function drawBackground(ctx) {
