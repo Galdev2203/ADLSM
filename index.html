@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ADLSM · Generador de horarios FAB</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260921-02">
+  <link rel="stylesheet" href="css/styles.css?v=20260921-03">
 </head>
 <body>
   <main class="app">
@@ -159,55 +159,10 @@
     </div>
   </div>
 
-  <footer style="width:min(1160px,calc(100% - 40px));margin:0 auto;padding:0 0 24px;text-align:right;color:#7a8698;font-size:11px;letter-spacing:.04em;">
-    ADLSM · <strong>v0.10.1</strong> · build 2026.09.21.02
+  <footer class="app-footer">
+    ADLSM · <strong>v0.11.0</strong> · build 2026.09.21.03
   </footer>
 
-  <script type="module" src="js/app.js?v=20260921-02"></script>
-  <script>
-    (() => {
-      const AVAILABLE_HEIGHT = 1818 - 292;
-      const ROW_HEIGHT = 171;
-      const ABSOLUTE_MAX_GAP = 120;
-      let updating = false;
-
-      function updateDistributionLimit() {
-        if (updating) return;
-        const slider = document.querySelector('#templateDistributionGap');
-        const output = document.querySelector('#templateDistributionGapValue');
-        const count = document.querySelectorAll('#editorMatches .editor-match').length;
-        if (!slider || !count) return;
-
-        const maxGap = count <= 1
-          ? 0
-          : Math.max(0, Math.min(
-              ABSOLUTE_MAX_GAP,
-              Math.floor((AVAILABLE_HEIGHT - count * ROW_HEIGHT) / (count - 1))
-            ));
-
-        const previousMax = Number(slider.max);
-        const previousValue = Number(slider.value);
-        const nextValue = Math.min(previousValue, maxGap);
-        const changed = previousMax !== maxGap || previousValue !== nextValue;
-
-        slider.max = String(maxGap);
-        slider.value = String(nextValue);
-        if (output) output.textContent = `${nextValue} px`;
-
-        if (changed && previousValue !== nextValue) {
-          updating = true;
-          slider.dispatchEvent(new Event('input', { bubbles: true }));
-          updating = false;
-        }
-      }
-
-      const observer = new MutationObserver(updateDistributionLimit);
-      observer.observe(document.body, { childList: true, subtree: true });
-      document.addEventListener('input', event => {
-        if (event.target?.id === 'templateDistributionGap') updateDistributionLimit();
-      });
-      updateDistributionLimit();
-    })();
-  </script>
+  <script type="module" src="js/app.js?v=20260921-03"></script>
 </body>
 </html>
