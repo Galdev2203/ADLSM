@@ -16,13 +16,17 @@ const els = {
   dateFilter: document.querySelector('#dateFilter'),
   clearFilter: document.querySelector('#clearTeam'),
   viewCards: document.querySelector('#viewCards'),
-  viewTable: document.querySelector('#viewTable')
+  viewTable: document.querySelector('#viewTable'),
+  selectionBar: document.querySelector('#selectionBar'),
+  selectedCount: document.querySelector('#selectedCount'),
+  clearSelection: document.querySelector('#clearSelection')
 };
 
 let allMatches = [];
 let currentMatches = [];
 let currentPage = 1;
 let currentView = 'cards';
+const selectedIds = new Set();
 
 function setMessage(text = '', visible = Boolean(text)) {
   els.message.textContent = text;
@@ -34,6 +38,12 @@ function setLoading(loading) {
   els.refresh.textContent = loading ? 'Buscando…' : 'Buscar en FAB';
 }
 
+function updateSelectionUI() {
+  const count = selectedIds.size;
+  els.selectedCount.textContent = String(count);
+  els.selectionBar.classList.toggle('hidden', count === 0);
+}
+
 function updateResults(matches, resetPage = false) {
   currentMatches = matches;
   if (resetPage) currentPage = 1;
@@ -41,16 +51,41 @@ function updateResults(matches, resetPage = false) {
   renderMatches(els.matches, matches, {
     page: currentPage,
     view: currentView,
+    selectedIds,
     onPageChange: page => {
       currentPage = page;
       updateResults(currentMatches);
       els.matches.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    },
+    onToggleSelection: toggleSelection
   });
+  updateSelectionUI();
 }
 
 function normalizeSearch(value) {
   return normalizeTeamName(value).replace(/\s+/g, ' ').trim();
+}
+
+function createMatchId(match) {
+  return [
+    match.date,
+    match.time,
+    match.homeTeam,
+    match.awayTeam,
+    match.venue,
+    match.competition
+  ].map(value => normalizeSearch(value)).join('|');
+}
+
+function withMatchIds(matches) {
+  return matches.map(match => ({ ...match, id: createMatchId(match) }));
+}
+
+function toggleSelection(id) {
+  if (!id) return;
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateResults(currentMatches);
 }
 
 function populateFilters() {
@@ -100,7 +135,8 @@ function filterMatches() {
 }
 
 function setMatches(matches) {
-  allMatches = matches;
+  allMatches = withMatchIds(matches);
+  selectedIds.clear();
   populateFilters();
   filterMatches();
 }
@@ -160,6 +196,10 @@ els.clearFilter.addEventListener('click', () => {
   els.competitionFilter.value = '';
   els.dateFilter.value = '';
   filterMatches();
+});
+els.clearSelection.addEventListener('click', () => {
+  selectedIds.clear();
+  updateResults(currentMatches);
 });
 els.viewCards.addEventListener('click', () => setView('cards'));
 els.viewTable.addEventListener('click', () => setView('table'));
