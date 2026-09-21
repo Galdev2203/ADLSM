@@ -33,9 +33,17 @@
 
       <div class="filters">
         <label class="filter-control">
-          Equipo
-          <select id="teamFilter" disabled>
-            <option value="">Todos los equipos</option>
+          Buscar por
+          <select id="filterType" disabled>
+            <option value="family">Club / grupo de equipos</option>
+            <option value="team">Equipo concreto</option>
+            <option value="category">Categoría / competición</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          Selección
+          <select id="filterValue" disabled>
+            <option value="">Carga primero un PDF</option>
           </select>
         </label>
         <button id="clearTeam" class="secondary" type="button" disabled>Mostrar todos</button>
