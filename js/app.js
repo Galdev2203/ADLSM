@@ -25,16 +25,21 @@ const els = {
   templateModal: document.querySelector('#templateModal'),
   templatePreview: document.querySelector('#templatePreview'),
   templatePageInfo: document.querySelector('#templatePageInfo'),
+  templatePageLabel: document.querySelector('#templatePageLabel'),
   templatePrev: document.querySelector('#templatePrev'),
   templateNext: document.querySelector('#templateNext'),
   downloadTemplate: document.querySelector('#downloadTemplate'),
-  closeTemplate: document.querySelector('#closeTemplate')
+  closeTemplate: document.querySelector('#closeTemplate'),
+  cancelTemplate: document.querySelector('#cancelTemplate'),
+  editorMatches: document.querySelector('#editorMatches'),
+  editorMatchCount: document.querySelector('#editorMatchCount')
 };
 
 let allMatches = [];
 let currentMatches = [];
 let currentPage = 1;
 let currentView = 'cards';
+let editorMatches = [];
 let templatePages = [];
 let currentTemplatePage = 0;
 const selectedIds = new Set();
@@ -206,21 +211,149 @@ function openTemplateGenerator() {
   const selected = getSelectedMatches();
   if (!selected.length) return;
 
-  templatePages = getTemplatePages(selected);
+  editorMatches = selected.map(match => ({ ...match }));
   currentTemplatePage = 0;
-  renderTemplatePreview();
+  renderEditor();
+  rebuildTemplatePages();
   els.templateModal.classList.remove('hidden');
   document.body.classList.add('modal-open');
 }
 
+function renderEditor() {
+  els.editorMatchCount.textContent = String(editorMatches.length);
+  els.editorMatches.replaceChildren();
+
+  if (!editorMatches.length) {
+    const empty = document.createElement('div');
+    empty.className = 'editor-empty';
+    empty.textContent = 'No hay partidos en la plantilla.';
+    els.editorMatches.appendChild(empty);
+    return;
+  }
+
+  editorMatches.forEach((match, index) => {
+    const item = document.createElement('article');
+    item.className = 'editor-match';
+    item.dataset.index = String(index);
+
+    const header = document.createElement('div');
+    header.className = 'editor-match-header';
+
+    const number = document.createElement('span');
+    number.className = 'editor-number';
+    number.textContent = String(index + 1).padStart(2, '0');
+
+    const title = document.createElement('strong');
+    title.textContent = `${match.homeTeam || 'Local'} · ${match.awayTeam || 'Visitante'}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'editor-order-actions';
+    actions.append(
+      makeOrderButton('↑', 'Subir partido', () => moveEditorMatch(index, -1), index === 0),
+      makeOrderButton('↓', 'Bajar partido', () => moveEditorMatch(index, 1), index === editorMatches.length - 1),
+      makeOrderButton('×', 'Quitar partido', () => removeEditorMatch(index), false, 'remove')
+    );
+    header.append(number, title, actions);
+
+    const grid = document.createElement('div');
+    grid.className = 'editor-fields';
+    grid.append(
+      makeEditorField('Local', 'homeTeam', match.homeTeam, index),
+      makeEditorField('Visitante', 'awayTeam', match.awayTeam, index),
+      makeEditorField('Hora', 'time', match.time, index),
+      makeEditorField('Fecha', 'date', match.date, index),
+      makeEditorField('Competición', 'competition', match.competition, index),
+      makeEditorField('Pabellón / pista', 'venue', match.venue, index)
+    );
+
+    item.append(header, grid);
+    els.editorMatches.appendChild(item);
+  });
+}
+
+function makeOrderButton(label, ariaLabel, onClick, disabled = false, extraClass = '') {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `editor-order-button ${extraClass}`.trim();
+  button.textContent = label;
+  button.title = ariaLabel;
+  button.setAttribute('aria-label', ariaLabel);
+  button.disabled = disabled;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function makeEditorField(label, key, value, index) {
+  const wrapper = document.createElement('label');
+  wrapper.className = 'editor-field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('input');
+  input.type = key === 'time' ? 'text' : 'text';
+  input.value = value || '';
+  input.dataset.key = key;
+  input.addEventListener('input', () => {
+    editorMatches[index][key] = input.value;
+    updateEditorMatchTitle(index);
+    rebuildTemplatePages(false);
+  });
+  wrapper.append(caption, input);
+  return wrapper;
+}
+
+function updateEditorMatchTitle(index) {
+  const item = els.editorMatches.querySelector(`[data-index="${index}"]`);
+  if (!item) return;
+  const title = item.querySelector('.editor-match-header strong');
+  if (title) title.textContent = `${editorMatches[index].homeTeam || 'Local'} · ${editorMatches[index].awayTeam || 'Visitante'}`;
+}
+
+function moveEditorMatch(index, direction) {
+  const target = index + direction;
+  if (target < 0 || target >= editorMatches.length) return;
+  [editorMatches[index], editorMatches[target]] = [editorMatches[target], editorMatches[index]];
+  currentTemplatePage = Math.min(currentTemplatePage, Math.max(0, getTemplatePages(editorMatches).length - 1));
+  renderEditor();
+  rebuildTemplatePages(false);
+}
+
+function removeEditorMatch(index) {
+  editorMatches.splice(index, 1);
+  currentTemplatePage = Math.min(currentTemplatePage, Math.max(0, getTemplatePages(editorMatches).length - 1));
+  renderEditor();
+  rebuildTemplatePages(false);
+}
+
+function rebuildTemplatePages(resetPage = false) {
+  templatePages = getTemplatePages(editorMatches);
+  if (resetPage) currentTemplatePage = 0;
+  if (currentTemplatePage >= templatePages.length) currentTemplatePage = Math.max(0, templatePages.length - 1);
+  renderTemplatePreview();
+}
+
 function renderTemplatePreview() {
   const matches = templatePages[currentTemplatePage] || [];
-  els.templatePreview.replaceChildren(createTemplateCanvas(matches));
-  els.templatePageInfo.textContent = templatePages.length > 1
-    ? `Página ${currentTemplatePage + 1} de ${templatePages.length} · ${getSelectedMatches().length} partidos seleccionados`
-    : `${matches.length} partidos seleccionados`;
+  els.templatePreview.replaceChildren();
+
+  if (!matches.length) {
+    const empty = document.createElement('div');
+    empty.className = 'template-preview-empty';
+    empty.textContent = 'Añade al menos un partido para ver la plantilla.';
+    els.templatePreview.appendChild(empty);
+  } else {
+    els.templatePreview.appendChild(createTemplateCanvas(matches));
+  }
+
+  const pageCount = templatePages.length;
+  els.templatePageInfo.textContent = pageCount > 1
+    ? `${editorMatches.length} partidos · ${pageCount} páginas`
+    : `${editorMatches.length} ${editorMatches.length === 1 ? 'partido' : 'partidos'}`;
+  els.templatePageLabel.textContent = pageCount
+    ? `Página ${currentTemplatePage + 1} de ${pageCount} · Máximo 5 partidos por imagen`
+    : 'Sin partidos';
   els.templatePrev.disabled = currentTemplatePage === 0;
-  els.templateNext.disabled = currentTemplatePage >= templatePages.length - 1;
+  els.templateNext.disabled = currentTemplatePage >= pageCount - 1 || pageCount === 0;
+  els.downloadTemplate.disabled = pageCount === 0;
 }
 
 function closeTemplateGenerator() {
@@ -263,6 +396,7 @@ els.clearSelection.addEventListener('click', () => {
 });
 els.generateTemplate.addEventListener('click', openTemplateGenerator);
 els.closeTemplate.addEventListener('click', closeTemplateGenerator);
+els.cancelTemplate.addEventListener('click', closeTemplateGenerator);
 els.templateModal.addEventListener('click', event => {
   if (event.target === els.templateModal) closeTemplateGenerator();
 });
