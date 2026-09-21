@@ -23,9 +23,8 @@ function getDateVariants(isoDate) {
   ];
 }
 
-async function fetchReader(url, responseFormat = 'markdown') {
-  const headers = responseFormat === 'html' ? { 'X-Respond-With': 'html' } : {};
-  const response = await fetch(`${READER_BASE}${url}`, { method: 'GET', headers, cache: 'no-store' });
+async function fetchReader(url) {
+  const response = await fetch(`${READER_BASE}${url}`, { method: 'GET', cache: 'no-store' });
   if (!response.ok) throw new Error(`${response.status} al consultar FAB mediante Reader.`);
   const text = await response.text();
   if (!text.trim()) throw new Error('FAB devolvió un documento vacío.');
@@ -58,16 +57,16 @@ function findScheduleLink(source, isoDate) {
 
 export async function findFabDocuments(isoDate) {
   const { day, month, year } = dateParts(isoDate);
-  const page = await fetchReader(FAB_SCHEDULES_URL, 'markdown');
+  const page = await fetchReader(FAB_SCHEDULES_URL);
   const schedule = findScheduleLink(page, isoDate);
 
   if (!schedule) {
     throw new Error(`La página oficial de FAB no contiene un PDF para la jornada ${day}/${month}/${year}.`);
   }
 
-  // Pedimos HTML al Reader para conservar la estructura de filas y columnas del PDF.
-  // El parser sigue teniendo un fallback de texto por si Reader no devuelve una tabla HTML.
-  const documentText = await fetchReader(schedule.url, 'html');
+  // Para los PDFs de FAB, Reader en markdown conserva las filas como tablas Markdown.
+  // El parser identifica las filas de partido por la presencia conjunta de fecha y hora.
+  const documentText = await fetchReader(schedule.url);
   return {
     url: schedule.url,
     label: schedule.label,
