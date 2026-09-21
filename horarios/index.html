@@ -7,7 +7,7 @@
   <title>ADLSM · Horarios FAB</title>
   <base href="../">
   <link rel="icon" href="assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="css/styles.css?v=20260922-06">
+  <link rel="stylesheet" href="css/styles.css?v=20260922-07">
 </head>
 <body>
   <main class="app">
@@ -51,12 +51,12 @@
       <div class="template-actions editor-actions"><button id="cancelTemplate" class="secondary" type="button">Volver</button><button id="downloadTemplate" class="primary" type="button">Descargar PNG</button></div>
     </div>
   </div>
-  <footer class="app-footer">ADLSM · <strong>v0.16.0</strong> · build 2026.09.22.06</footer>
+  <footer class="app-footer">ADLSM · <strong>v0.16.1</strong> · build 2026.09.22.07</footer>
   <script>
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     document.querySelector('#matchDate').value = today.toISOString().slice(0, 10);
   </script>
-  <script type="module" src="js/app.js?v=20260922-06"></script>
+  <script type="module" src="js/app.js?v=20260922-07"></script>
 </body>
 </html>
