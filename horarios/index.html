@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Consulta de horarios FAB y generador de publicaciones de baloncesto de ADLSM.">
+  <title>ADLSM · Horarios FAB</title>
+  <link rel="icon" href="../assets/logos/ADLSM.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="../css/styles.css?v=20260922-06">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <p class="eyebrow"><a class="breadcrumb-link" href="../">ADLSM</a> · HORARIOS FAB</p>
+        <h1>Generador de horarios FAB</h1>
+        <p class="subtitle">Obtén los partidos de tu club desde la FAB y prepara los datos para publicar.</p>
+      </div>
+      <button id="refreshFab" class="primary">Buscar en FAB</button>
+    </header>
+    <section class="panel">
+      <div class="panel-header"><div><h2>Fuente de datos</h2><p id="sourceStatus" class="muted">Listo para consultar.</p></div><label class="date-control">Jornada<input id="matchDate" type="date" value="2026-09-20"></label></div>
+      <div id="message" class="message hidden"></div>
+      <div class="filters">
+        <label class="filter-control search-control">Equipo o club<input id="teamSearch" type="search" placeholder="Ej.: La Salle Montemolín, Alierta…" autocomplete="off" disabled></label>
+        <label class="filter-control">Competición<select id="competitionFilter" disabled><option value="">Todas las competiciones</option></select></label>
+        <label class="filter-control">Fecha<select id="dateFilter" disabled><option value="">Todas las fechas</option></select></label>
+        <button id="clearTeam" class="secondary" type="button" disabled>Limpiar</button>
+      </div>
+      <div class="fallback"><div><strong>Plan B: subir PDF</strong><p class="muted">Usaremos el mismo parser cuando la conexión con FAB no sea posible.</p></div><label class="upload"><span>Seleccionar PDF</span><input id="pdfInput" type="file" accept="application/pdf"></label></div>
+    </section>
+    <section class="panel">
+      <div class="panel-header results-header"><div><h2>Partidos detectados</h2><p id="matchCount" class="muted">0 partidos</p></div><div class="results-actions"><div class="view-toggle" role="group" aria-label="Vista de resultados"><button id="viewCards" type="button" class="view-button active">▦ Tarjetas</button><button id="viewTable" type="button" class="view-button">☷ Tabla</button></div><button id="manualTemplate" class="primary" type="button">Crear plantilla manual</button></div></div>
+      <div id="selectionBar" class="selection-bar hidden"><div><strong><span id="selectedCount">0</span> partidos seleccionados</strong><span class="selection-help">Selecciona los que quieras incluir en la plantilla de Instagram.</span></div><div class="selection-actions"><button id="clearSelection" class="secondary" type="button">Limpiar selección</button><button id="generateTemplate" class="primary" type="button">Editar plantilla</button></div></div>
+      <div id="matches" class="matches empty"><div class="empty-state"><div class="empty-icon">🏀</div><h3>Aún no hay partidos</h3><p>Busca una jornada en FAB, carga un PDF o crea una plantilla manualmente.</p></div></div>
+    </section>
+  </main>
+  <div id="templateModal" class="template-modal hidden" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
+    <div class="template-dialog template-editor-dialog">
+      <div class="template-header"><div><p class="eyebrow">ADLSM · INSTAGRAM</p><h2 id="templateTitle">Editor de plantilla</h2><p id="templatePageInfo" class="muted"></p></div><button id="closeTemplate" class="modal-close" type="button" aria-label="Cerrar">×</button></div>
+      <div class="template-editor-layout">
+        <section class="editor-panel">
+          <div class="editor-section-header"><div><h3>Configuración de la publicación</h3><p class="muted">Personaliza el título y el texto de la franja superior.</p></div></div>
+          <div class="template-settings"><label class="editor-field"><span>Título</span><input id="templateMainTitle" type="text" value="HORARIOS BALONCESTO" maxlength="42"></label><label class="editor-field"><span>Subtítulo</span><input id="templateSubtitle" type="text" value="FEDERADOS" maxlength="36"></label></div>
+          <div class="editor-section-header editor-matches-header"><div><h3>Partidos de la publicación</h3><p class="muted">Añade partidos manualmente, selecciona logos, ordénalos y modifica cualquier dato.</p></div><div class="editor-header-actions"><button id="addManualMatch" class="secondary" type="button">＋ Añadir partido</button><span id="editorMatchCount" class="editor-count">0</span></div></div>
+          <div id="editorMatches" class="editor-matches"></div>
+        </section>
+        <section class="preview-panel"><div class="preview-panel-header"><div><h3>Vista previa</h3><p class="muted">La imagen se actualiza automáticamente.</p></div><div class="template-page-buttons"><button id="templatePrev" class="secondary" type="button">‹</button><button id="templateNext" class="secondary" type="button">›</button></div></div><div id="templatePreview" class="template-preview"></div><p id="templatePageLabel" class="preview-page-label"></p></section>
+      </div>
+      <div class="template-actions editor-actions"><button id="cancelTemplate" class="secondary" type="button">Volver</button><button id="downloadTemplate" class="primary" type="button">Descargar PNG</button></div>
+    </div>
+  </div>
+  <footer class="app-footer">ADLSM · <strong>v0.16.0</strong> · build 2026.09.22.06</footer>
+  <script type="module" src="../js/app.js?v=20260922-06"></script>
+</body>
+</html>
