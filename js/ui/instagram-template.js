@@ -1,6 +1,9 @@
 const WIDTH = 1080;
 const HEIGHT = 1920;
 const MAX_MATCHES_PER_PAGE = 8;
+const CONTENT_TOP = 292;
+const CONTENT_BOTTOM = 1818;
+const ROW_HEIGHT = 171;
 const MAX_CUSTOM_GAP = 120;
 const DEFAULT_CUSTOM_GAP = 24;
 
@@ -23,16 +26,19 @@ const DEFAULT_TEMPLATE = {
   subtitle: 'FEDERADOS'
 };
 
-export function getTemplatePages(matches) {
+export function getTemplatePages(matches = []) {
+  const safeMatches = Array.isArray(matches) ? matches : [];
   const pages = [];
-  for (let i = 0; i < matches.length; i += MAX_MATCHES_PER_PAGE) {
-    pages.push(matches.slice(i, i + MAX_MATCHES_PER_PAGE));
+  for (let i = 0; i < safeMatches.length; i += MAX_MATCHES_PER_PAGE) {
+    pages.push(safeMatches.slice(i, i + MAX_MATCHES_PER_PAGE));
   }
   return pages;
 }
 
-export function createTemplateCanvas(matches, template = DEFAULT_TEMPLATE) {
+export function createTemplateCanvas(matches = [], template = DEFAULT_TEMPLATE) {
   ensureDistributionControls();
+  syncDistributionControlLimit(Math.min(matches.length, MAX_MATCHES_PER_PAGE));
+
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -40,8 +46,10 @@ export function createTemplateCanvas(matches, template = DEFAULT_TEMPLATE) {
   return canvas;
 }
 
-export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
-  const ctx = canvas.getContext('2d');
+export function drawTemplate(canvas, matches = [], template = DEFAULT_TEMPLATE) {
+  const ctx = canvas?.getContext?.('2d');
+  if (!ctx) throw new Error('El navegador no ha podido crear el lienzo de la plantilla.');
+
   const scale = canvas.width / WIDTH;
   ctx.save();
   ctx.scale(scale, scale);
@@ -50,56 +58,67 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
   drawBackground(ctx);
   drawHeader(ctx, template);
 
-  const count = Math.min(matches.length, MAX_MATCHES_PER_PAGE);
+  const count = Math.min(Array.isArray(matches) ? matches.length : 0, MAX_MATCHES_PER_PAGE);
   if (count) {
-    const contentTop = 292;
-    const contentBottom = 1818;
-    const rowHeight = 171;
-    const availableHeight = contentBottom - contentTop;
-    const totalRowsHeight = count * rowHeight;
+    const availableHeight = CONTENT_BOTTOM - CONTENT_TOP;
+    const totalRowsHeight = count * ROW_HEIGHT;
     const distribution = getDistributionSettings();
-    const gap = getMatchGap(distribution.mode, distribution.customGap, count, availableHeight, totalRowsHeight);
+    const gap = getMatchGap(
+      distribution.mode,
+      distribution.customGap,
+      count,
+      availableHeight,
+      totalRowsHeight
+    );
 
-    // El tamaño de las tarjetas es fijo. La distribución solo cambia el espacio entre ellas.
-    // Un único partido siempre empieza arriba.
-    const startY = contentTop;
-
+    const startY = CONTENT_TOP;
     for (let index = 0; index < count; index += 1) {
-      drawMatch(ctx, matches[index], startY + index * (rowHeight + gap), rowHeight);
+      drawMatch(ctx, matches[index] || {}, startY + index * (ROW_HEIGHT + gap), ROW_HEIGHT);
     }
   }
 
   ctx.restore();
 }
 
+function getMaxCustomGap(count) {
+  if (count <= 1) return 0;
+  const availableHeight = CONTENT_BOTTOM - CONTENT_TOP;
+  const freeHeight = availableHeight - count * ROW_HEIGHT;
+  return Math.max(0, Math.min(MAX_CUSTOM_GAP, Math.floor(freeHeight / (count - 1))));
+}
+
 function getDistributionSettings() {
   const mode = document.querySelector('#templateDistributionMode')?.value || 'top';
   const rawGap = Number(document.querySelector('#templateDistributionGap')?.value);
-  const customGap = Number.isFinite(rawGap) ? Math.min(MAX_CUSTOM_GAP, Math.max(0, rawGap)) : DEFAULT_CUSTOM_GAP;
+  const count = Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length || 0);
+  const maxGap = getMaxCustomGap(Math.min(count, MAX_MATCHES_PER_PAGE));
+  const customGap = Number.isFinite(rawGap)
+    ? Math.min(maxGap, Math.max(0, rawGap))
+    : Math.min(DEFAULT_CUSTOM_GAP, maxGap);
   return { mode, customGap };
 }
 
 function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
   if (count <= 1) return 0;
 
+  const maxSafeGap = Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
+
   if (mode === 'equal') {
-    // Equivalente a distribuir con espacio entre el primero y el último.
-    return Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
+    return maxSafeGap;
   }
 
   if (mode === 'custom') {
-    return customGap;
+    return Math.min(Math.max(0, customGap), maxSafeGap);
   }
 
-  // Partidos agrupados arriba.
-  return 12;
+  return Math.min(12, maxSafeGap);
 }
 
 function ensureDistributionControls() {
   if (document.querySelector('#templateDistributionMode')) return;
 
   const header = document.querySelector('.editor-matches-header');
-  if (!header) return;
+  if (!header?.parentNode) return;
 
   if (!document.querySelector('#templateDistributionStyles')) {
     const style = document.createElement('style');
@@ -159,7 +178,7 @@ function ensureDistributionControls() {
   wrapper.innerHTML = `
     <div class="template-distribution-title">
       <strong>Distribución de partidos</strong>
-      <span>El tamaño de las tarjetas se mantiene siempre igual.</span>
+      <span>Las tarjetas mantienen siempre el mismo tamaño y nunca salen del lienzo.</span>
     </div>
     <div class="template-distribution-fields">
       <label class="editor-field">
@@ -184,17 +203,32 @@ function ensureDistributionControls() {
   const gapField = wrapper.querySelector('#templateDistributionGapField');
   const gapValue = wrapper.querySelector('#templateDistributionGapValue');
 
-  const refresh = () => {
+  const refresh = ({ rerender = true } = {}) => {
     const custom = mode.value === 'custom';
     gap.disabled = !custom;
     gapField.classList.toggle('is-disabled', !custom);
-    gapValue.textContent = `${gap.value} px`;
-    document.querySelector('#templateMainTitle')?.dispatchEvent(new Event('input', { bubbles: true }));
+    syncDistributionControlLimit();
+    if (rerender) document.dispatchEvent(new CustomEvent('template-distribution-change'));
   };
 
-  mode.addEventListener('change', refresh);
-  gap.addEventListener('input', refresh);
-  refresh();
+  mode.addEventListener('change', () => refresh());
+  gap.addEventListener('input', () => refresh());
+  refresh({ rerender: false });
+}
+
+function syncDistributionControlLimit(count = null) {
+  const slider = document.querySelector('#templateDistributionGap');
+  const output = document.querySelector('#templateDistributionGapValue');
+  if (!slider) return;
+
+  const resolvedCount = count ?? Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length || 0);
+  const maxGap = getMaxCustomGap(Math.min(resolvedCount, MAX_MATCHES_PER_PAGE));
+  const currentValue = Number(slider.value);
+  const nextValue = Number.isFinite(currentValue) ? Math.min(currentValue, maxGap) : Math.min(DEFAULT_CUSTOM_GAP, maxGap);
+
+  slider.max = String(maxGap);
+  slider.value = String(nextValue);
+  if (output) output.textContent = `${nextValue} px`;
 }
 
 function drawBackground(ctx) {
@@ -371,7 +405,7 @@ function roundRect(ctx, x, y, w, h, r, fill) {
   ctx.arcTo(x + w, y, x + w, y + h, radius);
   ctx.arcTo(x + w, y + h, x, y + h, radius);
   ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
@@ -420,4 +454,4 @@ function measurePillWidth(ctx, text) {
   return ctx.measureText(text.toUpperCase()).width + 42;
 }
 
-export { WIDTH, HEIGHT, MAX_MATCHES_PER_PAGE, DEFAULT_TEMPLATE };
+export { WIDTH, HEIGHT, MAX_MATCHES_PER_PAGE, DEFAULT_TEMPLATE, getMaxCustomGap };
