@@ -60,6 +60,8 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
     const distribution = getDistributionSettings();
     const gap = getMatchGap(distribution.mode, distribution.customGap, count, availableHeight, totalRowsHeight);
 
+    // El tamaño de las tarjetas es fijo. La distribución solo cambia el espacio entre ellas.
+    // Un único partido siempre empieza arriba.
     const startY = contentTop;
 
     for (let index = 0; index < count; index += 1) {
@@ -81,6 +83,7 @@ function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
   if (count <= 1) return 0;
 
   if (mode === 'equal') {
+    // Equivalente a distribuir con espacio entre el primero y el último.
     return Math.max(0, (availableHeight - totalRowsHeight) / (count - 1));
   }
 
@@ -88,6 +91,7 @@ function getMatchGap(mode, customGap, count, availableHeight, totalRowsHeight) {
     return customGap;
   }
 
+  // Partidos agrupados arriba.
   return 12;
 }
 
@@ -96,6 +100,59 @@ function ensureDistributionControls() {
 
   const header = document.querySelector('.editor-matches-header');
   if (!header) return;
+
+  if (!document.querySelector('#templateDistributionStyles')) {
+    const style = document.createElement('style');
+    style.id = 'templateDistributionStyles';
+    style.textContent = `
+      .template-distribution-controls {
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid #dfe6f0;
+        border-radius: 12px;
+        background: #f7f9fc;
+      }
+      .template-distribution-title {
+        display: grid;
+        gap: 3px;
+        margin-bottom: 10px;
+        color: #263b60;
+      }
+      .template-distribution-title strong { font-size: 12px; }
+      .template-distribution-title span { font-size: 11px; color: #68758a; }
+      .template-distribution-fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
+        gap: 10px;
+        align-items: end;
+      }
+      .template-distribution-fields select {
+        width: 100%;
+        min-height: 38px;
+        padding: 8px 9px;
+        border: 1px solid #d7deea;
+        border-radius: 8px;
+        background: white;
+        color: #172033;
+        outline: none;
+      }
+      .template-distribution-fields select:focus {
+        border-color: #7896c5;
+        box-shadow: 0 0 0 3px rgba(36,85,164,.10);
+      }
+      .template-distribution-fields input[type="range"] {
+        width: 100%;
+        min-height: 38px;
+        accent-color: #2455a4;
+      }
+      .template-distribution-fields output { color: #2455a4; font-weight: 800; }
+      .template-distribution-fields .is-disabled { opacity: .55; }
+      @media (max-width: 680px) {
+        .template-distribution-fields { grid-template-columns: 1fr; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   const wrapper = document.createElement('div');
   wrapper.className = 'template-distribution-controls';
