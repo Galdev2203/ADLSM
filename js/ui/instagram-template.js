@@ -1,50 +1,535 @@
-const WIDTH=1080,HEIGHT=1920,MAX_MATCHES_PER_PAGE=8;
-const CONTENT_TOP=270,CONTENT_BOTTOM=1818,ROW_HEIGHT=156,MAX_CUSTOM_GAP=120,DEFAULT_CUSTOM_GAP=28;
-const CUSTOM_LOGOS_KEY='adlsm.template.customLogos.v1', LOGO_SELECTIONS_KEY='adlsm.template.logoSelections.v2';
-const COLORS={blue:'#174a9a',yellow:'#ffe000',white:'#fff',soft:'#f7f8fb'};
-const FONT='Arial Black, Arial, Helvetica, sans-serif';
-const DEFAULT_TEMPLATE={title:'HORARIOS BALONCESTO',subtitle:'FEDERADOS'};
-const LOGOS=[
- {id:'adlsm',name:'A.D. La Salle Montemolín',src:'assets/logos/adlsm.svg',aliases:['la salle','montemolin','montemolín','adlsm']},
- {id:'old-school',name:'Old School Basket Zaragoza',src:'assets/logos/old-school.svg',aliases:['old school','osb']},
- {id:'st-casablanca',name:'St. Casablanca',src:'assets/logos/st-casablanca.svg',aliases:['casablanca','st. casablanca','st casablanca']},
- {id:'basket',name:'Balón de baloncesto',src:'assets/logos/basket.svg',aliases:['cba','basket']},
- {id:'la-muela',name:'La Muela / Frivalca',src:'assets/logos/la-muela.svg',aliases:['la muela','frivalca']}
-];
-const imageCache=new Map();
+const WIDTH = 1080;
+const HEIGHT = 1920;
+const MAX_MATCHES_PER_PAGE = 8;
+const CONTENT_TOP = 270;
+const CONTENT_BOTTOM = 1818;
+const ROW_HEIGHT = 156;
+const MAX_CUSTOM_GAP = 120;
+const DEFAULT_CUSTOM_GAP = 28;
 
-export function getTemplatePages(matches=[]){const safe=Array.isArray(matches)?matches:[];const pages=[];for(let i=0;i<safe.length;i+=MAX_MATCHES_PER_PAGE)pages.push(safe.slice(i,i+MAX_MATCHES_PER_PAGE));return pages;}
-export async function createTemplateCanvas(matches=[],template=DEFAULT_TEMPLATE){ensureDistributionControls();syncDistributionControlLimit(Math.min(matches.length,MAX_MATCHES_PER_PAGE));ensureLogoPickers();const canvas=document.createElement('canvas');canvas.width=WIDTH;canvas.height=HEIGHT;await drawTemplate(canvas,matches,template);return canvas;}
-export async function drawTemplate(canvas,matches=[],template=DEFAULT_TEMPLATE){const ctx=canvas?.getContext?.('2d');if(!ctx)throw new Error('El navegador no ha podido crear el lienzo de la plantilla.');ctx.clearRect(0,0,WIDTH,HEIGHT);await drawBackground(ctx);drawHeader(ctx,template);const count=Math.min(Array.isArray(matches)?matches.length:0,MAX_MATCHES_PER_PAGE);if(count){const available=CONTENT_BOTTOM-CONTENT_TOP,total=count*ROW_HEIGHT,{mode,customGap}=getDistributionSettings(count),gap=getMatchGap(mode,customGap,count,available,total);const imgs=await Promise.all(matches.slice(0,count).map(m=>Promise.all([loadImage(resolveLogoSource(m.homeLogo,m.homeTeam,true)),loadImage(resolveLogoSource(m.awayLogo,m.awayTeam,false))])));for(let i=0;i<count;i++)drawMatch(ctx,matches[i]||{},CONTENT_TOP+i*(ROW_HEIGHT+gap),ROW_HEIGHT,imgs[i]?.[0],imgs[i]?.[1]);}drawFooter(ctx);return canvas;}
-function maxGap(count){if(count<=1)return 0;return Math.max(0,Math.min(MAX_CUSTOM_GAP,Math.floor((CONTENT_BOTTOM-CONTENT_TOP-count*ROW_HEIGHT)/(count-1))));}
-function getDistributionSettings(count){const mode=document.querySelector('#templateDistributionMode')?.value||'top',raw=Number(document.querySelector('#templateDistributionGap')?.value),m=maxGap(count);return{mode,customGap:Number.isFinite(raw)?Math.min(m,Math.max(0,raw)):Math.min(DEFAULT_CUSTOM_GAP,m)};}
-function getMatchGap(mode,custom,count,available,total){if(count<=1)return 0;const safe=Math.max(0,(available-total)/(count-1));if(mode==='equal')return safe;if(mode==='custom')return Math.min(custom,safe);return Math.min(16,safe);}
-function ensureDistributionControls(){if(document.querySelector('#templateDistributionMode'))return;const header=document.querySelector('.editor-matches-header');if(!header?.parentNode)return;const style=document.createElement('style');style.id='templateDistributionStyles';style.textContent=`.template-distribution-controls{margin-top:14px;padding:12px;border:1px solid #dfe6f0;border-radius:12px;background:#f7f9fc}.template-distribution-title{display:grid;gap:3px;margin-bottom:10px;color:#263b60}.template-distribution-title strong{font-size:12px}.template-distribution-title span{font-size:11px;color:#68758a}.template-distribution-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,1fr);gap:10px}.template-distribution-fields select{width:100%;min-height:38px;padding:8px;border:1px solid #d7deea;border-radius:8px;background:#fff}.template-distribution-fields input[type=range]{width:100%;accent-color:#2455a4}@media(max-width:680px){.template-distribution-fields{grid-template-columns:1fr}}`;document.head.appendChild(style);const wrap=document.createElement('div');wrap.className='template-distribution-controls';wrap.innerHTML='<div class="template-distribution-title"><strong>Distribución de partidos</strong><span>El límite se adapta automáticamente al número de partidos.</span></div><div class="template-distribution-fields"><label class="editor-field"><span>Posición</span><select id="templateDistributionMode"><option value="top">Juntos arriba</option><option value="equal">Distribuir equitativamente</option><option value="custom">Separación personalizada</option></select></label><label class="editor-field" id="templateDistributionGapField"><span>Separación <output id="templateDistributionGapValue">0 px</output></span><input id="templateDistributionGap" type="range" min="0" max="120" value="28"></label></div>';header.parentNode.insertBefore(wrap,header);const mode=wrap.querySelector('#templateDistributionMode'),gap=wrap.querySelector('#templateDistributionGap'),field=wrap.querySelector('#templateDistributionGapField');const refresh=()=>{gap.disabled=mode.value!=='custom';field.classList.toggle('is-disabled',gap.disabled);syncDistributionControlLimit();document.dispatchEvent(new CustomEvent('template-distribution-change'));};mode.addEventListener('change',refresh);gap.addEventListener('input',refresh);refresh();}
-function syncDistributionControlLimit(count=null){const slider=document.querySelector('#templateDistributionGap'),out=document.querySelector('#templateDistributionGapValue');if(!slider)return;const c=count??Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length||0),m=maxGap(Math.min(c,MAX_MATCHES_PER_PAGE)),v=Math.min(Number(slider.value)||0,m);slider.max=String(m);slider.value=String(v);if(out)out.textContent=`${v} px`;}
-async function drawBackground(ctx){const bg=await loadImage('assets/background.svg');if(bg)ctx.drawImage(bg,0,0,WIDTH,HEIGHT);else{const g=ctx.createLinearGradient(0,0,0,HEIGHT);g.addColorStop(0,'#5873a1');g.addColorStop(1,'#31588d');ctx.fillStyle=g;ctx.fillRect(0,0,WIDTH,HEIGHT);}}
-function drawHeader(ctx,template){const title=clean(template?.title)||DEFAULT_TEMPLATE.title,sub=clean(template?.subtitle)||DEFAULT_TEMPLATE.subtitle;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=COLORS.yellow;const lines=fitTitleLines(ctx,title.toUpperCase(),830),size=lines.length===1?72:61;ctx.font=`italic 900 ${size}px ${FONT}`;const lh=size*.9,start=lines.length===1?82:61;lines.forEach((line,i)=>ctx.fillText(line,WIDTH/2,start+i*lh));const sy=lines.length===1?151:177;ctx.fillStyle=COLORS.white;ctx.fillRect(126,sy,828,54);ctx.fillStyle=COLORS.blue;fitText(ctx,sub.toUpperCase(),WIDTH/2,sy+27,760,28,8,900);}
-function fitTitleLines(ctx,text,max){ctx.font=`italic 900 64px ${FONT}`;if(ctx.measureText(text).width<=max)return[text];const words=text.split(' '),lines=[];let cur='';for(const w of words){const n=cur?`${cur} ${w}`:w;if(!cur||ctx.measureText(n).width<=max)cur=n;else{lines.push(cur);cur=w;}}if(cur)lines.push(cur);return lines.slice(0,2);}
-function drawMatch(ctx,m,y,row,homeImg,awayImg){const x=218,w=644,cy=y+62,cx=WIDTH/2,cardY=y+8,cardH=108,logoR=66,timeR=56;roundRect(ctx,x,cardY,w,cardH,27,COLORS.white);ctx.fillStyle=COLORS.yellow;ctx.fillRect(x+32,cardY,w-64,7);drawBadge(ctx,188,cy,logoR,homeImg,true);drawBadge(ctx,892,cy,logoR,awayImg,false);drawTeamName(ctx,m.homeTeam,305,cy,165,false);drawTeamName(ctx,m.awayTeam,775,cy,165,true);ctx.beginPath();ctx.arc(cx,cy,timeR,0,Math.PI*2);ctx.fillStyle=COLORS.yellow;ctx.fill();ctx.fillStyle=COLORS.blue;fitText(ctx,m.time||'--:--',cx,cy-8,100,29,9,900);fitText(ctx,formatDay(m.date),cx,cy+22,100,12,8,900);const info=`${clean(m.competition)||'COMPETICIÓN'}${m.venue?` / ${clean(m.venue)}`:''}`,pw=Math.min(700,Math.max(330,measurePill(ctx,info)));roundRect(ctx,cx-pw/2,cardY+104,pw,43,21,COLORS.yellow);ctx.fillStyle=COLORS.blue;fitText(ctx,info.toUpperCase(),cx,cardY+126,pw-26,14,7,900);}
-function drawBadge(ctx,x,y,r,img,isHome){ctx.save();ctx.beginPath();ctx.arc(x,y,r+8,0,Math.PI*2);ctx.fillStyle=COLORS.white;ctx.fill();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();if(img){const s=r*2,scale=Math.max(s/img.width,s/img.height);ctx.drawImage(img,x-img.width*scale/2,y-img.height*scale/2,img.width*scale,img.height*scale);}else{ctx.fillStyle=isHome?COLORS.blue:COLORS.soft;ctx.fillRect(x-r,y-r,r*2,r*2);ctx.fillStyle=isHome?COLORS.yellow:COLORS.blue;fitText(ctx,isHome?'ADLSM':'RIVAL',x,y,80,22,8,900);}ctx.restore();}
-function drawTeamName(ctx,value,x,y,maxWidth,right){const text=clean(value)||'SIN EQUIPO';let size=24,lines=[];while(size>=16){ctx.font=`900 ${size}px ${FONT}`;lines=wrap(ctx,text,maxWidth,2);if(lines.every(l=>ctx.measureText(l).width<=maxWidth))break;size--;}ctx.fillStyle=COLORS.blue;ctx.textAlign=right?'right':'left';ctx.textBaseline='middle';const lh=size*1.08,start=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>ctx.fillText(l,x,start+i*lh));}
-function wrap(ctx,text,max,limit){const words=text.split(/\s+/).filter(Boolean),lines=[];let cur='';for(const w of words){const n=cur?`${cur} ${w}`:w;if(ctx.measureText(n).width<=max||!cur)cur=n;else{lines.push(cur);cur=w;}}if(cur)lines.push(cur);if(lines.length<=limit)return lines;const out=lines.slice(0,limit);let last=out[limit-1];while(last.length>3&&ctx.measureText(`${last}…`).width>max)last=last.slice(0,-1);out[limit-1]=`${last}…`;return out;}
-function fitText(ctx,text,x,y,max,start,min=8,weight=800){let s=start;while(s>min){ctx.font=`${weight} ${s}px ${FONT}`;if(ctx.measureText(text).width<=max)break;s--;}ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y);}
-function measurePill(ctx,text){ctx.font=`900 14px ${FONT}`;return ctx.measureText(text.toUpperCase()).width+52;}
-function roundRect(ctx,x,y,w,h,r,fill){ctx.beginPath();const q=Math.min(r,w/2,h/2);ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath();ctx.fillStyle=fill;ctx.fill();}
-function drawFooter(ctx){const y=1838;ctx.strokeStyle=COLORS.yellow;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(110,y);ctx.lineTo(285,y);ctx.stroke();ctx.beginPath();ctx.moveTo(795,y);ctx.lineTo(970,y);ctx.stroke();ctx.fillStyle=COLORS.white;ctx.font=`500 18px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('MÁS QUE UN CLUB',540,y);}
-function clean(v){return String(v??'').replace(/\s+/g,' ').trim();}
-function norm(v){return clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-function formatDay(v){const m={lunes:'LUNES',martes:'MARTES',miércoles:'MIÉRCOLES',miercoles:'MIÉRCOLES',jueves:'JUEVES',viernes:'VIERNES',sábado:'SÁBADO',sabado:'SÁBADO',domingo:'DOMINGO'};return m[clean(v).toLowerCase()]||clean(v).toUpperCase();}
-function customLogos(){try{const x=JSON.parse(localStorage.getItem(CUSTOM_LOGOS_KEY)||'[]');return Array.isArray(x)?x.filter(v=>v?.id&&v?.src):[];}catch{return[];}}
-function logoOptions(){return [...LOGOS,...customLogos().map(x=>({...x,custom:true}))];}
-function defaultLogo(team,isHome){const n=norm(team);if(isHome)return'adlsm';return LOGOS.find(l=>l.aliases?.some(a=>n.includes(norm(a))))?.id||'basket';}
-function selections(){try{return JSON.parse(localStorage.getItem(LOGO_SELECTIONS_KEY)||'{}')||{};}catch{return{};}}
-function selection(key,side){return selections()[`${key}:${side}`]||'';}
-function saveSelection(key,side,id){try{const x=selections();x[`${key}:${side}`]=id;localStorage.setItem(LOGO_SELECTIONS_KEY,JSON.stringify(x));}catch{}}
-function editorKey(item){return [...item.querySelectorAll('input')].map(i=>i.value||'').join('|')||item.dataset.index;}
-function resolveLogoSource(id,team,isHome){const options=logoOptions(),selected=id||defaultLogo(team,isHome);return options.find(x=>x.id===selected)?.src||options[0]?.src;}
-function loadImage(src){if(!src)return Promise.resolve(null);if(imageCache.has(src))return imageCache.get(src);const p=new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src;});imageCache.set(src,p);return p;}
-function ensureLogoPickers(){if(!document.querySelector('#templateLogoPickerStyles')){const s=document.createElement('style');s.id='templateLogoPickerStyles';s.textContent=`.template-logo-pickers{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.logo-picker{position:relative}.logo-picker-button{width:100%;min-height:48px;display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:8px;padding:6px 9px;border:1px solid #d7deea;border-radius:9px;background:#fff;color:#263b60;cursor:pointer;text-align:left}.logo-picker-button img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#f1f4f8}.logo-picker-button span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800}.logo-picker-panel{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 6px);padding:8px;background:#fff;border:1px solid #d6deea;border-radius:12px;box-shadow:0 16px 40px rgba(25,43,72,.18);max-height:270px;overflow:auto}.logo-picker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.logo-option{min-height:82px;padding:7px 5px;display:grid;justify-items:center;align-content:center;gap:5px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;cursor:pointer}.logo-option img{width:42px;height:42px;object-fit:contain}.logo-option span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:800}.logo-option-add{border-style:dashed;color:#2455a4}.template-preview-loading{min-height:300px;display:grid;place-items:center;padding:24px;color:#68758a;background:#fff;border:1px dashed #ccd6e5;border-radius:12px}.template-preview-error{min-height:220px;display:grid;align-content:center;gap:8px;padding:24px;text-align:center;color:#7d3131;background:#fff7f7;border:1px solid #edcaca;border-radius:12px}.template-preview-error span{font-size:13px}@media(max-width:680px){.template-logo-pickers{grid-template-columns:1fr}.logo-picker-panel{position:fixed;left:12px;right:12px;bottom:12px;top:auto;max-height:55vh}}`;document.head.appendChild(s);}const items=document.querySelectorAll('#editorMatches .editor-match');items.forEach(item=>{if(item.querySelector('.template-logo-pickers'))return;const fields=item.querySelector('.editor-fields');if(!fields)return;const key=editorKey(item),home=fields.querySelector('input[data-key="homeTeam"]')?.value||'',away=fields.querySelector('input[data-key="awayTeam"]')?.value||'',h=selection(key,'home')||defaultLogo(home,true),a=selection(key,'away')||defaultLogo(away,false);item.dataset.logoHome=h;item.dataset.logoAway=a;const wrap=document.createElement('div');wrap.className='template-logo-pickers';wrap.append(createLogoPicker(item,'home',h),createLogoPicker(item,'away',a));fields.after(wrap);});}
-function createLogoPicker(owner,side,current){const field=document.createElement('label');field.className='logo-picker-field editor-field';const span=document.createElement('span');span.textContent=side==='home'?'Logo local':'Logo visitante';const wrap=document.createElement('div');wrap.className='logo-picker';const button=document.createElement('button');button.type='button';button.className='logo-picker-button';const panel=document.createElement('div');panel.className='logo-picker-panel hidden';let selected=current;const renderButton=()=>{const opt=logoOptions().find(x=>x.id===selected)||logoOptions()[0];button.replaceChildren();const img=document.createElement('img');img.src=opt?.src||'';const text=document.createElement('span');text.textContent=opt?.name||'Elegir logo';const arrow=document.createElement('span');arrow.textContent='▾';button.append(img,text,arrow);};const renderPanel=()=>{panel.replaceChildren();const grid=document.createElement('div');grid.className='logo-picker-grid';logoOptions().forEach(opt=>{const b=document.createElement('button');b.type='button';b.className='logo-option';const img=document.createElement('img');img.src=opt.src;const name=document.createElement('span');name.textContent=opt.name;b.append(img,name);b.addEventListener('click',()=>{selected=opt.id;owner.dataset[side==='home'?'logoHome':'logoAway']=selected;saveSelection(editorKey(owner),side,selected);panel.classList.add('hidden');renderButton();document.dispatchEvent(new CustomEvent('template-logo-change'));});grid.appendChild(b);});const add=document.createElement('button');add.type='button';add.className='logo-option logo-option-add';add.innerHTML='<span style="font-size:24px">＋</span><span>Añadir imagen</span>';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.addEventListener('change',async()=>{const file=input.files?.[0];if(!file)return;try{const src=await fileToDataUrl(file),name=clean(file.name.replace(/\.[^.]+$/,''))||'Logo personalizado',id=`custom-${Date.now()}`;const list=[...customLogos(),{id,name,src}].slice(-20);localStorage.setItem(CUSTOM_LOGOS_KEY,JSON.stringify(list));selected=id;owner.dataset[side==='home'?'logoHome':'logoAway']=id;saveSelection(editorKey(owner),side,id);renderPanel();renderButton();panel.classList.remove('hidden');document.dispatchEvent(new CustomEvent('template-logo-change'));}catch(e){window.alert(errorMessage(e));}finally{input.value='';}});add.appendChild(input);add.addEventListener('click',()=>input.click());grid.appendChild(add);panel.appendChild(grid);};button.addEventListener('click',e=>{e.stopPropagation();const open=!panel.classList.contains('hidden');document.querySelectorAll('.logo-picker-panel').forEach(p=>p.classList.add('hidden'));if(!open){renderPanel();panel.classList.remove('hidden');}});document.addEventListener('click',e=>{if(!wrap.contains(e.target))panel.classList.add('hidden');});wrap.append(button,panel);field.append(span,wrap);renderButton();return field;}
-async function fileToDataUrl(file){const raw=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result||''));r.onerror=()=>rej(new Error('No se pudo leer la imagen.'));r.readAsDataURL(file);});const img=await loadImage(raw);if(!img)throw new Error('La imagen seleccionada no es válida.');const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d'),scale=Math.min(256/img.width,256/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(256-w)/2,(256-h)/2,w,h);return c.toDataURL('image/webp',.84);}
-function errorMessage(e){return e instanceof Error?e.message:String(e||'Error desconocido.');}
+const LOGO_MANIFEST_URL = 'assets/logos/manifest.json';
+const CUSTOM_LOGOS_KEY = 'adlsm.template.customLogos.v2';
+const LOGO_SELECTIONS_KEY = 'adlsm.template.logoSelections.v3';
+
+const COLORS = { blue: '#174a9a', yellow: '#ffe000', white: '#fff', soft: '#f7f8fb' };
+const FONT = 'Arial Black, Arial, Helvetica, sans-serif';
+const DEFAULT_TEMPLATE = { title: 'HORARIOS BALONCESTO', subtitle: 'FEDERADOS' };
+
+const imageCache = new Map();
+let manifestLogos = null;
+let manifestPromise = null;
+
+export function getTemplatePages(matches = []) {
+  const safe = Array.isArray(matches) ? matches : [];
+  const pages = [];
+  for (let i = 0; i < safe.length; i += MAX_MATCHES_PER_PAGE) pages.push(safe.slice(i, i + MAX_MATCHES_PER_PAGE));
+  return pages;
+}
+
+export async function createTemplateCanvas(matches = [], template = DEFAULT_TEMPLATE) {
+  ensureDistributionControls();
+  syncDistributionControlLimit(Math.min(matches.length, MAX_MATCHES_PER_PAGE));
+  const logos = await getLogoOptions();
+  ensureLogoPickers(logos);
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  await drawTemplate(canvas, matches, template, logos);
+  return canvas;
+}
+
+export async function drawTemplate(canvas, matches = [], template = DEFAULT_TEMPLATE, logos = null) {
+  const ctx = canvas?.getContext?.('2d');
+  if (!ctx) throw new Error('El navegador no ha podido crear el lienzo de la plantilla.');
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  await drawBackground(ctx);
+  drawHeader(ctx, template);
+
+  const count = Math.min(Array.isArray(matches) ? matches.length : 0, MAX_MATCHES_PER_PAGE);
+  if (count) {
+    const available = CONTENT_BOTTOM - CONTENT_TOP;
+    const total = count * ROW_HEIGHT;
+    const { mode, customGap } = getDistributionSettings(count);
+    const gap = getMatchGap(mode, customGap, count, available, total);
+    const options = logos || await getLogoOptions();
+    const imgs = await Promise.all(matches.slice(0, count).map(match => Promise.all([
+      loadImage(resolveLogoSource(match.homeLogo, match.homeTeam, true, options)),
+      loadImage(resolveLogoSource(match.awayLogo, match.awayTeam, false, options))
+    ])));
+    for (let i = 0; i < count; i++) {
+      drawMatch(ctx, matches[i] || {}, CONTENT_TOP + i * (ROW_HEIGHT + gap), ROW_HEIGHT, imgs[i]?.[0], imgs[i]?.[1]);
+    }
+  }
+  drawFooter(ctx);
+  return canvas;
+}
+
+function maxGap(count) {
+  if (count <= 1) return 0;
+  return Math.max(0, Math.min(MAX_CUSTOM_GAP, Math.floor((CONTENT_BOTTOM - CONTENT_TOP - count * ROW_HEIGHT) / (count - 1))));
+}
+
+function getDistributionSettings(count) {
+  const mode = document.querySelector('#templateDistributionMode')?.value || 'top';
+  const raw = Number(document.querySelector('#templateDistributionGap')?.value);
+  const m = maxGap(count);
+  return { mode, customGap: Number.isFinite(raw) ? Math.min(m, Math.max(0, raw)) : Math.min(DEFAULT_CUSTOM_GAP, m) };
+}
+
+function getMatchGap(mode, custom, count, available, total) {
+  if (count <= 1) return 0;
+  const safe = Math.max(0, (available - total) / (count - 1));
+  if (mode === 'equal') return safe;
+  if (mode === 'custom') return Math.min(custom, safe);
+  return Math.min(16, safe);
+}
+
+function ensureDistributionControls() {
+  if (document.querySelector('#templateDistributionMode')) return;
+  const header = document.querySelector('.editor-matches-header');
+  if (!header?.parentNode) return;
+  const style = document.createElement('style');
+  style.id = 'templateDistributionStyles';
+  style.textContent = `.template-distribution-controls{margin-top:14px;padding:12px;border:1px solid #dfe6f0;border-radius:12px;background:#f7f9fc}.template-distribution-title{display:grid;gap:3px;margin-bottom:10px;color:#263b60}.template-distribution-title strong{font-size:12px}.template-distribution-title span{font-size:11px;color:#68758a}.template-distribution-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,1fr);gap:10px}.template-distribution-fields select{width:100%;min-height:38px;padding:8px;border:1px solid #d7deea;border-radius:8px;background:#fff}.template-distribution-fields input[type=range]{width:100%;accent-color:#2455a4}@media(max-width:680px){.template-distribution-fields{grid-template-columns:1fr}}`;
+  document.head.appendChild(style);
+  const wrap = document.createElement('div');
+  wrap.className = 'template-distribution-controls';
+  wrap.innerHTML = '<div class="template-distribution-title"><strong>Distribución de partidos</strong><span>El límite se adapta automáticamente al número de partidos.</span></div><div class="template-distribution-fields"><label class="editor-field"><span>Posición</span><select id="templateDistributionMode"><option value="top">Juntos arriba</option><option value="equal">Distribuir equitativamente</option><option value="custom">Separación personalizada</option></select></label><label class="editor-field" id="templateDistributionGapField"><span>Separación <output id="templateDistributionGapValue">0 px</output></span><input id="templateDistributionGap" type="range" min="0" max="120" value="28"></label></div>';
+  header.parentNode.insertBefore(wrap, header);
+  const mode = wrap.querySelector('#templateDistributionMode');
+  const gap = wrap.querySelector('#templateDistributionGap');
+  const field = wrap.querySelector('#templateDistributionGapField');
+  const refresh = () => {
+    gap.disabled = mode.value !== 'custom';
+    field.classList.toggle('is-disabled', gap.disabled);
+    syncDistributionControlLimit();
+    document.dispatchEvent(new CustomEvent('template-distribution-change'));
+  };
+  mode.addEventListener('change', refresh);
+  gap.addEventListener('input', refresh);
+  refresh();
+}
+
+function syncDistributionControlLimit(count = null) {
+  const slider = document.querySelector('#templateDistributionGap');
+  const out = document.querySelector('#templateDistributionGapValue');
+  if (!slider) return;
+  const c = count ?? Number(document.querySelector('#editorMatches')?.querySelectorAll('.editor-match').length || 0);
+  const m = maxGap(Math.min(c, MAX_MATCHES_PER_PAGE));
+  const v = Math.min(Number(slider.value) || 0, m);
+  slider.max = String(m);
+  slider.value = String(v);
+  if (out) out.textContent = `${v} px`;
+}
+
+async function getLogoOptions() {
+  if (!manifestPromise) {
+    manifestPromise = fetch(LOGO_MANIFEST_URL, { cache: 'no-cache' })
+      .then(response => {
+        if (!response.ok) throw new Error(`No se pudo cargar la biblioteca de logos (${response.status}).`);
+        return response.json();
+      })
+      .then(data => Array.isArray(data) ? data : Array.isArray(data.logos) ? data.logos : [])
+      .then(items => items.filter(isValidLogo).map(normalizeLogo))
+      .catch(error => {
+        console.warn('[ADLSM] Biblioteca de logos:', error);
+        return [];
+      });
+  }
+  if (manifestLogos === null) manifestLogos = await manifestPromise;
+  return [...manifestLogos, ...customLogos().map(item => ({ ...item, custom: true }))];
+}
+
+function isValidLogo(item) { return Boolean(item && item.id && item.name && item.src); }
+
+function normalizeLogo(item) {
+  return { id: String(item.id), name: String(item.name), src: String(item.src), aliases: Array.isArray(item.aliases) ? item.aliases.map(String) : [] };
+}
+
+async function drawBackground(ctx) {
+  const bg = await loadImage('assets/background.svg');
+  if (bg) ctx.drawImage(bg, 0, 0, WIDTH, HEIGHT);
+  else {
+    const g = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    g.addColorStop(0, '#5873a1');
+    g.addColorStop(1, '#31588d');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  }
+}
+
+function drawHeader(ctx, template) {
+  const title = clean(template?.title) || DEFAULT_TEMPLATE.title;
+  const sub = clean(template?.subtitle) || DEFAULT_TEMPLATE.subtitle;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = COLORS.yellow;
+  const lines = fitTitleLines(ctx, title.toUpperCase(), 830);
+  const size = lines.length === 1 ? 72 : 61;
+  ctx.font = `italic 900 ${size}px ${FONT}`;
+  const lh = size * .9;
+  const start = lines.length === 1 ? 82 : 61;
+  lines.forEach((line, i) => ctx.fillText(line, WIDTH / 2, start + i * lh));
+  const sy = lines.length === 1 ? 151 : 177;
+  ctx.fillStyle = COLORS.white;
+  ctx.fillRect(126, sy, 828, 54);
+  ctx.fillStyle = COLORS.blue;
+  fitText(ctx, sub.toUpperCase(), WIDTH / 2, sy + 27, 760, 28, 8, 900);
+}
+
+function fitTitleLines(ctx, text, max) {
+  ctx.font = `italic 900 64px ${FONT}`;
+  if (ctx.measureText(text).width <= max) return [text];
+  const words = text.split(' '), lines = [];
+  let cur = '';
+  for (const word of words) {
+    const next = cur ? `${cur} ${word}` : word;
+    if (!cur || ctx.measureText(next).width <= max) cur = next;
+    else { lines.push(cur); cur = word; }
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 2);
+}
+
+function drawMatch(ctx, match, y, row, homeImg, awayImg) {
+  const x = 218, w = 644, cy = y + 62, cx = WIDTH / 2, cardY = y + 8, cardH = 108, logoR = 66, timeR = 56;
+  roundRect(ctx, x, cardY, w, cardH, 27, COLORS.white);
+  ctx.fillStyle = COLORS.yellow;
+  ctx.fillRect(x + 32, cardY, w - 64, 7);
+  drawBadge(ctx, 188, cy, logoR, homeImg, true);
+  drawBadge(ctx, 892, cy, logoR, awayImg, false);
+  drawTeamName(ctx, match.homeTeam, 305, cy, 165, false);
+  drawTeamName(ctx, match.awayTeam, 775, cy, 165, true);
+  ctx.beginPath();
+  ctx.arc(cx, cy, timeR, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.yellow;
+  ctx.fill();
+  ctx.fillStyle = COLORS.blue;
+  fitText(ctx, match.time || '--:--', cx, cy - 8, 100, 29, 9, 900);
+  fitText(ctx, formatDay(match.date), cx, cy + 22, 100, 12, 8, 900);
+  const info = `${clean(match.competition) || 'COMPETICIÓN'}${match.venue ? ` / ${clean(match.venue)}` : ''}`;
+  const pw = Math.min(700, Math.max(330, measurePill(ctx, info)));
+  roundRect(ctx, cx - pw / 2, cardY + 104, pw, 43, 21, COLORS.yellow);
+  ctx.fillStyle = COLORS.blue;
+  fitText(ctx, info.toUpperCase(), cx, cardY + 126, pw - 26, 14, 7, 900);
+}
+
+function drawBadge(ctx, x, y, r, img, isHome) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.white;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.clip();
+  if (img) {
+    const s = r * 2;
+    const scale = Math.max(s / img.width, s / img.height);
+    ctx.drawImage(img, x - img.width * scale / 2, y - img.height * scale / 2, img.width * scale, img.height * scale);
+  } else {
+    ctx.fillStyle = isHome ? COLORS.blue : COLORS.soft;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    ctx.fillStyle = isHome ? COLORS.yellow : COLORS.blue;
+    fitText(ctx, 'LOGO', x, y, 80, 20, 8, 900);
+  }
+  ctx.restore();
+}
+
+function drawTeamName(ctx, value, x, y, maxWidth, right) {
+  const text = clean(value) || 'SIN EQUIPO';
+  let size = 24, lines = [];
+  while (size >= 16) {
+    ctx.font = `900 ${size}px ${FONT}`;
+    lines = wrap(ctx, text, maxWidth, 2);
+    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) break;
+    size--;
+  }
+  ctx.fillStyle = COLORS.blue;
+  ctx.textAlign = right ? 'right' : 'left';
+  ctx.textBaseline = 'middle';
+  const lh = size * 1.08;
+  const start = y - (lines.length - 1) * lh / 2;
+  lines.forEach((line, i) => ctx.fillText(line, x, start + i * lh));
+}
+
+function wrap(ctx, text, max, limit) {
+  const words = text.split(/\s+/).filter(Boolean), lines = [];
+  let cur = '';
+  for (const word of words) {
+    const next = cur ? `${cur} ${word}` : word;
+    if (ctx.measureText(next).width <= max || !cur) cur = next;
+    else { lines.push(cur); cur = word; }
+  }
+  if (cur) lines.push(cur);
+  if (lines.length <= limit) return lines;
+  const out = lines.slice(0, limit);
+  let last = out[limit - 1];
+  while (last.length > 3 && ctx.measureText(`${last}…`).width > max) last = last.slice(0, -1);
+  out[limit - 1] = `${last}…`;
+  return out;
+}
+
+function fitText(ctx, text, x, y, max, start, min = 8, weight = 800) {
+  let size = start;
+  while (size > min) {
+    ctx.font = `${weight} ${size}px ${FONT}`;
+    if (ctx.measureText(text).width <= max) break;
+    size--;
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+}
+
+function measurePill(ctx, text) {
+  ctx.font = `900 14px ${FONT}`;
+  return ctx.measureText(text.toUpperCase()).width + 52;
+}
+
+function roundRect(ctx, x, y, w, h, r, fill) {
+  ctx.beginPath();
+  const q = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + q, y);
+  ctx.arcTo(x + w, y, x + w, y + h, q);
+  ctx.arcTo(x + w, y + h, x, y + h, q);
+  ctx.arcTo(x, y + h, x, y, q);
+  ctx.arcTo(x, y, x + w, y, q);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+function drawFooter(ctx) {
+  const y = 1838;
+  ctx.strokeStyle = COLORS.yellow;
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(110, y); ctx.lineTo(285, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(795, y); ctx.lineTo(970, y); ctx.stroke();
+  ctx.fillStyle = COLORS.white;
+  ctx.font = `500 18px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('MÁS QUE UN CLUB', 540, y);
+}
+
+function clean(value) { return String(value ?? '').replace(/\s+/g, ' ').trim(); }
+function norm(value) { return clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+function formatDay(value) {
+  const days = { lunes: 'LUNES', martes: 'MARTES', miércoles: 'MIÉRCOLES', miercoles: 'MIÉRCOLES', jueves: 'JUEVES', viernes: 'VIERNES', sábado: 'SÁBADO', sabado: 'SÁBADO', domingo: 'DOMINGO' };
+  return days[clean(value).toLowerCase()] || clean(value).toUpperCase();
+}
+
+function customLogos() {
+  try {
+    const value = JSON.parse(localStorage.getItem(CUSTOM_LOGOS_KEY) || '[]');
+    return Array.isArray(value) ? value.filter(item => item?.id && item?.src) : [];
+  } catch { return []; }
+}
+
+function selections() {
+  try { return JSON.parse(localStorage.getItem(LOGO_SELECTIONS_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+
+function selection(key, side) { return selections()[`${key}:${side}`] || ''; }
+function saveSelection(key, side, id) {
+  try {
+    const value = selections();
+    value[`${key}:${side}`] = id;
+    localStorage.setItem(LOGO_SELECTIONS_KEY, JSON.stringify(value));
+  } catch {}
+}
+
+function editorKey(item) { return item.dataset.matchId || item.dataset.index; }
+
+function resolveLogoSource(id, team, isHome, options) {
+  const selected = id || defaultLogo(team, isHome, options);
+  return options.find(option => option.id === selected)?.src || null;
+}
+
+function defaultLogo(team, isHome, options) {
+  if (!isHome) return '';
+  const name = norm(team);
+  return options.find(option => option.aliases?.some(alias => name.includes(norm(alias))))?.id || '';
+}
+
+function loadImage(src) {
+  if (!src) return Promise.resolve(null);
+  if (imageCache.has(src)) return imageCache.get(src);
+  const promise = new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  imageCache.set(src, promise);
+  return promise;
+}
+
+function ensureLogoPickers(logos) {
+  if (!document.querySelector('#templateLogoPickerStyles')) {
+    const style = document.createElement('style');
+    style.id = 'templateLogoPickerStyles';
+    style.textContent = `.template-logo-pickers{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.logo-picker-field{min-width:0}.logo-picker{position:relative}.logo-picker-button{width:100%;min-height:48px;display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:8px;padding:6px 9px;border:1px solid #d7deea;border-radius:9px;background:#fff;color:#263b60;cursor:pointer;text-align:left}.logo-picker-button img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#f1f4f8}.logo-picker-button span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800}.logo-picker-panel{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 6px);padding:8px;background:#fff;border:1px solid #d6deea;border-radius:12px;box-shadow:0 16px 40px rgba(25,43,72,.18);max-height:300px;overflow:auto}.logo-picker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.logo-option{min-height:82px;padding:7px 5px;display:grid;justify-items:center;align-content:center;gap:5px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;cursor:pointer}.logo-option img{width:42px;height:42px;object-fit:contain}.logo-option span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:800}.logo-option-add{border-style:dashed;color:#2455a4}.logo-picker-empty{padding:12px;text-align:center;font-size:11px;color:#68758a}.template-preview-loading{min-height:300px;display:grid;place-items:center;padding:24px;color:#68758a;background:#fff;border:1px dashed #ccd6e5;border-radius:12px}.template-preview-error{min-height:220px;display:grid;align-content:center;gap:8px;padding:24px;text-align:center;color:#7d3131;background:#fff7f7;border:1px solid #edcaca}.template-preview-error span{font-size:13px}@media(max-width:680px){.template-logo-pickers{grid-template-columns:1fr}.logo-picker-panel{position:fixed;left:12px;right:12px;bottom:12px;top:auto;max-height:55vh}}`;
+    document.head.appendChild(style);
+  }
+
+  const items = document.querySelectorAll('#editorMatches .editor-match');
+  items.forEach(item => {
+    if (item.querySelector('.template-logo-pickers')) return;
+    const fields = item.querySelector('.editor-fields');
+    if (!fields) return;
+    const key = editorKey(item);
+    const home = fields.querySelector('input[data-key="homeTeam"]')?.value || '';
+    const away = fields.querySelector('input[data-key="awayTeam"]')?.value || '';
+    const homeSelected = selection(key, 'home') || defaultLogo(home, true, logos);
+    const awaySelected = selection(key, 'away') || defaultLogo(away, false, logos);
+    item.dataset.logoHome = homeSelected;
+    item.dataset.logoAway = awaySelected;
+    const wrap = document.createElement('div');
+    wrap.className = 'template-logo-pickers';
+    wrap.append(createLogoPicker(item, 'home', homeSelected, logos), createLogoPicker(item, 'away', awaySelected, logos));
+    fields.after(wrap);
+  });
+}
+
+function createLogoPicker(owner, side, current, logos) {
+  const field = document.createElement('label');
+  field.className = 'logo-picker-field editor-field';
+  const caption = document.createElement('span');
+  caption.textContent = side === 'home' ? 'Logo local' : 'Logo visitante';
+  const wrap = document.createElement('div');
+  wrap.className = 'logo-picker';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'logo-picker-button';
+  const panel = document.createElement('div');
+  panel.className = 'logo-picker-panel hidden';
+  let selected = current;
+
+  const renderButton = () => {
+    const opt = [...logos, ...customLogos()].find(item => item.id === selected);
+    button.replaceChildren();
+    if (opt?.src) {
+      const img = document.createElement('img');
+      img.src = opt.src;
+      img.alt = '';
+      button.appendChild(img);
+    } else {
+      const empty = document.createElement('span');
+      empty.textContent = 'Sin logo';
+      empty.style.gridColumn = '1 / span 2';
+      button.appendChild(empty);
+    }
+    const text = document.createElement('span');
+    text.textContent = opt?.name || 'Elegir logo';
+    const arrow = document.createElement('span');
+    arrow.textContent = '▾';
+    button.append(text, arrow);
+  };
+
+  const renderPanel = () => {
+    panel.replaceChildren();
+    const grid = document.createElement('div');
+    grid.className = 'logo-picker-grid';
+    const available = [...logos, ...customLogos()];
+    if (!available.length) {
+      const empty = document.createElement('div');
+      empty.className = 'logo-picker-empty';
+      empty.textContent = 'No hay logos precargados. Añade imágenes al editor o a la carpeta assets/logos.';
+      panel.appendChild(empty);
+    }
+    available.forEach(opt => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'logo-option';
+      const img = document.createElement('img');
+      img.src = opt.src;
+      img.alt = '';
+      const name = document.createElement('span');
+      name.textContent = opt.name;
+      option.append(img, name);
+      option.addEventListener('click', () => {
+        selected = opt.id;
+        owner.dataset[side === 'home' ? 'logoHome' : 'logoAway'] = selected;
+        saveSelection(editorKey(owner), side, selected);
+        panel.classList.add('hidden');
+        renderButton();
+        document.dispatchEvent(new CustomEvent('template-logo-change'));
+      });
+      grid.appendChild(option);
+    });
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'logo-option logo-option-add';
+    const plus = document.createElement('span');
+    plus.textContent = '＋';
+    plus.style.fontSize = '24px';
+    const addText = document.createElement('span');
+    addText.textContent = 'Añadir imagen';
+    add.append(plus, addText);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.hidden = true;
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const src = await fileToDataUrl(file);
+        const name = clean(file.name.replace(/\.[^.]+$/, '')) || 'Logo personalizado';
+        const id = `custom-${Date.now()}`;
+        const list = [...customLogos(), { id, name, src }].slice(-20);
+        localStorage.setItem(CUSTOM_LOGOS_KEY, JSON.stringify(list));
+        selected = id;
+        owner.dataset[side === 'home' ? 'logoHome' : 'logoAway'] = id;
+        saveSelection(editorKey(owner), side, id);
+        renderPanel();
+        renderButton();
+        document.dispatchEvent(new CustomEvent('template-logo-change'));
+      } catch (error) {
+        window.alert(errorMessage(error));
+      } finally {
+        input.value = '';
+      }
+    });
+    add.appendChild(input);
+    add.addEventListener('click', () => input.click());
+    grid.appendChild(add);
+    panel.appendChild(grid);
+  };
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    const open = !panel.classList.contains('hidden');
+    document.querySelectorAll('.logo-picker-panel').forEach(p => p.classList.add('hidden'));
+    if (!open) { renderPanel(); panel.classList.remove('hidden'); }
+  });
+  document.addEventListener('click', event => { if (!wrap.contains(event.target)) panel.classList.add('hidden'); });
+  wrap.append(button, panel);
+  field.append(caption, wrap);
+  renderButton();
+  return field;
+}
+
+async function fileToDataUrl(file) {
+  const raw = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+    reader.readAsDataURL(file);
+  });
+  const img = await loadImage(raw);
+  if (!img) throw new Error('La imagen seleccionada no es válida.');
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const scale = Math.min(256 / img.width, 256 / img.height);
+  const w = img.width * scale, h = img.height * scale;
+  ctx.drawImage(img, (256 - w) / 2, (256 - h) / 2, w, h);
+  return canvas.toDataURL('image/webp', .84);
+}
+
+function errorMessage(error) { return error instanceof Error ? error.message : String(error || 'Error desconocido.'); }
