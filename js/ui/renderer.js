@@ -1,7 +1,14 @@
 const PAGE_SIZE = 20;
 
 export function renderMatches(container, matches, options = {}) {
-  const { page = 1, view = 'cards', onPageChange } = options;
+  const {
+    page = 1,
+    view = 'cards',
+    selectedIds = new Set(),
+    onPageChange,
+    onToggleSelection
+  } = options;
+
   container.classList.toggle('empty', matches.length === 0);
 
   if (!matches.length) {
@@ -20,46 +27,89 @@ export function renderMatches(container, matches, options = {}) {
   const visible = matches.slice(start, start + PAGE_SIZE);
 
   container.innerHTML = view === 'table'
-    ? renderTable(visible)
-    : renderCards(visible);
+    ? renderTable(visible, selectedIds)
+    : renderCards(visible, selectedIds);
 
-  container.insertAdjacentHTML('beforeend', renderPagination(currentPage, totalPages, matches.length, start + 1, Math.min(start + PAGE_SIZE, matches.length)));
+  container.insertAdjacentHTML('beforeend', renderPagination(
+    currentPage,
+    totalPages,
+    matches.length,
+    start + 1,
+    Math.min(start + PAGE_SIZE, matches.length)
+  ));
 
   container.querySelectorAll('[data-page]').forEach(button => {
     button.addEventListener('click', () => onPageChange?.(Number(button.dataset.page)));
   });
+
+  container.querySelectorAll('[data-match-id]').forEach(item => {
+    item.addEventListener('click', event => {
+      if (event.target.closest('input, button, a')) return;
+      onToggleSelection?.(item.dataset.matchId);
+    });
+
+    item.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target.closest('input, button, a')) return;
+      event.preventDefault();
+      onToggleSelection?.(item.dataset.matchId);
+    });
+  });
+
+  container.querySelectorAll('[data-select-checkbox]').forEach(checkbox => {
+    checkbox.addEventListener('change', event => {
+      onToggleSelection?.(event.target.dataset.selectCheckbox);
+    });
+  });
 }
 
-function renderCards(matches) {
-  return matches.map(match => `
-    <article class="match-card">
-      <div class="match-meta">
-        ${match.competition ? `<span>${escapeHtml(match.competition)}</span>` : ''}
-        <span>${escapeHtml(match.date)}</span>
-        <span>${escapeHtml(match.time)}</span>
-      </div>
-      <div class="match-teams">
-        <span>${escapeHtml(match.homeTeam)}</span>
-        <span class="versus">vs</span>
-        <span>${escapeHtml(match.awayTeam)}</span>
-      </div>
-      ${match.venue ? `<p class="muted">📍 ${escapeHtml(match.venue)}</p>` : ''}
-    </article>`).join('');
+function renderCards(matches, selectedIds) {
+  return matches.map(match => {
+    const selected = selectedIds.has(match.id);
+    return `
+      <article class="match-card selectable-match${selected ? ' selected' : ''}"
+        data-match-id="${escapeHtml(match.id)}"
+        tabindex="0"
+        role="button"
+        aria-pressed="${selected}">
+        <div class="match-card-top">
+          <div class="match-meta">
+            ${match.competition ? `<span>${escapeHtml(match.competition)}</span>` : ''}
+            <span>${escapeHtml(match.date)}</span>
+            <span>${escapeHtml(match.time)}</span>
+          </div>
+          <label class="selection-check" title="Seleccionar partido">
+            <input type="checkbox" data-select-checkbox="${escapeHtml(match.id)}" ${selected ? 'checked' : ''} aria-label="Seleccionar ${escapeHtml(match.homeTeam)} contra ${escapeHtml(match.awayTeam)}">
+            <span></span>
+          </label>
+        </div>
+        <div class="match-teams">
+          <span>${escapeHtml(match.homeTeam)}</span>
+          <span class="versus">vs</span>
+          <span>${escapeHtml(match.awayTeam)}</span>
+        </div>
+        ${match.venue ? `<p class="muted">📍 ${escapeHtml(match.venue)}</p>` : ''}
+      </article>`;
+  }).join('');
 }
 
-function renderTable(matches) {
+function renderTable(matches, selectedIds) {
   return `<div class="table-wrap"><table class="matches-table">
     <thead><tr>
-      <th>Fecha</th><th>Hora</th><th>Local</th><th>Visitante</th><th>Competición</th><th>Pabellón</th>
+      <th class="selection-column">Sel.</th><th>Fecha</th><th>Hora</th><th>Local</th><th>Visitante</th><th>Competición</th><th>Pabellón</th>
     </tr></thead>
-    <tbody>${matches.map(match => `<tr>
-      <td>${escapeHtml(match.date)}</td>
-      <td>${escapeHtml(match.time)}</td>
-      <td>${escapeHtml(match.homeTeam)}</td>
-      <td>${escapeHtml(match.awayTeam)}</td>
-      <td>${escapeHtml(match.competition)}</td>
-      <td>${escapeHtml(match.venue)}</td>
-    </tr>`).join('')}</tbody>
+    <tbody>${matches.map(match => {
+      const selected = selectedIds.has(match.id);
+      return `<tr class="selectable-row${selected ? ' selected' : ''}" data-match-id="${escapeHtml(match.id)}" tabindex="0" role="button" aria-pressed="${selected}">
+        <td class="selection-column"><label class="selection-check" title="Seleccionar partido"><input type="checkbox" data-select-checkbox="${escapeHtml(match.id)}" ${selected ? 'checked' : ''} aria-label="Seleccionar ${escapeHtml(match.homeTeam)} contra ${escapeHtml(match.awayTeam)}"><span></span></label></td>
+        <td>${escapeHtml(match.date)}</td>
+        <td>${escapeHtml(match.time)}</td>
+        <td>${escapeHtml(match.homeTeam)}</td>
+        <td>${escapeHtml(match.awayTeam)}</td>
+        <td>${escapeHtml(match.competition)}</td>
+        <td>${escapeHtml(match.venue)}</td>
+      </tr>`;
+    }).join('')}</tbody>
   </table></div>`;
 }
 
