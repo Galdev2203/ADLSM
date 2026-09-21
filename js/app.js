@@ -1,6 +1,6 @@
 import { findFabDocuments } from './fab/fab-source.js';
 import { parsePdfFile } from './fab/fab-parser.js';
-import { normalizeTeamName, normalizeTeamFamily } from './fab/fab-normalizer.js';
+import { normalizeTeamName } from './fab/fab-normalizer.js';
 import { renderMatches } from './ui/renderer.js';
 
 const els = {
@@ -11,8 +11,9 @@ const els = {
   message: document.querySelector('#message'),
   matches: document.querySelector('#matches'),
   count: document.querySelector('#matchCount'),
-  filterType: document.querySelector('#filterType'),
-  filterValue: document.querySelector('#filterValue'),
+  teamSearch: document.querySelector('#teamSearch'),
+  competitionFilter: document.querySelector('#competitionFilter'),
+  dateFilter: document.querySelector('#dateFilter'),
   clearFilter: document.querySelector('#clearTeam'),
   viewCards: document.querySelector('#viewCards'),
   viewTable: document.querySelector('#viewTable')
@@ -48,89 +49,51 @@ function updateResults(matches, resetPage = false) {
   });
 }
 
-function uniqueSorted(values) {
-  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+function normalizeSearch(value) {
+  return normalizeTeamName(value).replace(/\s+/g, ' ').trim();
 }
 
-function familyKey(name) {
-  // More tolerant than the exact A/B/C/D rule: strip a final squad letter,
-  // final 1-99 number, Roman I-IV, or a leading squad number.
-  let value = normalizeTeamName(name);
-  value = value.replace(/\s+(?:[A-D]|[1-9][0-9]?|I|II|III|IV)$/, '').trim();
-  value = value.replace(/^(?:[1-9][0-9]?)\s+/, '').trim();
-  return value;
-}
+function populateFilters() {
+  const competitions = [...new Set(allMatches.map(m => m.competition).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'es'));
+  const dates = [...new Set(allMatches.map(m => m.date).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'es'));
 
-function buildOptions() {
-  const type = els.filterType.value;
-  let values;
-
-  if (type === 'family') {
-    const families = new Map();
-    for (const match of allMatches) {
-      for (const team of [match.homeTeam, match.awayTeam]) {
-        const family = familyKey(team);
-        if (!family) continue;
-        if (!families.has(family)) families.set(family, new Set());
-        families.get(family).add(team);
-      }
-    }
-
-    values = [...families.entries()]
-      .sort(([a], [b]) => a.localeCompare(b, 'es'))
-      .map(([family, variants]) => ({
-        value: family,
-        label: variants.size > 1
-          ? `${family} · ${variants.size} equipos`
-          : [...variants][0]
-      }));
-  } else if (type === 'team') {
-    values = uniqueSorted(allMatches.flatMap(match => [match.homeTeam, match.awayTeam]))
-      .map(team => ({ value: normalizeTeamName(team), label: team }));
-  } else {
-    values = uniqueSorted(allMatches.map(match => match.competition))
-      .map(category => ({ value: category, label: category }));
-  }
-
-  els.filterValue.innerHTML = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = type === 'family'
-    ? 'Selecciona un club / grupo'
-    : type === 'team'
-      ? 'Selecciona un equipo'
-      : 'Selecciona una categoría';
-  els.filterValue.appendChild(placeholder);
-
-  for (const item of values) {
+  els.competitionFilter.innerHTML = '<option value="">Todas las competiciones</option>';
+  competitions.forEach(value => {
     const option = document.createElement('option');
-    option.value = item.value;
-    option.textContent = item.label;
-    els.filterValue.appendChild(option);
-  }
+    option.value = value;
+    option.textContent = value;
+    els.competitionFilter.appendChild(option);
+  });
 
-  els.filterValue.disabled = values.length === 0;
-  els.filterType.disabled = allMatches.length === 0;
-  els.clearFilter.disabled = allMatches.length === 0;
+  els.dateFilter.innerHTML = '<option value="">Todas las fechas</option>';
+  dates.forEach(value => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    els.dateFilter.appendChild(option);
+  });
+
+  const enabled = allMatches.length > 0;
+  els.teamSearch.disabled = !enabled;
+  els.competitionFilter.disabled = !enabled;
+  els.dateFilter.disabled = !enabled;
+  els.clearFilter.disabled = !enabled;
 }
 
 function filterMatches() {
-  const type = els.filterType.value;
-  const selected = els.filterValue.value;
-
-  if (!selected) {
-    updateResults(allMatches, true);
-    return;
-  }
+  const search = normalizeSearch(els.teamSearch.value);
+  const competition = els.competitionFilter.value;
+  const date = els.dateFilter.value;
 
   const filtered = allMatches.filter(match => {
-    if (type === 'family') {
-      return familyKey(match.homeTeam) === selected || familyKey(match.awayTeam) === selected;
-    }
-    if (type === 'team') {
-      return normalizeTeamName(match.homeTeam) === selected || normalizeTeamName(match.awayTeam) === selected;
-    }
-    return match.competition === selected;
+    const home = normalizeSearch(match.homeTeam);
+    const away = normalizeSearch(match.awayTeam);
+    const teamMatches = !search || home.includes(search) || away.includes(search);
+    const competitionMatches = !competition || match.competition === competition;
+    const dateMatches = !date || match.date === date;
+    return teamMatches && competitionMatches && dateMatches;
   });
 
   updateResults(filtered, true);
@@ -138,7 +101,7 @@ function filterMatches() {
 
 function setMatches(matches) {
   allMatches = matches;
-  buildOptions();
+  populateFilters();
   filterMatches();
 }
 
@@ -189,9 +152,15 @@ function setView(view) {
 
 els.refresh.addEventListener('click', loadFromFab);
 els.pdf.addEventListener('change', event => loadLocalPdf(event.target.files?.[0]));
-els.filterType.addEventListener('change', () => { buildOptions(); filterMatches(); });
-els.filterValue.addEventListener('change', filterMatches);
-els.clearFilter.addEventListener('click', () => { els.filterValue.value = ''; filterMatches(); });
+els.teamSearch.addEventListener('input', filterMatches);
+els.competitionFilter.addEventListener('change', filterMatches);
+els.dateFilter.addEventListener('change', filterMatches);
+els.clearFilter.addEventListener('click', () => {
+  els.teamSearch.value = '';
+  els.competitionFilter.value = '';
+  els.dateFilter.value = '';
+  filterMatches();
+});
 els.viewCards.addEventListener('click', () => setView('cards'));
 els.viewTable.addEventListener('click', () => setView('table'));
 
