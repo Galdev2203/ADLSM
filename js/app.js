@@ -1,5 +1,6 @@
 import { findFabDocuments } from './fab/fab-source.js';
 import { parsePdfFile } from './fab/fab-parser.js';
+import { normalizeTeamName } from './fab/fab-normalizer.js';
 import { renderMatches } from './ui/renderer.js';
 
 const els = {
@@ -9,8 +10,12 @@ const els = {
   status: document.querySelector('#sourceStatus'),
   message: document.querySelector('#message'),
   matches: document.querySelector('#matches'),
-  count: document.querySelector('#matchCount')
+  count: document.querySelector('#matchCount'),
+  team: document.querySelector('#teamFilter'),
+  clearTeam: document.querySelector('#clearTeam')
 };
+
+let allMatches = [];
 
 function setMessage(text = '', visible = Boolean(text)) {
   els.message.textContent = text;
@@ -25,6 +30,47 @@ function setLoading(loading) {
 function updateResults(matches) {
   els.count.textContent = `${matches.length} ${matches.length === 1 ? 'partido' : 'partidos'}`;
   renderMatches(els.matches, matches);
+}
+
+function populateTeams(matches) {
+  const teams = [...new Map(
+    matches
+      .flatMap(match => [match.homeTeam, match.awayTeam])
+      .filter(Boolean)
+      .map(team => [normalizeTeamName(team), team])
+  ).values()].sort((a, b) => a.localeCompare(b, 'es'));
+
+  els.team.innerHTML = '<option value="">Todos los equipos</option>';
+  for (const team of teams) {
+    const option = document.createElement('option');
+    option.value = normalizeTeamName(team);
+    option.textContent = team;
+    els.team.appendChild(option);
+  }
+
+  els.team.disabled = teams.length === 0;
+  els.clearTeam.disabled = teams.length === 0;
+}
+
+function filterByTeam() {
+  const selected = els.team.value;
+  if (!selected) {
+    updateResults(allMatches);
+    return;
+  }
+
+  const filtered = allMatches.filter(match =>
+    normalizeTeamName(match.homeTeam) === selected ||
+    normalizeTeamName(match.awayTeam) === selected
+  );
+
+  updateResults(filtered);
+}
+
+function setMatches(matches) {
+  allMatches = matches;
+  populateTeams(matches);
+  filterByTeam();
 }
 
 async function loadFromFab() {
@@ -42,9 +88,9 @@ async function loadFromFab() {
     }
 
     const matches = await parsePdfFile(result.bytes, result.url);
-    updateResults(matches);
+    setMatches(matches);
     els.status.textContent = `Fuente: ${result.url}`;
-    setMessage(`Documento cargado correctamente. Se han extraído ${matches.length} partidos.`, true);
+    setMessage(`Documento cargado correctamente. Se han extraído ${matches.length} partidos. Selecciona un equipo para filtrar sus partidos.`, true);
   } catch (error) {
     console.error(error);
     els.status.textContent = 'No se pudo obtener el PDF directamente desde FAB.';
@@ -62,8 +108,8 @@ async function loadLocalPdf(file) {
   try {
     const bytes = await file.arrayBuffer();
     const matches = await parsePdfFile(bytes, file.name);
-    updateResults(matches);
-    setMessage(`PDF procesado correctamente. Se han extraído ${matches.length} partidos.`, true);
+    setMatches(matches);
+    setMessage(`PDF procesado correctamente. Se han extraído ${matches.length} partidos. Selecciona un equipo para filtrar sus partidos.`, true);
   } catch (error) {
     console.error(error);
     setMessage(`No se ha podido leer el PDF: ${error.message}`, true);
@@ -72,5 +118,10 @@ async function loadLocalPdf(file) {
 
 els.refresh.addEventListener('click', loadFromFab);
 els.pdf.addEventListener('change', event => loadLocalPdf(event.target.files?.[0]));
+els.team.addEventListener('change', filterByTeam);
+els.clearTeam.addEventListener('click', () => {
+  els.team.value = '';
+  filterByTeam();
+});
 
 updateResults([]);
