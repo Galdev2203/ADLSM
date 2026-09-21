@@ -1,6 +1,13 @@
 const FAB_SCHEDULES_URL = 'https://fabasket.com/horarios/';
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const FAB_BASE = 'https://fabasket.com/wp-content/uploads';
+
+// FAB no expone CORS para GitHub Pages. Usamos primero un proxy público
+// que actualmente devuelve los encabezados CORS correctamente y dejamos
+// AllOrigins como respaldo por compatibilidad.
+const CORS_PROXIES = [
+  'https://api.cors.lol/?url=',
+  'https://api.allorigins.win/raw?url='
+];
 
 function dateParts(isoDate) {
   const [year, month, day] = isoDate.split('-');
@@ -20,22 +27,49 @@ function candidateUrls(isoDate) {
   ];
 }
 
-function proxyUrl(url) {
-  return `${CORS_PROXY}${encodeURIComponent(url)}`;
+function proxyUrl(proxy, url) {
+  return `${proxy}${encodeURIComponent(url)}`;
+}
+
+async function fetchThroughProxies(url, responseType = 'text') {
+  let lastError = null;
+
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const response = await fetch(proxyUrl(proxy, url), {
+        method: 'GET',
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`${response.status} al consultar ${url} mediante ${new URL(proxy).hostname}`);
+      }
+
+      if (responseType === 'arrayBuffer') {
+        const bytes = await response.arrayBuffer();
+        if (bytes.byteLength < 1000) {
+          throw new Error(`El documento descargado desde ${url} está vacío o incompleto.`);
+        }
+        return bytes;
+      }
+
+      return response.text();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`No se pudo acceder a ${url}.`);
 }
 
 async function fetchProxyText(url) {
-  const response = await fetch(proxyUrl(url), { method: 'GET', cache: 'no-store' });
-  if (!response.ok) throw new Error(`${response.status} al consultar ${url}`);
-  return response.text();
+  return fetchThroughProxies(url, 'text');
 }
 
 async function fetchProxyBytes(url) {
-  const response = await fetch(proxyUrl(url), { method: 'GET', cache: 'no-store' });
-  if (!response.ok) throw new Error(`${response.status} al descargar ${url}`);
-  const bytes = await response.arrayBuffer();
-  if (bytes.byteLength < 1000) throw new Error(`El documento descargado desde ${url} está vacío o incompleto.`);
-  return bytes;
+  return fetchThroughProxies(url, 'arrayBuffer');
 }
 
 function normalizeDateText(value) {
@@ -111,8 +145,8 @@ export async function findFabDocuments(isoDate) {
     lastError = error;
   }
 
-  // Fallback: si FAB cambia temporalmente la página de horarios, mantenemos
-  // las variantes históricas conocidas como respaldo.
+  // Fallback: si la página de horarios no responde o FAB cambia su estructura,
+  // mantenemos las variantes históricas conocidas.
   for (const url of candidateUrls(isoDate)) {
     try {
       const bytes = await fetchProxyBytes(url);
