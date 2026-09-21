@@ -7,7 +7,13 @@ const COLORS = {
   darkBlue: '#173f80',
   yellow: '#ffe000',
   white: '#ffffff',
-  mutedBlue: '#5f78a4'
+  mutedBlue: '#5f78a4',
+  softWhite: '#f7f8fb'
+};
+
+const FONTS = {
+  title: 'Georgia, Times New Roman, serif',
+  body: 'Trebuchet MS, Arial, sans-serif'
 };
 
 const DEFAULT_TEMPLATE = {
@@ -43,11 +49,24 @@ export function drawTemplate(canvas, matches, template = DEFAULT_TEMPLATE) {
 
   const count = Math.min(matches.length, MAX_MATCHES_PER_PAGE);
   if (count) {
-    const top = 292;
+    const contentTop = 292;
+    const contentBottom = 1818;
     const rowHeight = 171;
-    const gap = 10;
+    const availableHeight = contentBottom - contentTop;
+    const totalRowsHeight = count * rowHeight;
+
+    // The cards always keep the same height. Only the vertical spacing changes
+    // so the block fills the available area for any number of selected matches.
+    const gap = count > 1
+      ? Math.max(12, (availableHeight - totalRowsHeight) / (count - 1))
+      : 0;
+    const blockHeight = totalRowsHeight + gap * Math.max(0, count - 1);
+    const startY = count === 1
+      ? contentTop + (availableHeight - rowHeight) / 2
+      : contentTop + Math.max(0, (availableHeight - blockHeight) / 2);
+
     for (let index = 0; index < count; index += 1) {
-      drawMatch(ctx, matches[index], top + index * (rowHeight + gap), rowHeight);
+      drawMatch(ctx, matches[index], startY + index * (rowHeight + gap), rowHeight);
     }
   }
 
@@ -62,7 +81,7 @@ function drawBackground(ctx) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  ctx.globalAlpha = .08;
+  ctx.globalAlpha = .06;
   for (let y = 0; y < HEIGHT; y += 90) {
     for (let x = (y / 90 % 2) * 45; x < WIDTH; x += 90) {
       ctx.fillStyle = '#ffffff';
@@ -81,24 +100,25 @@ function drawHeader(ctx, template) {
   ctx.fillStyle = COLORS.yellow;
 
   const titleLines = fitTitleLines(ctx, title.toUpperCase(), 850);
-  const titleSize = titleLines.length === 1 ? 72 : 64;
-  const titleStartY = titleLines.length === 1 ? 92 : 65;
-  ctx.font = `italic 900 ${titleSize}px Georgia, serif`;
+  const titleSize = titleLines.length === 1 ? 70 : 60;
+  const titleLineHeight = titleSize + 8;
+  const titleStartY = titleLines.length === 1 ? 92 : 62;
+  ctx.font = `italic 700 ${titleSize}px ${FONTS.title}`;
   titleLines.forEach((line, index) => {
-    ctx.fillText(line, WIDTH / 2, titleStartY + index * (titleSize + 6));
+    ctx.fillText(line, WIDTH / 2, titleStartY + index * titleLineHeight);
   });
 
-  const subtitleY = titleLines.length === 1 ? 166 : 196;
+  const subtitleY = titleLines.length === 1 ? 166 : 192;
   roundRect(ctx, 126, subtitleY, 828, 54, 0, COLORS.white);
   ctx.fillStyle = COLORS.blue;
-  fitText(ctx, subtitle.toUpperCase(), WIDTH / 2, subtitleY + 27, 770, 31, 'center');
+  fitText(ctx, subtitle.toUpperCase(), WIDTH / 2, subtitleY + 27, 770, 30, 'center', 9, 700);
 }
 
 function fitTitleLines(ctx, text, maxWidth) {
-  ctx.font = 'italic 900 64px Georgia, serif';
-  const words = text.split(' ').filter(Boolean);
+  ctx.font = `italic 700 64px ${FONTS.title}`;
   if (ctx.measureText(text).width <= maxWidth) return [text];
 
+  const words = text.split(' ').filter(Boolean);
   const lines = [];
   let current = '';
   for (const word of words) {
@@ -130,7 +150,7 @@ function drawMatch(ctx, match, y, rowHeight) {
   const pillW = Math.min(720, Math.max(390, measurePillWidth(ctx, info)));
   roundRect(ctx, centerX - pillW / 2, y + rowHeight - 30, pillW, 45, 23, COLORS.yellow);
   ctx.fillStyle = COLORS.blue;
-  fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 7, pillW - 34, 15, 'center');
+  fitText(ctx, info.toUpperCase(), centerX, y + rowHeight - 7, pillW - 34, 15, 'center', 8, 700);
 
   drawBadge(ctx, 178, circleY, circleR, match.homeTeam, true);
   drawBadge(ctx, 902, circleY, circleR, match.awayTeam, false);
@@ -144,8 +164,8 @@ function drawMatch(ctx, match, y, rowHeight) {
   ctx.fill();
 
   ctx.fillStyle = COLORS.blue;
-  fitText(ctx, match.time || '--:--', centerX, circleY - 9, 100, 29, 'center');
-  fitText(ctx, formatDay(match.date), centerX, circleY + 24, 100, 12, 'center');
+  fitText(ctx, match.time || '--:--', centerX, circleY - 9, 100, 29, 'center', 9, 800);
+  fitText(ctx, formatDay(match.date), centerX, circleY + 24, 100, 12, 'center', 8, 700);
 }
 
 function drawBadge(ctx, x, y, r, team, isHome) {
@@ -156,19 +176,19 @@ function drawBadge(ctx, x, y, r, team, isHome) {
 
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = isHome ? COLORS.blue : '#f7f7f7';
+  ctx.fillStyle = isHome ? COLORS.blue : COLORS.softWhite;
   ctx.fill();
 
   ctx.fillStyle = isHome ? COLORS.yellow : COLORS.blue;
-  fitText(ctx, isHome ? 'ADLSM' : initials(team), x, y - 4, 78, 21, 'center');
-  fitText(ctx, isHome ? 'BALONCESTO' : 'RIVAL', x, y + 21, 76, 10, 'center');
+  fitText(ctx, isHome ? 'ADLSM' : initials(team), x, y - 4, 78, 21, 'center', 8, 800);
+  fitText(ctx, isHome ? 'BALONCESTO' : 'RIVAL', x, y + 21, 76, 10, 'center', 7, 700);
 }
 
 function drawTeamName(ctx, value, x, y, maxWidth, right) {
   const text = cleanTeamName(value) || 'SIN EQUIPO';
-  let size = 22;
+  let size = 23;
   while (size > 16) {
-    ctx.font = `900 ${size}px Arial, sans-serif`;
+    ctx.font = `700 ${size}px ${FONTS.body}`;
     const lines = wrapText(ctx, text, maxWidth, 2);
     if (lines.every(line => ctx.measureText(line).width <= maxWidth)) break;
     size -= 1;
@@ -208,10 +228,10 @@ function wrapText(ctx, text, maxWidth, maxLines = 2) {
   return kept;
 }
 
-function fitText(ctx, text, x, y, maxWidth, initialSize, align = 'center') {
+function fitText(ctx, text, x, y, maxWidth, initialSize, align = 'center', minSize = 8, weight = 700) {
   let size = initialSize;
-  while (size > 8) {
-    ctx.font = `900 ${size}px Arial, sans-serif`;
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px ${FONTS.body}`;
     if (ctx.measureText(text).width <= maxWidth) break;
     size -= 1;
   }
@@ -272,7 +292,7 @@ function formatDay(value = '') {
 }
 
 function measurePillWidth(ctx, text) {
-  ctx.font = '900 15px Arial, sans-serif';
+  ctx.font = `700 15px ${FONTS.body}`;
   return ctx.measureText(text.toUpperCase()).width + 42;
 }
 
