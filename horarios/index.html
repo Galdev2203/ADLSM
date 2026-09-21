@@ -7,13 +7,22 @@
   <title>ADLSM · Horarios FAB</title>
   <base href="../">
   <link rel="icon" href="assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="css/styles.css?v=20260922-07">
+  <link rel="stylesheet" href="css/styles.css?v=20260922-09">
+  <link rel="stylesheet" href="css/site.css?v=20260922-09">
 </head>
-<body>
+<body data-page="horarios">
   <main class="app">
+    <nav class="site-nav" data-site-nav aria-label="Navegación principal">
+      <a class="site-nav-brand" href="./" data-route="home"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"> ADLSM</a>
+      <div class="site-nav-links">
+        <a href="./" data-route="home">Inicio</a>
+        <a href="horarios/" data-route="horarios">Horarios</a>
+        <a href="resultados/" data-route="resultados">Resultados</a>
+      </div>
+    </nav>
     <header class="hero">
       <div>
-        <p class="eyebrow"><a class="breadcrumb-link" href="./">ADLSM</a> · HORARIOS FAB</p>
+        <p class="eyebrow">ADLSM · HORARIOS FAB</p>
         <h1>Generador de horarios FAB</h1>
         <p class="subtitle">Obtén los partidos de tu club desde la FAB y prepara los datos para publicar.</p>
       </div>
@@ -51,12 +60,13 @@
       <div class="template-actions editor-actions"><button id="cancelTemplate" class="secondary" type="button">Volver</button><button id="downloadTemplate" class="primary" type="button">Descargar PNG</button></div>
     </div>
   </div>
-  <footer class="app-footer">ADLSM · <strong>v0.16.1</strong> · build 2026.09.22.07</footer>
+  <footer class="app-footer">ADLSM · <strong data-app-version>v0.17.0 · build 2026.09.22.09</strong></footer>
   <script>
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     document.querySelector('#matchDate').value = today.toISOString().slice(0, 10);
   </script>
-  <script type="module" src="js/app.js?v=20260922-07"></script>
+  <script type="module" src="js/core/site-shell.js?v=20260922-09"></script>
+  <script type="module" src="js/horarios/controller.js?v=20260922-09"></script>
 </body>
 </html>
