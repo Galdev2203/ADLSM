@@ -158,7 +158,7 @@ function filterMatches() {
 }
 
 function setMatches(matches) {
-  allMatches = withMatchIds(matches);
+  allMatches = withMatchIds(Array.isArray(matches) ? matches : []);
   selectedIds.clear();
   populateFilters();
   filterMatches();
@@ -217,14 +217,19 @@ function openTemplateGenerator() {
   const selected = getSelectedMatches();
   if (!selected.length) return;
 
-  editorMatches = selected.map(match => ({ ...match }));
-  currentTemplatePage = 0;
-  els.templateMainTitle.value = templateSettings.title;
-  els.templateSubtitle.value = templateSettings.subtitle;
-  renderEditor();
-  rebuildTemplatePages();
-  els.templateModal.classList.remove('hidden');
-  document.body.classList.add('modal-open');
+  try {
+    editorMatches = selected.map(match => ({ ...match }));
+    currentTemplatePage = 0;
+    els.templateMainTitle.value = templateSettings.title;
+    els.templateSubtitle.value = templateSettings.subtitle;
+    renderEditor();
+    rebuildTemplatePages(true);
+    els.templateModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+  } catch (error) {
+    console.error('No se pudo abrir el editor de plantilla.', error);
+    setMessage(`No se pudo abrir el editor de plantilla: ${getErrorMessage(error)}`, true);
+  }
 }
 
 function renderEditor() {
@@ -311,7 +316,7 @@ function makeEditorField(label, key, value, index) {
 
 function updateEditorMatchTitle(index) {
   const item = els.editorMatches.querySelector(`[data-index="${index}"]`);
-  if (!item) return;
+  if (!item || !editorMatches[index]) return;
   const title = item.querySelector('.editor-match-header strong');
   if (title) title.textContent = `${editorMatches[index].homeTeam || 'Local'} · ${editorMatches[index].awayTeam || 'Visitante'}`;
 }
@@ -343,13 +348,21 @@ function renderTemplatePreview() {
   const matches = templatePages[currentTemplatePage] || [];
   els.templatePreview.replaceChildren();
 
-  if (!matches.length) {
+  if (matches.length) {
+    try {
+      els.templatePreview.appendChild(createTemplateCanvas(matches, templateSettings));
+    } catch (error) {
+      console.error('Error al generar la vista previa.', error);
+      const errorBox = document.createElement('div');
+      errorBox.className = 'template-preview-error';
+      errorBox.innerHTML = `<strong>No se pudo generar la vista previa.</strong><span>${escapeHtml(getErrorMessage(error))}</span>`;
+      els.templatePreview.appendChild(errorBox);
+    }
+  } else {
     const empty = document.createElement('div');
     empty.className = 'template-preview-empty';
     empty.textContent = 'Añade al menos un partido para ver la plantilla.';
     els.templatePreview.appendChild(empty);
-  } else {
-    els.templatePreview.appendChild(createTemplateCanvas(matches, templateSettings));
   }
 
   const pageCount = templatePages.length;
@@ -373,18 +386,39 @@ function downloadCurrentTemplate() {
   const matches = templatePages[currentTemplatePage] || [];
   if (!matches.length) return;
 
-  const canvas = createTemplateCanvas(matches, templateSettings);
-  canvas.toBlob(blob => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `horarios-baloncesto-${currentTemplatePage + 1}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
+  try {
+    const canvas = createTemplateCanvas(matches, templateSettings);
+    canvas.toBlob(blob => {
+      if (!blob) {
+        setMessage('El navegador no ha podido generar el PNG.', true);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `horarios-baloncesto-${currentTemplatePage + 1}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  } catch (error) {
+    console.error('No se pudo descargar la plantilla.', error);
+    setMessage(`No se pudo generar el PNG: ${getErrorMessage(error)}`, true);
+  }
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error || 'Error desconocido.');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 els.refresh.addEventListener('click', loadFromFab);
@@ -427,6 +461,7 @@ els.templateNext.addEventListener('click', () => {
   renderTemplatePreview();
 });
 els.downloadTemplate.addEventListener('click', downloadCurrentTemplate);
+document.addEventListener('template-distribution-change', renderTemplatePreview);
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !els.templateModal.classList.contains('hidden')) closeTemplateGenerator();
 });
