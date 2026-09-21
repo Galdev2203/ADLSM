@@ -22,7 +22,6 @@ function joinColumn(items,minX,maxX){return clean(items.filter(item=>item.x>=min
 function findCell(items,predicate){return items.find(item=>predicate(item.text));}
 function extractSourceYear(rows){const text=rows.map(row=>row.text).join(' ');const match=text.match(/JORNADA\s*:?\s*\d{1,2}\/\d{1,2}\/(\d{2,4})/i);return match?.[1]||'';}
 function isHeaderOrNoise(row){const text=row.text.toUpperCase();return text.includes('LOCAL VISITANTE')||text.includes('FEDERACIÓN ARAGONESA')||text.includes('HORARIOS - JORNADA');}
-
 function dedupeMatches(matches){const seen=new Set();return matches.filter(match=>{const key=[match.date,match.time,match.homeTeam,match.awayTeam,match.venue].join('|');if(seen.has(key))return false;seen.add(key);return true;});}
 
 function parsePageRows(rows,sourceName,sourceYear){const matches=[];let section='';for(const row of rows){if(!row?.items?.length||isHeaderOrNoise(row))continue;const dateItem=findCell(row.items,isDate);const timeItem=findCell(row.items,isTime);if(!dateItem&&!timeItem&&COMPETITION_RE.test(row.text)&&row.text.length<150){section=clean(row.text);continue;}if(!dateItem||!timeItem)continue;const dateMatch=dateItem.text.match(DATE_RE);if(!dateMatch)continue;const homeTeam=joinColumn(row.items,30,198);const awayTeam=joinColumn(row.items,198,355);const venue=joinColumn(row.items,435,650);if(!homeTeam||!awayTeam)continue;if(/^(LOCAL|VISITANTE|FECHA|HORA|PISTA|JUEGO)$/i.test(homeTeam))continue;matches.push({competition:section,homeTeam,awayTeam,date:normaliseDate(dateMatch[1],dateMatch[2],dateMatch[3]||sourceYear),time:timeItem.text,venue,source:sourceName});}return matches;}
@@ -48,6 +47,9 @@ export function parseFabReaderText(input,sourceName='FAB Reader',fallbackYear=''
 }
 
 export async function parsePdfFile(input,sourceName='PDF'){
+  // findFabDocuments uses Reader text instead of binary PDF data. Keep this
+  // entry point so the existing local-PDF upload flow remains unchanged.
+  if(typeof input==='string') return parseFabReaderText(input,sourceName);
   const loadingTask=pdfjsLib.getDocument({data:input});const pdf=await loadingTask.promise;const allMatches=[];
   for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber+=1){const page=await pdf.getPage(pageNumber);const content=await page.getTextContent();const rows=groupTextItems(content.items);const sourceYear=extractSourceYear(rows);allMatches.push(...parsePageRows(rows,sourceName,sourceYear));}
   return dedupeMatches(allMatches);
