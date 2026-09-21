@@ -19,6 +19,7 @@ function compact(value) { return clean(value).toUpperCase().replace(/\s+/g, '');
 function isTableHeader(value) { const text = compact(value); return text.includes('LOCALVISITANTEFECHAHORA') || (text.includes('LOCAL') && text.includes('VISITANTE') && text.includes('FECHA') && text.includes('HORA')); }
 function isFooter(value) { const text = compact(value); return text.includes('FEDERACIONARAGONESA') || text.includes('PLAZAHERRERADELOSNAVARROS') || text.includes('HORARIOSJORNADA'); }
 function extractYear(source, fallback = '') { const match = String(source || '').match(/(?:JORNADA|HORARIOS)[^\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i); return match?.[1] || fallback; }
+function isMarkdownSeparator(cells) { return cells.length > 0 && cells.every(cell => /^:?-{2,}:?$/.test(clean(cell))); }
 
 function groupTextItems(items) {
   const positioned = items.filter(item => item.str?.trim()).map(item => ({ text: clean(item.str), x: item.transform[4], y: item.transform[5] })).sort((a, b) => b.y - a.y || a.x - b.x);
@@ -42,13 +43,15 @@ function parsePdfRows(rows, sourceName, fallbackYear) {
     }
     const dateMatch = dateItem.text.match(DATE_RE);
     if (!dateMatch) continue;
-    let localStart = 0, visitorStart = 0, dateStart = 0, venueStart = 0;
     const upper = header?.map(item => ({ text: compact(item.text), x: item.x })) || [];
     const local = upper.find(item => item.text === 'LOCAL');
     const visitor = upper.find(item => item.text === 'VISITANTE');
     const date = upper.find(item => item.text === 'FECHA');
     const venue = upper.find(item => item.text === 'PISTAJUEGO' || item.text === 'PISTA');
-    localStart = local?.x ?? 0; visitorStart = visitor?.x ?? 0; dateStart = date?.x ?? dateItem.x; venueStart = venue?.x ?? timeItem.x + 35;
+    const localStart = local?.x ?? 0;
+    const visitorStart = visitor?.x ?? 0;
+    const dateStart = date?.x ?? dateItem.x;
+    const venueStart = venue?.x ?? timeItem.x + 35;
     const homeTeam = clean(row.items.filter(item => item.x >= localStart && item.x < visitorStart).map(item => item.text).join(' '));
     const awayTeam = clean(row.items.filter(item => item.x >= visitorStart && item.x < dateStart).map(item => item.text).join(' '));
     const venueText = clean(row.items.filter(item => item.x >= venueStart).map(item => item.text).join(' '));
@@ -66,12 +69,12 @@ function parseHtmlTables(source, sourceName, fallbackYear) {
   const detectedYear = extractYear(source, fallbackYear);
   for (const row of doc.querySelectorAll('tr')) {
     const cells = [...row.querySelectorAll('th,td')].map(cell => clean(cell.textContent)).filter(Boolean);
-    if (!cells.length) continue;
+    if (!cells.length || isMarkdownSeparator(cells)) continue;
     const joined = cells.join(' ');
     if (isTableHeader(joined)) continue;
     const dateIndex = cells.findIndex(cell => isDate(cell));
     const timeIndex = cells.findIndex(cell => isTime(cell));
-    if (dateIndex < 0 || timeIndex < 0) { if (!isFooter(joined)) section = joined; continue; }
+    if (dateIndex < 0 || timeIndex < 0) { if (!isFooter(joined)) section = clean(joined); continue; }
     const dateMatch = cells[dateIndex].match(DATE_RE);
     if (!dateMatch) continue;
     const homeTeam = clean(cells[0] || '');
@@ -80,6 +83,57 @@ function parseHtmlTables(source, sourceName, fallbackYear) {
     if (!homeTeam || isTableHeader(homeTeam)) continue;
     matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: clean(cells[timeIndex]), venue, source: sourceName });
   }
+  return dedupeMatches(matches);
+}
+
+function parseMarkdownTables(source, sourceName, fallbackYear) {
+  const lines = String(source || '').replace(/\r/g, '').split('\n');
+  const tableLines = lines.filter(line => /^\s*\|/.test(line));
+  if (!tableLines.length) return [];
+
+  const matches = [];
+  let section = '';
+  let headerSeen = false;
+  const detectedYear = extractYear(source, fallbackYear);
+
+  for (const rawLine of tableLines) {
+    const cells = rawLine.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(clean);
+    if (!cells.length || isMarkdownSeparator(cells)) continue;
+
+    const joined = cells.join(' ');
+    if (!headerSeen) {
+      if (isTableHeader(joined)) headerSeen = true;
+      continue;
+    }
+    if (isFooter(joined)) break;
+
+    // The FAB rule: only rows containing BOTH a date and a time are matches.
+    const dateIndex = cells.findIndex(cell => isDate(cell));
+    const timeIndex = cells.findIndex(cell => isTime(cell));
+    if (dateIndex < 0 || timeIndex < 0) {
+      if (joined) section = clean(joined);
+      continue;
+    }
+
+    const dateMatch = cells[dateIndex].match(DATE_RE);
+    if (!dateMatch) continue;
+
+    const homeTeam = clean(cells[0] || '');
+    const awayTeam = clean(cells[1] || '');
+    const venue = clean(cells[timeIndex + 1] || cells[cells.length - 1] || '');
+    if (!homeTeam || isTableHeader(homeTeam)) continue;
+
+    matches.push({
+      competition: section,
+      homeTeam,
+      awayTeam,
+      date: dateFromMatch(dateMatch, detectedYear),
+      time: clean(cells[timeIndex]),
+      venue,
+      source: sourceName
+    });
+  }
+
   return dedupeMatches(matches);
 }
 
@@ -109,10 +163,8 @@ function parseReaderRows(source, sourceName, fallbackYear) {
 
     const dateMatch = findDateInText(line);
     const timeMatch = findTimeInText(line);
-
-    // This is the key rule for FAB: rows without both date and time are category rows.
     if (!dateMatch || !timeMatch) {
-      if (line && !isTableHeader(line)) section = clean(line);
+      if (line && !isTableHeader(line)) section = clean(line.replace(/^\|\s*|\s*\|$/g, ''));
       continue;
     }
 
@@ -125,7 +177,7 @@ function parseReaderRows(source, sourceName, fallbackYear) {
     const [homeTeam, awayTeam] = splitTeams(prefix);
     if (!homeTeam || isTableHeader(homeTeam)) continue;
 
-    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(suffix), source: sourceName });
+    matches.push({ competition: section, homeTeam, awayTeam, date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(suffix.replace(/^\|\s*|\s*\|$/g, '')), source: sourceName });
   }
 
   return dedupeMatches(matches);
@@ -149,6 +201,8 @@ export async function parsePdfFile(input, sourceName = '') {
     const source = input;
     const htmlMatches = parseHtmlTables(source, sourceName, '');
     if (htmlMatches.length) return htmlMatches;
+    const markdownMatches = parseMarkdownTables(source, sourceName, '');
+    if (markdownMatches.length) return markdownMatches;
     const readerMatches = parseReaderRows(source, sourceName, '');
     if (readerMatches.length) return readerMatches;
     throw new Error('No se encontraron filas de partidos en el documento de FAB.');
@@ -165,6 +219,8 @@ export async function parsePdfFile(input, sourceName = '') {
     const text = new TextDecoder().decode(bytes);
     const htmlMatches = parseHtmlTables(text, sourceName, '');
     if (htmlMatches.length) return htmlMatches;
+    const markdownMatches = parseMarkdownTables(text, sourceName, '');
+    if (markdownMatches.length) return markdownMatches;
     const readerMatches = parseReaderRows(text, sourceName, '');
     if (readerMatches.length) return readerMatches;
     throw new Error('El documento recibido no es un PDF válido ni contiene una tabla de FAB reconocible.');
