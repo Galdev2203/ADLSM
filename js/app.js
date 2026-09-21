@@ -32,7 +32,9 @@ const els = {
   closeTemplate: document.querySelector('#closeTemplate'),
   cancelTemplate: document.querySelector('#cancelTemplate'),
   editorMatches: document.querySelector('#editorMatches'),
-  editorMatchCount: document.querySelector('#editorMatchCount')
+  editorMatchCount: document.querySelector('#editorMatchCount'),
+  templateMainTitle: document.querySelector('#templateMainTitle'),
+  templateSubtitle: document.querySelector('#templateSubtitle')
 };
 
 let allMatches = [];
@@ -43,6 +45,10 @@ let editorMatches = [];
 let templatePages = [];
 let currentTemplatePage = 0;
 const selectedIds = new Set();
+const templateSettings = {
+  title: 'HORARIOS BALONCESTO',
+  subtitle: 'FEDERADOS'
+};
 
 function setMessage(text = '', visible = Boolean(text)) {
   els.message.textContent = text;
@@ -213,6 +219,8 @@ function openTemplateGenerator() {
 
   editorMatches = selected.map(match => ({ ...match }));
   currentTemplatePage = 0;
+  els.templateMainTitle.value = templateSettings.title;
+  els.templateSubtitle.value = templateSettings.subtitle;
   renderEditor();
   rebuildTemplatePages();
   els.templateModal.classList.remove('hidden');
@@ -289,7 +297,7 @@ function makeEditorField(label, key, value, index) {
   const caption = document.createElement('span');
   caption.textContent = label;
   const input = document.createElement('input');
-  input.type = key === 'time' ? 'text' : 'text';
+  input.type = 'text';
   input.value = value || '';
   input.dataset.key = key;
   input.addEventListener('input', () => {
@@ -341,7 +349,7 @@ function renderTemplatePreview() {
     empty.textContent = 'Añade al menos un partido para ver la plantilla.';
     els.templatePreview.appendChild(empty);
   } else {
-    els.templatePreview.appendChild(createTemplateCanvas(matches));
+    els.templatePreview.appendChild(createTemplateCanvas(matches, templateSettings));
   }
 
   const pageCount = templatePages.length;
@@ -349,7 +357,7 @@ function renderTemplatePreview() {
     ? `${editorMatches.length} partidos · ${pageCount} páginas`
     : `${editorMatches.length} ${editorMatches.length === 1 ? 'partido' : 'partidos'}`;
   els.templatePageLabel.textContent = pageCount
-    ? `Página ${currentTemplatePage + 1} de ${pageCount} · Máximo 5 partidos por imagen`
+    ? `Página ${currentTemplatePage + 1} de ${pageCount} · Máximo 8 partidos por imagen`
     : 'Sin partidos';
   els.templatePrev.disabled = currentTemplatePage === 0;
   els.templateNext.disabled = currentTemplatePage >= pageCount - 1 || pageCount === 0;
@@ -365,7 +373,7 @@ function downloadCurrentTemplate() {
   const matches = templatePages[currentTemplatePage] || [];
   if (!matches.length) return;
 
-  const canvas = createTemplateCanvas(matches);
+  const canvas = createTemplateCanvas(matches, templateSettings);
   canvas.toBlob(blob => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
@@ -397,6 +405,14 @@ els.clearSelection.addEventListener('click', () => {
 els.generateTemplate.addEventListener('click', openTemplateGenerator);
 els.closeTemplate.addEventListener('click', closeTemplateGenerator);
 els.cancelTemplate.addEventListener('click', closeTemplateGenerator);
+els.templateMainTitle.addEventListener('input', () => {
+  templateSettings.title = els.templateMainTitle.value;
+  renderTemplatePreview();
+});
+els.templateSubtitle.addEventListener('input', () => {
+  templateSettings.subtitle = els.templateSubtitle.value;
+  renderTemplatePreview();
+});
 els.templateModal.addEventListener('click', event => {
   if (event.target === els.templateModal) closeTemplateGenerator();
 });
