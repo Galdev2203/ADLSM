@@ -6,18 +6,28 @@
   <meta name="description" content="Herramientas internas de ADLSM para entrenadores y responsables de equipos.">
   <title>ADLSM · Herramientas internas</title>
   <link rel="icon" href="assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="css/styles.css?v=20260922-06">
-  <link rel="stylesheet" href="css/home.css?v=20260922-06">
+  <link rel="stylesheet" href="css/styles.css?v=20260922-09">
+  <link rel="stylesheet" href="css/home.css?v=20260922-09">
+  <link rel="stylesheet" href="css/site.css?v=20260922-09">
 </head>
-<body>
+<body data-page="home">
   <main class="home-app">
+    <nav class="site-nav" data-site-nav aria-label="Navegación principal">
+      <a class="site-nav-brand" href="./" data-route="home"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"> ADLSM</a>
+      <div class="site-nav-links">
+        <a href="./" data-route="home">Inicio</a>
+        <a href="horarios/" data-route="horarios">Horarios</a>
+        <a href="resultados/" data-route="resultados">Resultados</a>
+      </div>
+    </nav>
+
     <section class="home-hero">
       <div>
         <div class="home-brand"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"> ADLSM · HERRAMIENTAS INTERNAS</div>
         <h1>Todo lo que necesitas para trabajar con tus equipos.</h1>
         <p class="subtitle">Un espacio común para entrenadores y responsables de las secciones masculinas, femeninas, escolares y federadas.</p>
       </div>
-      <div class="home-status">Entorno interno · Temporada 2026/27</div>
+      <div class="home-status">Entorno interno · Temporada <span data-season>2026/27</span></div>
     </section>
 
     <section class="home-section" aria-labelledby="tools-title">
@@ -32,16 +42,16 @@
         <a class="tool-card featured" href="horarios/" aria-label="Abrir Horarios FAB">
           <div class="tool-icon">🏀</div>
           <h3>Horarios FAB</h3>
-          <p>Consulta las jornadas de la Federación Aragonesa de Baloncesto, filtra partidos y prepara publicaciones para redes sociales.</p>
+          <p>Consulta jornadas de FAB, filtra partidos y prepara publicaciones para redes sociales.</p>
           <span class="tool-arrow">ABRIR HERRAMIENTA →</span>
         </a>
 
-        <article class="tool-card coming-soon" aria-label="Resultados próximamente">
+        <a class="tool-card featured" href="resultados/" aria-label="Abrir Resultados FEB y FAB">
           <div class="tool-icon">📊</div>
           <h3>Resultados</h3>
-          <p>Resultados de los partidos, clasificación y preparación de publicaciones.</p>
-          <span class="tool-arrow">PRÓXIMAMENTE</span>
-        </article>
+          <p>Consulta partidos, clasificaciones y estadísticas de una competición y analiza el rendimiento de un equipo.</p>
+          <span class="tool-arrow">ABRIR HERRAMIENTA →</span>
+        </a>
 
         <article class="tool-card coming-soon" aria-label="Equipos próximamente">
           <div class="tool-icon">👥</div>
@@ -72,13 +82,14 @@
         </article>
       </div>
 
-      <div class="home-note"><strong>Una herramienta en evolución.</strong> Las nuevas secciones se irán incorporando sobre esta misma base para mantener una experiencia única y coherente para toda la red de entrenadores.</div>
+      <div class="home-note"><strong>Una herramienta en evolución.</strong> Las nuevas secciones se incorporarán sobre esta misma base para mantener una experiencia única y coherente para toda la red de entrenadores.</div>
     </section>
 
     <footer class="home-footer">
-      <span>ADLSM · Herramientas internas · <strong>v0.16.1</strong> · build 2026.09.22.07</span>
+      <span>ADLSM · Herramientas internas · <strong data-app-version>v0.17.0 · build 2026.09.22.09</strong></span>
       <a href="horarios/">Ir a Horarios FAB →</a>
     </footer>
   </main>
+  <script type="module" src="js/core/site-shell.js?v=20260922-09"></script>
 </body>
 </html>
