@@ -51,7 +51,7 @@ function cellsFromHtml(source) {
 }
 
 function cellsFromMarkdown(source) {
-  return source.split('\n').map(clean).filter(Boolean).map(line => {
+  return source.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
     if (!line.includes('|')) return [];
     return line.replace(/^\|\s*/, '').replace(/\s*\|$/, '').split('|').map(clean).filter(Boolean);
   }).filter(cells => cells.length >= 4 && !cells.every(cell => /^:?-{2,}:?$/.test(cell)));
@@ -88,6 +88,73 @@ function parseReaderCells(rows, sourceName, fallbackYear) {
   return matches;
 }
 
+// Jina Reader sometimes returns the PDF as plain text instead of a Markdown table.
+// In that format the column headers and match rows preserve their visual positions.
+// Use those header positions to split LOCAL / VISITANTE / FECHA / HORA / PISTA
+// instead of guessing teams from the previous lines (which caused rows to shift).
+function parseFixedWidthReaderText(source, sourceName, fallbackYear) {
+  const rawLines = String(source || '').replace(/\r/g, '').split('\n');
+  const headerIndex = rawLines.findIndex(line => {
+    const text = line.toUpperCase();
+    return text.includes('LOCAL') && text.includes('VISITANTE') && text.includes('FECHA') && text.includes('HORA') && text.includes('PISTA');
+  });
+  if (headerIndex < 0) return [];
+
+  const header = rawLines[headerIndex];
+  const positions = {
+    local: header.toUpperCase().indexOf('LOCAL'),
+    visitor: header.toUpperCase().indexOf('VISITANTE'),
+    date: header.toUpperCase().indexOf('FECHA'),
+    time: header.toUpperCase().indexOf('HORA'),
+    venue: header.toUpperCase().indexOf('PISTA')
+  };
+  if (positions.local < 0 || positions.visitor < 0 || positions.date < 0 || positions.time < 0 || positions.venue < 0) return [];
+
+  let detectedYear = fallbackYear;
+  const yearMatch = source.match(/(?:JORNADA|HORARIOS)[^\n\d]*(?:\d{1,2}[\/-]\d{1,2}[\/-])(\d{2,4})/i);
+  if (yearMatch) detectedYear = yearMatch[1];
+
+  const matches = [];
+  let section = '';
+  for (let index = headerIndex + 1; index < rawLines.length; index += 1) {
+    const raw = rawLines[index];
+    if (!raw.trim()) continue;
+    const dateMatch = findDateInText(raw);
+    const timeMatch = findTimeInText(raw);
+
+    // Competition separator rows have no date/time. Keep them as the current section.
+    if (!dateMatch || !timeMatch) {
+      const compact = clean(raw);
+      if (compact && COMPETITION_RE.test(compact) && compact.length < 180) section = compact;
+      continue;
+    }
+
+    const dateStart = raw.indexOf(dateMatch[0]);
+    const timeStart = raw.indexOf(timeMatch[0], dateStart + dateMatch[0].length);
+    if (dateStart < 0 || timeStart < 0) continue;
+
+    // Prefer visual column boundaries. If Jina collapsed spaces, fall back to the
+    // date/time anchors while still using the header to split the two teams.
+    let homeTeam = raw.slice(positions.local, positions.visitor).trim();
+    let awayTeam = raw.slice(positions.visitor, positions.date).trim();
+    let venue = raw.slice(timeStart + timeMatch[0].length).trim();
+
+    if (!homeTeam || !awayTeam || homeTeam.toUpperCase().includes('LOCAL VISITANTE')) {
+      const prefix = raw.slice(0, dateStart).trim();
+      const parts = prefix.split(/\s{2,}/).map(clean).filter(Boolean);
+      if (parts.length >= 2) { homeTeam = parts[0]; awayTeam = parts[1]; }
+    }
+
+    if (!venue) venue = clean(raw.slice(positions.venue));
+    if (!homeTeam || !awayTeam) continue;
+    if (/^(LOCAL|VISITANTE|FECHA|HORA|PISTA|JUEGO)$/i.test(homeTeam)) continue;
+    if (/^\d/.test(homeTeam) || /^\d/.test(awayTeam)) continue;
+
+    matches.push({ competition: section, homeTeam: clean(homeTeam), awayTeam: clean(awayTeam), date: dateFromMatch(dateMatch, detectedYear), time: timeMatch[0], venue: clean(venue), source: sourceName });
+  }
+  return dedupeMatches(matches);
+}
+
 function parseLooseReaderText(source, sourceName, fallbackYear) {
   const lines = source.split('\n').map(clean).filter(Boolean);
   const matches = [];
@@ -115,13 +182,16 @@ function parseLooseReaderText(source, sourceName, fallbackYear) {
   return matches;
 }
 
-/** Parse the Markdown/HTML/text table returned by Jina Reader for a FAB PDF. */
 export function parseFabReaderText(input, sourceName = 'FAB Reader', fallbackYear = '') {
   const source = String(input || '').replace(/\r/g, '');
   const htmlRows = cellsFromHtml(source);
   const markdownRows = cellsFromMarkdown(source);
   const tableMatches = parseReaderCells([...htmlRows, ...markdownRows], sourceName, fallbackYear);
   if (tableMatches.length) return dedupeMatches(tableMatches);
+
+  const fixedMatches = parseFixedWidthReaderText(source, sourceName, fallbackYear);
+  if (fixedMatches.length) return fixedMatches;
+
   return dedupeMatches(parseLooseReaderText(source, sourceName, fallbackYear));
 }
 
