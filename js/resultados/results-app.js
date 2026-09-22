@@ -1,15 +1,46 @@
-import { RESULTS_PRESETS, RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js';
+import { RESULTS_PRESETS, RESULTS_VIEWS, analyzeTeam, discoverCompetition, fetchCompetition } from './results-source.js';
 
 const els = {
-  form: document.querySelector('#resultsForm'), source: document.querySelector('#resultsSource'), view: document.querySelector('#resultsView'), url: document.querySelector('#resultsUrl'), team: document.querySelector('#resultsTeam'), status: document.querySelector('#resultsStatus'), summary: document.querySelector('#resultsSummary'), classification: document.querySelector('#resultsClassification'), matches: document.querySelector('#resultsMatches'), metadata: document.querySelector('#resultsMetadata'), search: document.querySelector('#resultsSearch'), openSource: document.querySelector('#openSource'), exportCsv: document.querySelector('#exportCsv')
+  form: document.querySelector('#resultsForm'),
+  source: document.querySelector('#resultsSource'),
+  category: document.querySelector('#resultsCategory'),
+  season: document.querySelector('#resultsSeason'),
+  group: document.querySelector('#resultsGroup'),
+  view: document.querySelector('#resultsView'),
+  team: document.querySelector('#resultsTeam'),
+  status: document.querySelector('#resultsStatus'),
+  summary: document.querySelector('#resultsSummary'),
+  classification: document.querySelector('#resultsClassification'),
+  matches: document.querySelector('#resultsMatches'),
+  metadata: document.querySelector('#resultsMetadata'),
+  search: document.querySelector('#resultsSearch'),
+  openSource: document.querySelector('#openSource'),
+  exportCsv: document.querySelector('#exportCsv')
 };
+
+let catalog = null;
 let dataset = null;
 let analysis = null;
 
 const text = value => String(value ?? '');
 const escapeHtml = value => text(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
-const setStatus = (message, kind = 'info') => { els.status.textContent = message; els.status.className = `results-status ${kind}`; };
 const formatNumber = value => Number(value || 0).toLocaleString('es-ES', { maximumFractionDigits: 1 });
+const setStatus = (message, kind = 'info') => { els.status.textContent = message; els.status.className = `results-status ${kind}`; };
+
+function setSelectOptions(select, options, placeholder) {
+  select.innerHTML = `<option value="">${escapeHtml(placeholder)}</option>`;
+  for (const option of options) {
+    const node = document.createElement('option');
+    node.value = option.url;
+    node.textContent = option.label;
+    select.appendChild(node);
+  }
+  select.disabled = options.length === 0;
+}
+
+function currentCompetitionUrl() {
+  return els.season.value || els.category.value || catalog?.fallbackUrl || '';
+}
 
 function getFilteredMatches() {
   const query = text(els.search.value).trim().toLocaleLowerCase('es');
@@ -49,7 +80,7 @@ function renderMatches() {
 
 function render() {
   if (!dataset || !analysis) return;
-  els.metadata.innerHTML = `<div><span>Temporada</span><strong>${escapeHtml(dataset.season || 'No indicada')}</strong></div><div><span>Categoría</span><strong>${escapeHtml(dataset.category || 'No indicada')}</strong></div><div><span>Vista</span><strong>${escapeHtml(RESULTS_VIEWS[dataset.view]?.label || dataset.view)}</strong></div><div><span>Fuente</span><strong>${escapeHtml(dataset.url)}</strong></div>`;
+  els.metadata.innerHTML = `<div><span>Temporada</span><strong>${escapeHtml(dataset.season || els.season.selectedOptions[0]?.textContent || 'No indicada')}</strong></div><div><span>Categoría</span><strong>${escapeHtml(dataset.category || els.category.selectedOptions[0]?.textContent || 'No indicada')}</strong></div><div><span>Vista</span><strong>${escapeHtml(RESULTS_VIEWS[dataset.view]?.label || dataset.view)}</strong></div><div><span>Fuente</span><strong>FEB / FAB</strong></div>`;
   renderSummary();
   renderClassification();
   renderMatches();
@@ -58,6 +89,7 @@ function render() {
 }
 
 async function load(url, teamQuery = '', view = 'results') {
+  if (!url) return;
   setStatus('Consultando FEB/FAB…', 'loading');
   els.form.querySelector('button[type="submit"]').disabled = true;
   try {
@@ -76,12 +108,61 @@ async function load(url, teamQuery = '', view = 'results') {
   }
 }
 
-function syncPreset() {
-  const preset = RESULTS_PRESETS[els.source.value];
-  if (preset) els.url.value = preset.url;
+async function discoverSource(sourceId, preferredUrl = '') {
+  setStatus('Cargando categorías y temporadas de FEB/FAB…', 'loading');
+  els.form.querySelector('button[type="submit"]').disabled = true;
+  els.category.disabled = true;
+  els.season.disabled = true;
+  els.group.disabled = true;
+  try {
+    catalog = await discoverCompetition(sourceId);
+    setSelectOptions(els.category, catalog.categoryOptions, 'Selecciona una categoría');
+    setSelectOptions(els.season, catalog.seasonOptions, 'Selecciona una temporada');
+    setSelectOptions(els.group, catalog.groupOptions, catalog.groupOptions.length ? 'Todos los grupos' : 'Grupos no disponibles');
+
+    const categoryTarget = catalog.defaultCategory || catalog.categoryOptions[0]?.url || preferredUrl || catalog.fallbackUrl;
+    if (categoryTarget) {
+      const categoryOption = [...els.category.options].find(option => option.value === categoryTarget);
+      if (categoryOption) categoryOption.selected = true;
+    }
+    const seasonTarget = catalog.defaultSeason || catalog.seasonOptions[0]?.url || categoryTarget;
+    if (seasonTarget) {
+      const seasonOption = [...els.season.options].find(option => option.value === seasonTarget);
+      if (seasonOption) seasonOption.selected = true;
+    }
+
+    els.form.querySelector('button[type="submit"]').disabled = false;
+    setStatus('Competición lista. Elige categoría y temporada y pulsa Consultar.', 'info');
+  } catch (error) {
+    catalog = null;
+    setSelectOptions(els.category, [], 'No disponible');
+    setSelectOptions(els.season, [], 'No disponible');
+    setSelectOptions(els.group, [], 'No disponible');
+    setStatus(error instanceof Error ? error.message : 'No se han podido cargar las competiciones.', 'error');
+  } finally {
+    els.form.querySelector('button[type="submit"]').disabled = false;
+  }
 }
 
-function exportCsv() {
+function syncSeasonFromCategory() {
+  if (!catalog) return;
+  const categoryUrl = els.category.value;
+  if (!categoryUrl) return;
+  const match = catalog.seasonOptions.find(option => option.url === categoryUrl);
+  if (match) els.season.value = match.url;
+}
+
+els.source.addEventListener('change', () => discoverSource(els.source.value));
+els.category.addEventListener('change', syncSeasonFromCategory);
+els.form.addEventListener('submit', event => {
+  event.preventDefault();
+  const url = currentCompetitionUrl();
+  if (!url) { setStatus('Selecciona una categoría o temporada antes de consultar.', 'error'); return; }
+  load(url, els.team.value.trim(), els.view.value);
+});
+els.team.addEventListener('input', () => { if (!dataset) return; analysis = analyzeTeam(dataset, els.team.value.trim()); render(); });
+els.search.addEventListener('input', renderMatches);
+els.exportCsv.addEventListener('click', () => {
   const matches = getFilteredMatches();
   if (!matches.length) return;
   const header = ['Jornada','Fecha','Hora','Local','Visitante','Puntos local','Puntos visitante','Pabellón'];
@@ -89,12 +170,7 @@ function exportCsv() {
   const csv = [header, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(';')).join('\n');
   const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `resultados-${dataset?.season || 'feb'}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+});
 
-els.source.addEventListener('change', syncPreset);
-els.form.addEventListener('submit', event => { event.preventDefault(); load(els.url.value.trim(), els.team.value.trim(), els.view.value); });
-els.team.addEventListener('input', () => { if (!dataset) return; analysis = analyzeTeam(dataset, els.team.value.trim()); render(); });
-els.search.addEventListener('input', renderMatches);
-els.exportCsv.addEventListener('click', exportCsv);
-els.url.value = RESULTS_PRESETS.zaragoza.url;
-load(RESULTS_PRESETS.zaragoza.url, '', 'results');
+els.source.value = 'zaragoza';
+discoverSource('zaragoza');
