@@ -1,5 +1,5 @@
-import { analyzeTeam, fetchCompetition } from './results-runtime-v15.js?v=20260922-17';
-import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js?v=20260922-17';
+import { analyzeTeam, fetchCompetition } from './results-runtime-v15.js?v=20260922-18';
+import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js?v=20260922-18';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -208,9 +208,10 @@ async function loadCatalog() {
   status('Cargando categorías FEB/FAB…', 'loading');
   try {
     catalog = await discoverCompetitionCatalog(els.source.value);
-    setOptions(els.category, catalog.categories, 'Selecciona una categoría…');
-    if (catalog.categories?.length) {
-      els.category.value = catalog.categories[0].url;
+    const categories = catalog.categoryOptions || catalog.categories || [];
+    setOptions(els.category, categories, 'Selecciona una categoría…');
+    if (categories.length) {
+      els.category.value = catalog.defaultCategory || categories[0].url;
       await loadSeasons(els.category.value);
     } else {
       status('No se han encontrado categorías.', 'error');
@@ -224,7 +225,7 @@ async function loadCatalog() {
 
 function exportCsv() {
   if (!dataset?.matches?.length) return;
-  const rows = [['Jornada','Local','Visitante','Local','Visitante','Fecha','Hora']];
+  const rows = [['Jornada','Local','Visitante','Puntos local','Puntos visitante','Fecha','Hora']];
   for (const m of dataset.matches) rows.push([m.jornada || '', m.home, m.away, m.homeScore ?? '', m.awayScore ?? '', m.date || '', m.time || '']);
   const csv = rows.map(r => r.map(v => `"${text(v).replace(/"/g, '""')}"`).join(';')).join('\n');
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
