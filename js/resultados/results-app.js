@@ -21,6 +21,7 @@ const els = {
 let catalog = null;
 let dataset = null;
 let analysis = null;
+let seasonWasChosen = false;
 
 const text = value => String(value ?? '');
 const escapeHtml = value => text(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
@@ -39,7 +40,7 @@ function setSelectOptions(select, options, placeholder) {
 }
 
 function currentCompetitionUrl() {
-  return els.season.value || els.category.value || catalog?.fallbackUrl || '';
+  return (seasonWasChosen && els.season.value) || els.category.value || els.season.value || catalog?.fallbackUrl || '';
 }
 
 function getFilteredMatches() {
@@ -108,30 +109,31 @@ async function load(url, teamQuery = '', view = 'results') {
   }
 }
 
-async function discoverSource(sourceId, preferredUrl = '') {
+async function discoverSource(sourceId) {
   setStatus('Cargando categorías y temporadas de FEB/FAB…', 'loading');
   els.form.querySelector('button[type="submit"]').disabled = true;
   els.category.disabled = true;
   els.season.disabled = true;
   els.group.disabled = true;
+  seasonWasChosen = false;
   try {
     catalog = await discoverCompetition(sourceId);
     setSelectOptions(els.category, catalog.categoryOptions, 'Selecciona una categoría');
     setSelectOptions(els.season, catalog.seasonOptions, 'Selecciona una temporada');
     setSelectOptions(els.group, catalog.groupOptions, catalog.groupOptions.length ? 'Todos los grupos' : 'Grupos no disponibles');
 
-    const categoryTarget = catalog.defaultCategory || catalog.categoryOptions[0]?.url || preferredUrl || catalog.fallbackUrl;
+    const categoryTarget = catalog.defaultCategory || catalog.categoryOptions[0]?.url || catalog.fallbackUrl;
     if (categoryTarget) {
       const categoryOption = [...els.category.options].find(option => option.value === categoryTarget);
       if (categoryOption) categoryOption.selected = true;
     }
-    const seasonTarget = catalog.defaultSeason || catalog.seasonOptions[0]?.url || categoryTarget;
+
+    const seasonTarget = catalog.defaultSeason || catalog.seasonOptions[0]?.url || '';
     if (seasonTarget) {
       const seasonOption = [...els.season.options].find(option => option.value === seasonTarget);
       if (seasonOption) seasonOption.selected = true;
     }
 
-    els.form.querySelector('button[type="submit"]').disabled = false;
     setStatus('Competición lista. Elige categoría y temporada y pulsa Consultar.', 'info');
   } catch (error) {
     catalog = null;
@@ -144,16 +146,14 @@ async function discoverSource(sourceId, preferredUrl = '') {
   }
 }
 
-function syncSeasonFromCategory() {
-  if (!catalog) return;
-  const categoryUrl = els.category.value;
-  if (!categoryUrl) return;
-  const match = catalog.seasonOptions.find(option => option.url === categoryUrl);
-  if (match) els.season.value = match.url;
-}
-
 els.source.addEventListener('change', () => discoverSource(els.source.value));
-els.category.addEventListener('change', syncSeasonFromCategory);
+els.category.addEventListener('change', () => {
+  seasonWasChosen = false;
+  setStatus('Categoría seleccionada. Puedes mantener la temporada actual o elegir otra.', 'info');
+});
+els.season.addEventListener('change', () => {
+  seasonWasChosen = Boolean(els.season.value);
+});
 els.form.addEventListener('submit', event => {
   event.preventDefault();
   const url = currentCompetitionUrl();
