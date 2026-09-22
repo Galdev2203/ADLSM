@@ -1,5 +1,5 @@
-import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js';
-import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js';
+import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js?v=20260922-11';
+import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js?v=20260922-11';
 
 const els = {
   form: document.querySelector('#resultsForm'),
