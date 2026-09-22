@@ -6,9 +6,9 @@
   <meta name="description" content="Análisis interno de resultados y clasificaciones FEB/FAB para ADLSM.">
   <title>ADLSM · Resultados</title>
   <link rel="icon" href="../assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="../css/styles.css?v=20260922-09">
-  <link rel="stylesheet" href="../css/site.css?v=20260922-09">
-  <link rel="stylesheet" href="../css/results.css?v=20260922-09">
+  <link rel="stylesheet" href="../css/styles.css?v=20260922-10">
+  <link rel="stylesheet" href="../css/site.css?v=20260922-10">
+  <link rel="stylesheet" href="../css/results.css?v=20260922-10">
 </head>
 <body data-page="resultados">
   <main class="app">
@@ -25,20 +25,21 @@
       <div>
         <p class="eyebrow">ADLSM · ANÁLISIS</p>
         <h1>Resultados FEB / FAB</h1>
-        <p class="subtitle">Consulta partidos, clasificación y estadísticas de una competición para analizar una temporada, una categoría o un equipo.</p>
+        <p class="subtitle">Consulta resultados, calendarios, equipos y clasificaciones de las competiciones de Aragón y Zaragoza.</p>
       </div>
       <a class="secondary hero-link" href="https://fabasket.com/resultados/" target="_blank" rel="noopener">Ver fuente FAB ↗</a>
     </header>
 
     <section class="panel results-query-panel">
-      <div class="panel-header"><div><h2>Consulta de competición</h2><p class="muted">La aplicación utiliza el mismo puente Reader que usamos en Horarios para evitar problemas de CORS desde GitHub Pages.</p></div></div>
+      <div class="panel-header"><div><h2>Consulta de competición</h2><p class="muted">Las páginas de FEB/FAB usan un identificador de competición (<code>c=...</code>). Puedes usar una de nuestras fuentes rápidas o pegar la URL de una competición concreta.</p></div></div>
       <form id="resultsForm" class="results-form">
         <label class="filter-control">Fuente rápida<select id="resultsSource"><option value="zaragoza">Zaragoza · escolares</option><option value="aragon">Aragón · FEB/FAB</option></select></label>
+        <label class="filter-control">Consulta<select id="resultsView"><option value="results">Resultados y clasificación</option><option value="calendar">Calendario completo</option><option value="teams">Equipos</option><option value="upcoming">Próximos partidos</option></select></label>
         <label class="filter-control results-url-field">URL de competición FEB<input id="resultsUrl" type="url" required spellcheck="false"></label>
         <label class="filter-control">Equipo (opcional)<input id="resultsTeam" type="search" placeholder="Ej.: La Salle Montemolín"></label>
-        <button class="primary" type="submit">Consultar resultados</button>
+        <button class="primary" type="submit">Consultar</button>
       </form>
-      <div class="results-query-help"><strong>Primera versión:</strong> puedes pegar cualquier URL válida de <code>competiciones.feb.es</code> de una categoría. Así podemos consultar también temporadas históricas cuando dispongamos del enlace de esa competición.</div>
+      <div class="results-query-help"><strong>Importante:</strong> la web de FEB presenta las categorías y temporadas mediante selectores internos; cada selección termina en una URL con un identificador <code>c</code>. La aplicación acepta directamente esas URLs para no inventar asociaciones entre nombres e IDs.</div>
       <div id="resultsStatus" class="results-status info">Preparando consulta…</div>
     </section>
 
@@ -46,18 +47,18 @@
     <section id="resultsSummary" class="results-stats" aria-label="Resumen estadístico"></section>
 
     <section class="panel results-section">
-      <div class="panel-header results-section-header"><div><h2>Partidos</h2><p class="muted">Resultados detectados en la competición consultada.</p></div><div class="results-toolbar"><input id="resultsSearch" type="search" placeholder="Filtrar partidos…"><button id="exportCsv" class="secondary" type="button" disabled>Exportar CSV</button><a id="openSource" class="secondary" href="#" target="_blank" rel="noopener">Abrir FEB ↗</a></div></div>
+      <div class="panel-header results-section-header"><div><h2>Partidos</h2><p class="muted">Partidos detectados en la vista consultada.</p></div><div class="results-toolbar"><input id="resultsSearch" type="search" placeholder="Filtrar partidos…"><button id="exportCsv" class="secondary" type="button" disabled>Exportar CSV</button><a id="openSource" class="secondary" href="#" target="_blank" rel="noopener">Abrir FEB ↗</a></div></div>
       <div id="resultsMatches" class="results-match-list"><div class="results-empty-small">Consultando…</div></div>
     </section>
 
     <section class="panel results-section">
-      <div class="panel-header"><div><h2>Clasificación</h2><p class="muted">Tabla publicada por la competición consultada cuando está disponible.</p></div></div>
+      <div class="panel-header"><div><h2>Clasificación / equipos</h2><p class="muted">Clasificación publicada por FEB/FAB o equipos detectados en la vista consultada.</p></div></div>
       <div id="resultsClassification"><div class="results-empty-small">Consultando…</div></div>
     </section>
 
-    <footer class="app-footer">ADLSM · <strong data-app-version>v0.17.0 · build 2026.09.22.09</strong></footer>
+    <footer class="app-footer">ADLSM · <strong data-app-version>v0.18.0 · build 2026.09.22.10</strong></footer>
   </main>
-  <script type="module" src="../js/core/site-shell.js?v=20260922-09"></script>
-  <script type="module" src="../js/resultados/results-app.js?v=20260922-09"></script>
+  <script type="module" src="../js/core/site-shell.js?v=20260922-10"></script>
+  <script type="module" src="../js/resultados/results-app.js?v=20260922-10"></script>
 </body>
 </html>
