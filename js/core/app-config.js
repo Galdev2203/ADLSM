@@ -1,8 +1,8 @@
 export const APP_CONFIG = {
   name: 'ADLSM',
   fullName: 'ADLSM · Herramientas internas',
-  version: '0.17.0',
-  build: '2026.09.22.09',
+  version: '0.18.0',
+  build: '2026.09.22.10',
   season: '2026/27',
   fab: {
     schedulesUrl: 'https://fabasket.com/horarios/',
