@@ -1,5 +1,5 @@
-import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js?v=20260922-11';
-import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js?v=20260922-11';
+import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js?v=20260922-12';
+import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js?v=20260922-12';
 
 const els = {
   form: document.querySelector('#resultsForm'),
@@ -40,7 +40,7 @@ function setSelectOptions(select, options, placeholder) {
 }
 
 function currentCompetitionUrl() {
-  return (seasonWasChosen && els.season.value) || els.category.value || els.season.value || '';
+  return (seasonWasChosen && els.season.value) || els.category.value || els.season.value || catalog?.fallbackUrl || '';
 }
 
 function getFilteredMatches() {
@@ -157,6 +157,10 @@ els.season.addEventListener('change', () => {
 });
 els.form.addEventListener('submit', event => {
   event.preventDefault();
+  if (els.category.disabled || !els.category.value) {
+    setStatus('Las categorías todavía no están disponibles. Espera a que FEB/FAB termine de cargarlas.', 'error');
+    return;
+  }
   const url = currentCompetitionUrl();
   if (!url) { setStatus('Selecciona una categoría antes de consultar.', 'error'); return; }
   load(url, els.team.value.trim(), els.view.value);
