@@ -4,24 +4,33 @@ export const RESULTS_PRESETS = {
   aragon: {
     id: 'aragon',
     label: 'Aragón · Competiciones FEB y FAB',
+    baseUrl: 'https://competiciones.feb.es/autonomicas/?a=3',
     url: 'https://competiciones.feb.es/autonomicas/?a=3&c=23460&med=0'
   },
   zaragoza: {
     id: 'zaragoza',
     label: 'Zaragoza · Competiciones escolares',
+    baseUrl: 'https://competiciones.feb.es/autonomicas/?a=32',
     url: 'https://competiciones.feb.es/autonomicas/?a=32&c=23063&med=0'
   }
 };
 
 export const RESULTS_VIEWS = {
   results: { label: 'Resultados y clasificación', suffix: '' },
-  calendar: { label: 'Calendario', suffix: 'Calendarios.aspx' },
+  calendar: { label: 'Calendario completo', suffix: 'Calendarios.aspx' },
   teams: { label: 'Equipos', suffix: 'Equipos.aspx' },
   upcoming: { label: 'Próximos partidos', suffix: 'Partidos.aspx' }
 };
 
-async function fetchReader(url) {
-  const response = await fetch(`${READER_BASE}${url}`, { cache: 'no-store' });
+async function fetchReader(url, format = 'markdown') {
+  const response = await fetch(`${READER_BASE}${url}`, {
+    cache: 'no-store',
+    headers: {
+      'x-respond-with': format,
+      'x-engine': 'browser',
+      'x-no-cache': 'true'
+    }
+  });
   if (!response.ok) throw new Error(`${response.status} al consultar FEB mediante Reader.`);
   const text = await response.text();
   if (!text.trim()) throw new Error('FEB devolvió un documento vacío.');
@@ -95,7 +104,7 @@ function parseResultsAndCalendar(lines) {
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const jornadaMatch = line.match(/^Jornada\s+(\d+)\s+(\d{2}\/\d{2}\/\d{4})$/i);
-    if (jornadaMatch) { jornada = jornadaMatch[1]; pendingTeams = null; continue; }
+    if (jornadaMatch) { jornada = jornadaMatch[1]; continue; }
     const combined = parseCombinedMatchLine(line, jornada);
     if (combined) { matches.push(combined); pendingTeams = null; continue; }
     if (pendingTeams) {
@@ -126,17 +135,119 @@ function parseTeamsPage(lines) {
 function parseData(text) {
   const lines = String(text || '').split(/\r?\n/).map(clean).filter(Boolean).map(stripMarkdown);
   const { season, category } = parseHeader(lines);
-  const matches = parseResultsAndCalendar(lines);
-  const classification = parseClassification(lines);
-  const teams = parseTeamsPage(lines);
-  return { season, category, matches, classification, teams, rawLines: lines };
+  return {
+    season,
+    category,
+    matches: parseResultsAndCalendar(lines),
+    classification: parseClassification(lines),
+    teams: parseTeamsPage(lines),
+    rawLines: lines
+  };
+}
+
+function extractCompetitionId(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw, 'https://competiciones.feb.es');
+    return parsed.searchParams.get('c') || (parsed.searchParams.get('id') || '');
+  } catch {
+    return /^\d+$/.test(raw) ? raw : '';
+  }
+}
+
+function resolveOptionTarget(option, sourceBaseUrl) {
+  const raw = option.getAttribute('value') || option.getAttribute('data-url') || option.getAttribute('data-value') || '';
+  const c = extractCompetitionId(raw);
+  if (c) return normalizeCompetitionUrl(`${sourceBaseUrl}&c=${encodeURIComponent(c)}`, 'results');
+  if (/^\d+$/.test(raw.trim())) return normalizeCompetitionUrl(`${sourceBaseUrl}&c=${raw.trim()}`, 'results');
+  if (/^(?:https?:)?\/\//i.test(raw) || raw.startsWith('/') || raw.startsWith('?')) {
+    try {
+      const url = new URL(raw, sourceBaseUrl);
+      const optionC = url.searchParams.get('c');
+      if (optionC) return normalizeCompetitionUrl(url.href, 'results');
+    } catch { /* ignore malformed option */ }
+  }
+  return '';
+}
+
+function selectOptions(select, sourceBaseUrl) {
+  return [...select.querySelectorAll('option')]
+    .map(option => ({
+      label: clean(option.textContent),
+      value: option.value || '',
+      selected: option.selected,
+      url: resolveOptionTarget(option, sourceBaseUrl)
+    }))
+    .filter(option => option.label && !/^(?:selecciona|--)/i.test(option.label));
+}
+
+function classifySelect(select, options) {
+  const joined = options.map(option => option.label).join(' | ');
+  if (options.some(option => /^20\d{2}\/20\d{2}$/.test(option.label))) return 'season';
+  if (/grupo\s+\d+/i.test(joined)) return 'group';
+  if (/categor[ií]a/i.test(`${select.previousElementSibling?.textContent || ''} ${select.parentElement?.textContent || ''}`)) return 'category';
+  return '';
+}
+
+export function parseCompetitionSelectors(html, sourceBaseUrl) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const selects = [...doc.querySelectorAll('select')];
+  const parsed = selects.map(select => {
+    const options = selectOptions(select, sourceBaseUrl);
+    return { kind: classifySelect(select, options), options, selected: options.find(option => option.selected) || options[0] || null };
+  }).filter(item => item.options.length);
+
+  let season = parsed.find(item => item.kind === 'season');
+  let category = parsed.find(item => item.kind === 'category');
+  const groups = parsed.find(item => item.kind === 'group');
+
+  if (!season) season = parsed.find(item => item.options.filter(option => /^20\d{2}\/20\d{2}$/.test(option.label)).length >= 2);
+  if (!category) category = parsed.find(item => item !== season && item.options.length >= 4);
+
+  return {
+    category: category || { kind: 'category', options: [] },
+    season: season || { kind: 'season', options: [] },
+    group: groups || { kind: 'group', options: [] }
+  };
+}
+
+export async function discoverCompetition(sourceId) {
+  const preset = RESULTS_PRESETS[sourceId];
+  if (!preset) throw new Error('Fuente FEB/FAB no reconocida.');
+  const html = await fetchReader(preset.baseUrl, 'html');
+  const selectors = parseCompetitionSelectors(html, preset.baseUrl);
+  const categoryOptions = selectors.category.options.filter(option => option.url);
+  const seasonOptions = selectors.season.options.filter(option => option.url);
+  const groupOptions = selectors.group.options.filter(option => option.url);
+  if (!categoryOptions.length && !seasonOptions.length) {
+    throw new Error('No se han podido descubrir los selectores de competición de FEB/FAB.');
+  }
+  return {
+    sourceId,
+    baseUrl: preset.baseUrl,
+    categoryOptions,
+    seasonOptions,
+    groupOptions,
+    defaultCategory: selectors.category.selected?.url || '',
+    defaultSeason: selectors.season.selected?.url || '',
+    fallbackUrl: preset.url
+  };
+}
+
+export async function discoverSeasons(competitionUrl) {
+  const normalized = normalizeCompetitionUrl(competitionUrl, 'results');
+  const html = await fetchReader(normalized, 'html');
+  const selectors = parseCompetitionSelectors(html, normalized.split('?')[0] + '?' + new URL(normalized).searchParams.get('a') ? normalized : normalized);
+  return selectors.season.options.filter(option => option.url);
 }
 
 export function normalizeCompetitionUrl(url, view = 'results') {
   let parsed;
   try { parsed = new URL(url); } catch { throw new Error('La URL de FEB no es válida.'); }
   if (!/competiciones\.feb\.es$/i.test(parsed.hostname)) throw new Error('La consulta debe apuntar a competiciones.feb.es.');
-  if (!['3', '32'].includes(parsed.searchParams.get('a') || '')) throw new Error('La URL debe corresponder a Aragón (a=3) o Zaragoza (a=32).');
+  if (!['3', '32'].includes(parsed.searchParams.get('a') || '')) throw new Error('La consulta debe corresponder a Aragón (a=3) o Zaragoza (a=32).');
+  if (!parsed.searchParams.get('c')) throw new Error('No se ha encontrado un identificador de competición.');
   const config = RESULTS_VIEWS[view] || RESULTS_VIEWS.results;
   if (view !== 'results') parsed.pathname = `/autonomicas/${config.suffix}`;
   if (!parsed.searchParams.has('med')) parsed.searchParams.set('med', '0');
@@ -145,9 +256,9 @@ export function normalizeCompetitionUrl(url, view = 'results') {
 
 export async function fetchCompetition(url, view = 'results') {
   const normalizedUrl = normalizeCompetitionUrl(url, view);
-  const text = await fetchReader(normalizedUrl);
+  const text = await fetchReader(normalizedUrl, 'markdown');
   const data = parseData(text);
-  if (!data.matches.length && !data.classification.length && !data.teams.length) throw new Error('FEB no ha devuelto datos reconocibles para esta competición. Comprueba que la URL contiene un identificador de competición válido (c=...).');
+  if (!data.matches.length && !data.classification.length && !data.teams.length) throw new Error('FEB no ha devuelto datos reconocibles para esta competición.');
   return { ...data, url: normalizedUrl, view };
 }
 
