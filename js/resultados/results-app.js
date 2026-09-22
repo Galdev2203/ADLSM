@@ -1,5 +1,5 @@
 import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js';
-import { discoverSeasons, discoverSource } from './competition-discovery.js';
+import { discoverSeasons, discoverSource as discoverCompetitionCatalog } from './competition-discovery.js';
 
 const els = {
   form: document.querySelector('#resultsForm'),
@@ -133,7 +133,7 @@ async function discoverSource(sourceId) {
   els.season.disabled = true;
   seasonWasChosen = false;
   try {
-    catalog = await discoverSource(sourceId);
+    catalog = await discoverCompetitionCatalog(sourceId);
     setSelectOptions(els.category, catalog.categoryOptions, 'Selecciona una categoría');
     els.category.value = catalog.defaultCategory;
     await loadSeasons(catalog.defaultCategory, true);
