@@ -6,9 +6,9 @@
   <meta name="description" content="Análisis interno de resultados y clasificaciones FEB/FAB para ADLSM.">
   <title>ADLSM · Resultados</title>
   <link rel="icon" href="../assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="../css/styles.css?v=20260922-12">
-  <link rel="stylesheet" href="../css/site.css?v=20260922-12">
-  <link rel="stylesheet" href="../css/results.css?v=20260922-12">
+  <link rel="stylesheet" href="../css/styles.css?v=20260922-13">
+  <link rel="stylesheet" href="../css/site.css?v=20260922-13">
+  <link rel="stylesheet" href="../css/results.css?v=20260922-13">
 </head>
 <body data-page="resultados">
   <main class="app">
@@ -34,18 +34,18 @@
       <div class="panel-header">
         <div>
           <h2>Consulta de competición</h2>
-          <p class="muted">Selecciona la delegación, categoría y temporada. La aplicación descubre automáticamente los identificadores internos que utiliza FEB/FAB.</p>
+          <p class="muted">Selecciona fuente, categoría y temporada. Después podrás elegir un equipo o analizar la competición completa.</p>
         </div>
       </div>
       <form id="resultsForm" class="results-form">
         <label class="filter-control">Fuente<select id="resultsSource"><option value="zaragoza">Zaragoza · escolares</option><option value="aragon">Aragón · FEB/FAB</option></select></label>
         <label class="filter-control">Categoría<select id="resultsCategory" disabled><option value="">Cargando…</option></select></label>
         <label class="filter-control">Temporada<select id="resultsSeason" disabled><option value="">Cargando…</option></select></label>
-        <label class="filter-control">Consulta<select id="resultsView"><option value="results">Resultados y clasificación</option><option value="calendar">Calendario completo</option><option value="teams">Equipos</option><option value="upcoming">Próximos partidos</option></select></label>
-        <label class="filter-control">Equipo <span class="optional">(opcional)</span><input id="resultsTeam" type="search" placeholder="Ej.: La Salle Montemolín"></label>
+        <label class="filter-control">Equipo <span class="optional">(opcional)</span><select id="resultsTeam" disabled><option value="">Todos los equipos</option></select></label>
+        <label class="filter-control">Análisis<select id="resultsView"><option value="classification">Clasificación · todos los equipos</option><option value="team">Partidos del equipo</option><option value="cross">Resultados cruzados</option></select></label>
         <button class="primary" type="submit">Consultar</button>
       </form>
-      <div class="results-query-help"><strong>Sin URLs:</strong> ADLSM lee los selectores oficiales de FEB/FAB, obtiene sus identificadores y consulta directamente la competición seleccionada. No tienes que buscar ni pegar ningún <code>c=...</code>.</div>
+      <div class="results-query-help"><strong>Flujo:</strong> categoría → temporada → equipo opcional. Si no eliges equipo, ADLSM analiza la clasificación completa. Si eliges uno, puedes consultar sus partidos o abrir los resultados cruzados de toda la competición.</div>
       <div id="resultsStatus" class="results-status info">Preparando consulta…</div>
     </section>
 
@@ -54,20 +54,20 @@
 
     <section class="panel results-section">
       <div class="panel-header results-section-header">
-        <div><h2>Partidos</h2><p class="muted">Partidos detectados en la vista consultada.</p></div>
+        <div><h2 id="resultsMatchesTitle">Partidos</h2><p id="resultsMatchesSubtitle" class="muted">Partidos de la competición.</p></div>
         <div class="results-toolbar"><input id="resultsSearch" type="search" placeholder="Filtrar partidos…"><button id="exportCsv" class="secondary" type="button" disabled>Exportar CSV</button><a id="openSource" class="secondary" href="#" target="_blank" rel="noopener">Abrir FEB ↗</a></div>
       </div>
       <div id="resultsMatches" class="results-match-list"><div class="results-empty-small">Esperando consulta…</div></div>
     </section>
 
     <section class="panel results-section">
-      <div class="panel-header"><div><h2>Clasificación / equipos</h2><p class="muted">Clasificación publicada por FEB/FAB o equipos detectados en la vista consultada.</p></div></div>
+      <div class="panel-header"><div><h2 id="resultsClassificationTitle">Clasificación</h2><p id="resultsClassificationSubtitle" class="muted">Clasificación publicada por FEB/FAB.</p></div></div>
       <div id="resultsClassification"><div class="results-empty-small">Esperando consulta…</div></div>
     </section>
 
-    <footer class="app-footer">ADLSM · <strong data-app-version>v0.19.0 · build 2026.09.22.12</strong></footer>
+    <footer class="app-footer">ADLSM · <strong data-app-version>v0.20.0 · build 2026.09.22.13</strong></footer>
   </main>
-  <script type="module" src="../js/core/site-shell.js?v=20260922-12"></script>
-  <script type="module" src="../js/resultados/results-app.js?v=20260922-12"></script>
+  <script type="module" src="../js/core/site-shell.js?v=20260922-13"></script>
+  <script type="module" src="../js/resultados/results-app.js?v=20260922-13"></script>
 </body>
 </html>
