@@ -1,11 +1,11 @@
-import { RESULTS_PRESETS, RESULTS_VIEWS, analyzeTeam, discoverCompetition, fetchCompetition } from './results-source.js';
+import { RESULTS_VIEWS, analyzeTeam, fetchCompetition } from './results-source.js';
+import { discoverSeasons, discoverSource } from './competition-discovery.js';
 
 const els = {
   form: document.querySelector('#resultsForm'),
   source: document.querySelector('#resultsSource'),
   category: document.querySelector('#resultsCategory'),
   season: document.querySelector('#resultsSeason'),
-  group: document.querySelector('#resultsGroup'),
   view: document.querySelector('#resultsView'),
   team: document.querySelector('#resultsTeam'),
   status: document.querySelector('#resultsStatus'),
@@ -40,7 +40,7 @@ function setSelectOptions(select, options, placeholder) {
 }
 
 function currentCompetitionUrl() {
-  return (seasonWasChosen && els.season.value) || els.category.value || els.season.value || catalog?.fallbackUrl || '';
+  return (seasonWasChosen && els.season.value) || els.category.value || els.season.value || '';
 }
 
 function getFilteredMatches() {
@@ -109,37 +109,38 @@ async function load(url, teamQuery = '', view = 'results') {
   }
 }
 
+async function loadSeasons(categoryUrl, autoSelect = true) {
+  if (!categoryUrl) return;
+  els.season.disabled = true;
+  setStatus('Cargando temporadas de la categoría…', 'loading');
+  try {
+    const seasons = await discoverSeasons(categoryUrl);
+    setSelectOptions(els.season, seasons.options, 'Selecciona una temporada');
+    if (autoSelect && seasons.selected) els.season.value = seasons.selected;
+    seasonWasChosen = false;
+    setStatus('Categoría lista. Elige una temporada si quieres cambiar la actual y pulsa Consultar.', 'info');
+  } catch (error) {
+    setSelectOptions(els.season, [], 'Temporadas no disponibles');
+    seasonWasChosen = false;
+    setStatus(error instanceof Error ? error.message : 'No se han podido cargar las temporadas.', 'error');
+  }
+}
+
 async function discoverSource(sourceId) {
-  setStatus('Cargando categorías y temporadas de FEB/FAB…', 'loading');
+  setStatus('Cargando categorías de FEB/FAB…', 'loading');
   els.form.querySelector('button[type="submit"]').disabled = true;
   els.category.disabled = true;
   els.season.disabled = true;
-  els.group.disabled = true;
   seasonWasChosen = false;
   try {
-    catalog = await discoverCompetition(sourceId);
+    catalog = await discoverSource(sourceId);
     setSelectOptions(els.category, catalog.categoryOptions, 'Selecciona una categoría');
-    setSelectOptions(els.season, catalog.seasonOptions, 'Selecciona una temporada');
-    setSelectOptions(els.group, catalog.groupOptions, catalog.groupOptions.length ? 'Todos los grupos' : 'Grupos no disponibles');
-
-    const categoryTarget = catalog.defaultCategory || catalog.categoryOptions[0]?.url || catalog.fallbackUrl;
-    if (categoryTarget) {
-      const categoryOption = [...els.category.options].find(option => option.value === categoryTarget);
-      if (categoryOption) categoryOption.selected = true;
-    }
-
-    const seasonTarget = catalog.defaultSeason || catalog.seasonOptions[0]?.url || '';
-    if (seasonTarget) {
-      const seasonOption = [...els.season.options].find(option => option.value === seasonTarget);
-      if (seasonOption) seasonOption.selected = true;
-    }
-
-    setStatus('Competición lista. Elige categoría y temporada y pulsa Consultar.', 'info');
+    els.category.value = catalog.defaultCategory;
+    await loadSeasons(catalog.defaultCategory, true);
   } catch (error) {
     catalog = null;
     setSelectOptions(els.category, [], 'No disponible');
     setSelectOptions(els.season, [], 'No disponible');
-    setSelectOptions(els.group, [], 'No disponible');
     setStatus(error instanceof Error ? error.message : 'No se han podido cargar las competiciones.', 'error');
   } finally {
     els.form.querySelector('button[type="submit"]').disabled = false;
@@ -147,9 +148,9 @@ async function discoverSource(sourceId) {
 }
 
 els.source.addEventListener('change', () => discoverSource(els.source.value));
-els.category.addEventListener('change', () => {
+els.category.addEventListener('change', async () => {
   seasonWasChosen = false;
-  setStatus('Categoría seleccionada. Puedes mantener la temporada actual o elegir otra.', 'info');
+  await loadSeasons(els.category.value, true);
 });
 els.season.addEventListener('change', () => {
   seasonWasChosen = Boolean(els.season.value);
@@ -157,7 +158,7 @@ els.season.addEventListener('change', () => {
 els.form.addEventListener('submit', event => {
   event.preventDefault();
   const url = currentCompetitionUrl();
-  if (!url) { setStatus('Selecciona una categoría o temporada antes de consultar.', 'error'); return; }
+  if (!url) { setStatus('Selecciona una categoría antes de consultar.', 'error'); return; }
   load(url, els.team.value.trim(), els.view.value);
 });
 els.team.addEventListener('input', () => { if (!dataset) return; analysis = analyzeTeam(dataset, els.team.value.trim()); render(); });
