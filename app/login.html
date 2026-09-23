@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADLSM · Acceso</title>
+  <link rel="icon" href="../assets/logos/ADLSM.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="app-page">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="auth-brand">
+        <img src="../assets/logos/ADLSM.jpg" alt="ADLSM">
+        <div>
+          <strong>ADLSM</strong>
+          <span>Gestión interna</span>
+        </div>
+      </div>
+      <h1>Iniciar sesión</h1>
+      <p class="muted">Accede a las herramientas de gestión de la agrupación.</p>
+      <form id="login-form">
+        <label>Email<input id="email" type="email" autocomplete="email" required></label>
+        <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+        <button class="primary-button" type="submit">Entrar</button>
+        <p id="login-error" class="form-error" role="alert" hidden></p>
+      </form>
+      <a class="back-link" href="../">← Volver a ADLSM</a>
+    </section>
+  </main>
+  <script type="module">
+    import { getSession, signIn } from '../js/core/auth.js';
+
+    const form = document.querySelector('#login-form');
+    const error = document.querySelector('#login-error');
+
+    const session = await getSession();
+    if (session) window.location.replace('./');
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      error.hidden = true;
+      const button = form.querySelector('button');
+      button.disabled = true;
+      button.textContent = 'Entrando…';
+
+      try {
+        await signIn(
+          document.querySelector('#email').value.trim(),
+          document.querySelector('#password').value
+        );
+        window.location.replace('./');
+      } catch (err) {
+        error.textContent = err.message || 'No se ha podido iniciar sesión.';
+        error.hidden = false;
+        button.disabled = false;
+        button.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>
