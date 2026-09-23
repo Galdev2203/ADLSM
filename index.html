@@ -3,59 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Herramientas internas de ADLSM para entrenadores y responsables de equipos.">
-  <title>ADLSM · Herramientas internas</title>
+  <meta name="description" content="ADLSM · Gestión interna de la agrupación deportiva.">
+  <title>ADLSM · Gestión interna</title>
   <link rel="icon" href="assets/logos/ADLSM.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="css/styles.css?v=20260923-01">
-  <link rel="stylesheet" href="css/home.css?v=20260923-01">
-  <link rel="stylesheet" href="css/site.css?v=20260923-01">
 </head>
-<body data-page="home">
-  <main class="home-app">
-    <nav class="site-nav" data-site-nav aria-label="Navegación principal">
-      <a class="site-nav-brand" href="./" data-route="home"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"> ADLSM</a>
-      <div class="site-nav-links">
-        <a href="./" data-route="home">Inicio</a>
-        <a href="horarios/" data-route="horarios">Horarios</a>
-        <a href="resultados/" data-route="resultados">Resultados</a>
-        <a href="app/login.html">Acceso interno</a>
-      </div>
-    </nav>
-
-    <section class="home-hero">
-      <div>
-        <div class="home-brand"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"> ADLSM · HERRAMIENTAS INTERNAS</div>
-        <h1>Todo lo que necesitas para trabajar con tus equipos.</h1>
-        <p class="subtitle">Un espacio común para entrenadores y responsables de las secciones masculinas, femeninas, escolares y federadas.</p>
-      </div>
-      <div class="home-status">Entorno interno · Temporada <span data-season>2026/27</span></div>
-    </section>
-
-    <section class="home-section" aria-labelledby="tools-title">
-      <div class="home-section-header">
-        <div>
-          <h2 id="tools-title">Herramientas</h2>
-          <p>Accede directamente a las herramientas disponibles.</p>
-        </div>
-      </div>
-
-      <div class="tool-grid">
-        <a class="tool-card featured" href="horarios/" aria-label="Abrir Horarios FAB"><div class="tool-icon">🏀</div><h3>Horarios FAB</h3><p>Consulta jornadas de FAB, filtra partidos y prepara publicaciones para redes sociales.</p><span class="tool-arrow">ABRIR HERRAMIENTA →</span></a>
-        <a class="tool-card featured" href="resultados/" aria-label="Abrir Resultados FEB y FAB"><div class="tool-icon">📊</div><h3>Resultados</h3><p>Consulta partidos, clasificaciones y estadísticas de una competición y analiza el rendimiento de un equipo.</p><span class="tool-arrow">ABRIR HERRAMIENTA →</span></a>
-        <a class="tool-card featured" href="app/" aria-label="Abrir gestión interna"><div class="tool-icon">👥</div><h3>Gestión ADLSM</h3><p>Equipos, personas, temporadas y partidos conectados con la base de datos de la agrupación.</p><span class="tool-arrow">ABRIR GESTIÓN →</span></a>
-        <article class="tool-card coming-soon" aria-label="Calendario próximamente"><div class="tool-icon">📅</div><h3>Calendario</h3><p>Una visión conjunta de partidos, entrenamientos y actividad de la agrupación.</p><span class="tool-arrow">EN DESARROLLO</span></article>
-        <article class="tool-card coming-soon" aria-label="Recursos próximamente"><div class="tool-icon">📚</div><h3>Recursos</h3><p>Documentación, metodología y material compartido para los entrenadores.</p><span class="tool-arrow">EN DESARROLLO</span></article>
-        <article class="tool-card coming-soon" aria-label="Publicaciones próximamente"><div class="tool-icon">📣</div><h3>Publicaciones</h3><p>Un espacio común para crear y gestionar las piezas gráficas de la agrupación.</p><span class="tool-arrow">EN DESARROLLO</span></article>
-      </div>
-
-      <div class="home-note"><strong>Una herramienta en evolución.</strong> Las nuevas secciones se incorporarán sobre esta misma base para mantener una experiencia única y coherente para toda la red de entrenadores.</div>
-    </section>
-
-    <footer class="home-footer">
-      <span>ADLSM · Herramientas internas · <strong data-app-version>v0.21.0 · build 2026.09.23.01</strong></span>
-      <a href="app/">Ir a Gestión ADLSM →</a>
-    </footer>
+<body style="margin:0;background:#f5f7fb;color:#172033;font-family:Inter,system-ui,sans-serif">
+  <main style="min-height:100vh;display:grid;place-items:center;padding:24px">
+    <p>Comprobando sesión…</p>
   </main>
-  <script type="module" src="js/core/site-shell.js?v=20260923-01"></script>
+  <script type="module">
+    import { getCurrentUserContext } from './js/core/auth.js';
+    const context = await getCurrentUserContext();
+    window.location.replace(context ? './app/' : './app/login.html');
+  </script>
 </body>
 </html>
