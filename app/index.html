@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADLSM · Panel</title>
+  <link rel="icon" href="../assets/logos/ADLSM.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="app-page">
+  <div id="app" class="app-layout" hidden>
+    <aside class="app-sidebar">
+      <a class="app-brand" href="../"><img src="../assets/logos/ADLSM.jpg" alt="ADLSM"><span>ADLSM</span></a>
+      <nav>
+        <a class="active" href="./">Panel</a>
+        <a href="./equipos.html">Equipos</a>
+        <a href="./personas.html">Personas</a>
+        <a href="./temporadas.html">Temporadas</a>
+        <a href="./partidos.html">Partidos</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../horarios/">Horarios FAB</a>
+        <a href="../resultados/">Resultados</a>
+        <button id="logout" class="ghost-button">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="app-header">
+        <div>
+          <span class="eyebrow">ADLSM · GESTIÓN INTERNA</span>
+          <h1>Panel</h1>
+        </div>
+        <div class="user-chip"><span id="user-name">Usuario</span><span id="user-roles"></span></div>
+      </header>
+
+      <section class="welcome-card">
+        <div>
+          <span class="eyebrow">Temporada 2026/27</span>
+          <h2 id="welcome-title">Bienvenido</h2>
+          <p>Desde aquí gestionaremos equipos, personas, temporadas y partidos directamente sobre Supabase.</p>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <a href="./equipos.html" class="dashboard-card"><span class="card-icon">👥</span><h3>Equipos</h3><p>Equipos y relaciones por temporada.</p></a>
+        <a href="./personas.html" class="dashboard-card"><span class="card-icon">🧑</span><h3>Personas</h3><p>Jugadores, entrenadores y responsables.</p></a>
+        <a href="./temporadas.html" class="dashboard-card"><span class="card-icon">📅</span><h3>Temporadas</h3><p>Histórico y temporadas activas.</p></a>
+        <a href="./partidos.html" class="dashboard-card"><span class="card-icon">🏀</span><h3>Partidos</h3><p>Calendarios y resultados.</p></a>
+      </section>
+
+      <section class="data-panel">
+        <div class="section-heading"><div><span class="eyebrow">CUENTA</span><h2>Tu acceso</h2></div></div>
+        <div id="account-info" class="account-info"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loading" class="loading-screen">Comprobando sesión…</div>
+
+  <script type="module">
+    import { getCurrentUserContext, signOut } from '../js/core/auth.js';
+
+    const app = document.querySelector('#app');
+    const loading = document.querySelector('#loading');
+
+    try {
+      const context = await getCurrentUserContext();
+      if (!context) {
+        window.location.replace('./login.html');
+      } else if (context.profile && context.profile.is_active === false) {
+        throw new Error('Tu usuario está desactivado. Contacta con un coordinador.');
+      } else {
+        const displayName = context.profile?.display_name || context.user.email;
+        document.querySelector('#user-name').textContent = displayName;
+        document.querySelector('#user-roles').textContent = context.roles.join(' · ') || 'Sin rol asignado';
+        document.querySelector('#welcome-title').textContent = `Hola, ${displayName}`;
+        document.querySelector('#account-info').innerHTML = `
+          <div><span>Email</span><strong>${context.user.email}</strong></div>
+          <div><span>Roles</span><strong>${context.roles.join(', ') || 'Sin roles'}</strong></div>
+          <div><span>Persona vinculada</span><strong>${context.profile?.person_id ? 'Sí' : 'No'}</strong></div>
+        `;
+        app.hidden = false;
+      }
+    } catch (err) {
+      loading.textContent = err.message || 'No se ha podido cargar la sesión.';
+    }
+
+    loading.hidden = true;
+    document.querySelector('#logout').addEventListener('click', async () => {
+      await signOut();
+      window.location.replace('./login.html');
+    });
+  </script>
+</body>
+</html>
