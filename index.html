@@ -1,20 +1,8 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ADLSM · Gestión interna de la agrupación deportiva.">
-  <title>ADLSM · Gestión interna</title>
-  <link rel="icon" href="assets/logos/ADLSM.jpg" type="image/jpeg">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADLSM</title><link rel="icon" href="assets/logos/ADLSM.jpg"><link rel="stylesheet" href="styles.css">
 </head>
-<body style="margin:0;background:#f5f7fb;color:#172033;font-family:Inter,system-ui,sans-serif">
-  <main style="min-height:100vh;display:grid;place-items:center;padding:24px">
-    <p>Comprobando sesión…</p>
-  </main>
-  <script type="module">
-    import { getCurrentUserContext } from './js/core/auth.js';
-    const context = await getCurrentUserContext();
-    window.location.replace(context ? './app/' : './app/login.html');
-  </script>
-</body>
+<body><div id="app"></div><script type="module" src="app.js"></script></body>
 </html>
