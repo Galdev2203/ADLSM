@@ -293,3 +293,8 @@
  .dashboard-topbar{min-height:76px;padding:16px 20px}
  .dashboard-topbar h1{font-size:26px}
 }
+
+/* Simple navigation labels */
+.dashboard-nav-item{border-left:0;padding:10px 12px;font-size:13px;font-weight:650}
+.dashboard-nav-item.active{border-left:0}
+.nav-index{display:none}
