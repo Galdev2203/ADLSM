@@ -245,11 +245,11 @@ export function initEquipos() {
     els.detail.scrollIntoView({ behavior:'smooth', block:'start' });
   };
 
-  const load = async () => {
+  const load = async (clearMessage = true) => {
     els.list.hidden = false;
     els.detail.hidden = true;
     els.list.innerHTML = '<div class="team-loading">Cargando equipos…</div>';
-    showMessage('');
+    if (clearMessage) showMessage('');
 
     const [seasonResult, teamResult, relationResult] = await Promise.all([
       supabase.from('seasons').select('id,name,start_year,end_year,is_active').order('start_year', { ascending:false }),
@@ -349,13 +349,16 @@ export function initEquipos() {
         .eq('id', editingId);
 
       if (relationError) {
-        showMessage(`El equipo se actualizó parcialmente, pero no se pudieron guardar los datos de la temporada: ${relationError.message}`);
-      } else {
-        closeModal();
-        showMessage('Equipo actualizado correctamente.', 'success');
+        showMessage(`No se pudieron guardar los datos de la temporada: ${relationError.message}`);
+        els.save.disabled = false;
+        els.save.textContent = 'Guardar cambios';
+        await load(false);
+        return;
       }
 
-      await load();
+      closeModal();
+      await load(false);
+      showMessage('Equipo actualizado correctamente.', 'success');
       return;
     }
 
