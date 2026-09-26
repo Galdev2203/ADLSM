@@ -195,6 +195,69 @@ export function initEquipos() {
     });
   };
 
+  const deleteTeam = async (id) => {
+    const row = teamSeasonRows.find((item) => item.id === id);
+    if (!row) return;
+
+    const teamName = row.display_name || row.team?.name || 'este equipo';
+    const confirmed = window.confirm(
+      '¿Eliminar "' + teamName + '" de la temporada ' + formatSeason(row.season) + '? Esta acción no se puede deshacer.'
+    );
+    if (!confirmed) return;
+
+    if (saving) return;
+    saving = true;
+
+    const detailDelete = els.detail.querySelector('#detailDelete');
+    if (detailDelete) {
+      detailDelete.disabled = true;
+      detailDelete.textContent = 'Eliminando…';
+    }
+
+    try {
+      const { count, error: countError } = await withTimeout(
+        supabase
+          .from('team_seasons')
+          .select('id', { count:'exact', head:true })
+          .eq('team_id', row.team_id)
+      );
+
+      if (countError) throw countError;
+
+      const { error: relationError } = await withTimeout(
+        supabase
+          .from('team_seasons')
+          .delete()
+          .eq('id', row.id)
+      );
+
+      if (relationError) throw relationError;
+
+      if ((count || 0) <= 1) {
+        const { error: teamError } = await withTimeout(
+          supabase
+            .from('teams')
+            .delete()
+            .eq('id', row.team_id)
+        );
+
+        if (teamError) {
+          showMessage('Se quitó el equipo de la temporada, pero no se pudo eliminar el registro base del equipo: ' + teamError.message);
+          await load(false);
+          return;
+        }
+      }
+
+      selectedSeasonId = row.season_id;
+      await load(false);
+      showMessage('Equipo ' + teamName + ' eliminado correctamente.', 'success');
+    } catch (error) {
+      showMessage('No se pudo eliminar el equipo: ' + (error?.message || 'Error desconocido'));
+    } finally {
+      saving = false;
+    }
+  };
+
   const showDetail = (id) => {
     const row = teamSeasonRows.find((item) => item.id === id);
     if (!row) return;
@@ -257,6 +320,7 @@ export function initEquipos() {
 
     els.detail.querySelector('#backToTeams').addEventListener('click', hideDetail);
     els.detail.querySelector('#detailEdit').addEventListener('click', () => openModal(row));
+    els.detail.querySelector('#detailDelete').addEventListener('click', () => deleteTeam(row.id));
     els.detail.scrollIntoView({ behavior:'smooth', block:'start' });
   };
 
