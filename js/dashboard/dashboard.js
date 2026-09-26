@@ -21,10 +21,10 @@ function ensureStylesheet(href, id) {
 }
 
 export async function initDashboard(app, user, onLogout) {
-  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-3', 'dashboard-styles');
+  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-4', 'dashboard-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
-  ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-2', 'equipos-styles');
+  ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
@@ -99,7 +99,7 @@ export async function initDashboard(app, user, onLogout) {
   };
 
   horariosSection.innerHTML = HORARIOS_VIEW;
-  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-8', 'horarios-styles');
+  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-9', 'horarios-styles');
 
   if (horariosCleanup) horariosCleanup();
   horariosCleanup = initHorarios();
