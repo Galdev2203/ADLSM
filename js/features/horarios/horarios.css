@@ -824,3 +824,10 @@ body.modal-open{overflow:hidden}
   .source-actions .date-control{flex:1;min-width:0}
   .source-actions .primary{flex:0 0 auto;width:auto}
 }
+
+/* Unified results toolbar */
+.results-actions{flex-wrap:nowrap}
+.selected-count-label{display:inline-flex;align-items:center;min-height:40px;padding:0 4px;color:#24518e;font-size:12px;white-space:nowrap}
+.selected-count-label.hidden{display:none!important}
+.selection-clear{min-height:40px;white-space:nowrap}
+@media(max-width:900px){.results-actions{flex-wrap:wrap}.selected-count-label,.selection-clear{flex:0 0 auto}}
