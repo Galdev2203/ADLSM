@@ -1,5 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
+import { confirmDialog } from '../../core/dialogs.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -200,9 +201,13 @@ export function initEquipos() {
     if (!row) return;
 
     const teamName = row.display_name || row.team?.name || 'este equipo';
-    const confirmed = window.confirm(
-      '¿Eliminar "' + teamName + '" de la temporada ' + formatSeason(row.season) + '? Esta acción no se puede deshacer.'
-    );
+    const confirmed = await confirmDialog({
+      title: 'Eliminar equipo',
+      message: '¿Eliminar "' + teamName + '" de la temporada ' + formatSeason(row.season) + '? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar equipo',
+      cancelText: 'Cancelar',
+      danger: true
+    });
     if (!confirmed) return;
 
     if (saving) return;

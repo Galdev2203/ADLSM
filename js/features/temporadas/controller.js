@@ -1,5 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
+import { confirmDialog } from '../../core/dialogs.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -252,7 +253,12 @@ export function initTemporadas() {
     const season = seasons.find((item) => item.id === id);
     if (!season || season.is_active) return;
 
-    const confirmed = window.confirm(`¿Activar la temporada "${season.name}"? La temporada activa actual dejará de estar activa.`);
+    const confirmed = await confirmDialog({
+      title: 'Activar temporada',
+      message: `¿Activar la temporada "${season.name}"? La temporada activa actual dejará de estar activa.`,
+      confirmText: 'Activar temporada',
+      cancelText: 'Cancelar'
+    });
     if (!confirmed) return;
 
     const { error: deactivateError } = await supabase
@@ -304,7 +310,13 @@ export function initTemporadas() {
       return;
     }
 
-    const confirmed = window.confirm(`¿Eliminar definitivamente la temporada "${season.name}"? Esta acción no se puede deshacer.`);
+    const confirmed = await confirmDialog({
+      title: 'Eliminar temporada',
+      message: `¿Eliminar definitivamente la temporada "${season.name}"? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar temporada',
+      cancelText: 'Cancelar',
+      danger: true
+    });
     if (!confirmed) return;
 
     const { error } = await supabase

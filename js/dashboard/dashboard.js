@@ -2,9 +2,9 @@ import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
 import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
-import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-3';
+import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-4';
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
-import { initEquipos } from '../features/equipos/controller.js?v=20260926-3';
+import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 
 let horariosCleanup = null;
 let perfilLoaded = false;
@@ -21,7 +21,7 @@ function ensureStylesheet(href, id) {
 }
 
 export async function initDashboard(app, user, onLogout) {
-  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-5', 'dashboard-styles');
+  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-6', 'dashboard-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
