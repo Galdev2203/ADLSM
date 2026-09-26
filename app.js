@@ -48,18 +48,26 @@ function landing() {
     </main>
   `;
 
-  document.querySelector('#goLogin').onclick = showLogin;
-  document.querySelector('#heroLogin').onclick = showLogin;
+  document.querySelector('#goLogin').onclick = () => showLogin();
+  document.querySelector('#heroLogin').onclick = () => showLogin();
 }
 
 function showLogin(message = '') {
   app.innerHTML = `
     <main class="login-page">
+      <section class="login-brand-side">
+        <div class="login-brand-content">
+          <img src="assets/logos/ADLSM.jpg" alt="ADLSM">
+          <div class="brand-side-title">ADLSM</div>
+          <div class="brand-side-line"></div>
+          <p>Gestión deportiva<br>La Salle Montemolín</p>
+        </div>
+      </section>
+
       <section class="login-panel">
         <button class="back-button" id="back">← Volver</button>
 
         <div class="login-heading">
-          <img src="assets/logos/ADLSM.jpg" alt="ADLSM">
           <p class="kicker">ADLSM</p>
           <h1>Iniciar sesión</h1>
           <p>Accede a la plataforma interna de La Salle Montemolín.</p>
@@ -87,7 +95,7 @@ function showLogin(message = '') {
     </main>
   `;
 
-  document.querySelector('#back').onclick = landing;
+  document.querySelector('#back').onclick = () => landing();
   document.querySelector('#loginForm').onsubmit = login;
 }
 
