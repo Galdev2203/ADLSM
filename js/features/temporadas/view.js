@@ -1,15 +1,7 @@
 export const TEMPORADAS_VIEW = `
 <section class="seasons-page">
-  <div class="seasons-header">
-    <div>
-      <span class="seasons-kicker">GESTIÓN</span>
-      <h2>Temporadas</h2>
-      <p>Gestiona las temporadas deportivas y conserva todo el historial del club.</p>
-    </div>
-    <button class="seasons-primary" id="newSeasonButton">+ Nueva temporada</button>
-  </div>
-
-  <div class="seasons-toolbar">
+  <div class="seasons-toolbar" id="seasonsToolbar">
+    <button class="seasons-primary seasons-toolbar-new" id="newSeasonButton">+ Nueva temporada</button>
     <div class="seasons-summary">
       <div><strong id="seasonTotal">0</strong><span>temporadas</span></div>
       <div><strong id="seasonActive">0</strong><span>activa</span></div>
