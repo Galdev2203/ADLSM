@@ -25,8 +25,7 @@ export async function initDashboard(app, user, onLogout) {
 
         <nav class="dashboard-nav" aria-label="Navegación principal">
           <button class="dashboard-nav-item active" data-section="horarios">
-            <span class="nav-index">01</span>
-            <span>Generar horarios</span>
+            <span>Horarios</span>
           </button>
         </nav>
 
