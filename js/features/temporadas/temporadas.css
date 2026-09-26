@@ -91,3 +91,24 @@
   .season-detail-actions button{flex:1}
   .season-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* Seasons page refinement: the dashboard topbar is the only section title. */
+.seasons-header{display:none}
+.seasons-toolbar{align-items:center}
+.seasons-toolbar-new{order:3;flex:0 0 auto}
+.seasons-summary{order:1}
+.seasons-search{order:2;margin-left:auto}
+.seasons-toolbar[hidden],
+.season-list[hidden],
+.season-detail[hidden]{display:none!important}
+.season-detail{width:100%}
+.season-detail-header{padding-top:2px}
+.season-detail-header > div:first-child{min-width:0}
+.season-back{font-size:12px}
+@media(max-width:760px){
+  .seasons-toolbar-new{order:1;width:100%}
+  .seasons-summary{order:2}
+  .seasons-search{order:3;margin-left:0}
+  .seasons-search input{width:100%}
+}
