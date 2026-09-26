@@ -22,6 +22,7 @@ export function initTemporadas() {
     historical: document.querySelector('#seasonHistorical'),
     search: document.querySelector('#seasonSearch'),
     message: document.querySelector('#seasonMessage'),
+    detail: document.querySelector('#seasonDetail'),
     modal: document.querySelector('#seasonModal'),
     form: document.querySelector('#seasonForm'),
     name: document.querySelector('#seasonName'),
@@ -51,6 +52,12 @@ export function initTemporadas() {
   const closeModal = () => {
     els.modal.hidden = true;
     els.form.reset();
+  };
+
+  const hideDetail = () => {
+    els.detail.hidden = true;
+    els.list.hidden = false;
+    els.detail.innerHTML = '';
   };
 
   const render = () => {
@@ -92,16 +99,123 @@ export function initTemporadas() {
           </div>
         </div>
         <div class="season-card-actions">
+          <button class="season-action season-view-action" data-action="view" data-id="${season.id}">Ver temporada</button>
           ${season.is_active ? '<span class="season-current">En uso</span>' : `<button class="season-action" data-action="activate" data-id="${season.id}">Activar</button>`}
         </div>
       </article>`).join('');
+
+    els.list.querySelectorAll('[data-action="view"]').forEach((button) => {
+      button.addEventListener('click', () => showDetail(button.dataset.id));
+    });
 
     els.list.querySelectorAll('[data-action="activate"]').forEach((button) => {
       button.addEventListener('click', () => activateSeason(button.dataset.id));
     });
   };
 
+  const showDetail = async (id) => {
+    const season = seasons.find((item) => item.id === id);
+    if (!season) return;
+
+    els.detail.hidden = false;
+    els.list.hidden = true;
+    els.detail.innerHTML = `<div class="season-detail-loading">Cargando información de ${escapeHtml(season.name)}…</div>`;
+
+    const { data: teamRows, error } = await supabase
+      .from('team_seasons')
+      .select('id,team_id,display_name,gender,competition_name,group_name,venue_name,venue_address,notes')
+      .eq('season_id', id)
+      .order('display_name', { ascending:true });
+
+    if (error) {
+      els.detail.innerHTML = `
+        <div class="season-detail-header">
+          <button class="season-back" id="backToSeasons">← Temporadas</button>
+          <h2>${escapeHtml(season.name)}</h2>
+        </div>
+        <div class="season-detail-empty">No se pudieron cargar los datos de la temporada.<br><small>${escapeHtml(error.message)}</small></div>`;
+      els.detail.querySelector('#backToSeasons').addEventListener('click', hideDetail);
+      return;
+    }
+
+    const rows = teamRows || [];
+    let teams = [];
+    if (rows.length) {
+      const teamIds = [...new Set(rows.map((row) => row.team_id).filter(Boolean))];
+      const { data: teamData } = await supabase
+        .from('teams')
+        .select('id,name,gender,category,is_active')
+        .in('id', teamIds);
+      teams = teamData || [];
+    }
+
+    const teamById = new Map(teams.map((team) => [team.id, team]));
+
+    els.detail.innerHTML = `
+      <div class="season-detail-header">
+        <div>
+          <button class="season-back" id="backToSeasons">← Volver a temporadas</button>
+          <div class="season-detail-title-row">
+            <div class="season-year-badge">${escapeHtml(season.start_year)}/${String(season.end_year).slice(-2)}</div>
+            <div>
+              <span class="seasons-kicker">TEMPORADA</span>
+              <h2>${escapeHtml(season.name)}</h2>
+              <span class="season-status ${season.is_active ? 'active' : ''}">${season.is_active ? 'ACTIVA' : 'HISTÓRICA'}</span>
+            </div>
+          </div>
+        </div>
+        <div class="season-detail-actions">
+          ${!season.is_active ? '<button class="season-action" id="detailActivate">Activar temporada</button>' : ''}
+          <button class="season-delete" id="deleteSeason">Eliminar temporada</button>
+        </div>
+      </div>
+
+      <div class="season-detail-stats">
+        <div><strong>${rows.length}</strong><span>equipos</span></div>
+        <div><strong>${escapeHtml(season.start_year)}</strong><span>inicio</span></div>
+        <div><strong>${escapeHtml(season.end_year)}</strong><span>fin</span></div>
+        <div><strong>${formatDate(season.created_at)}</strong><span>creada</span></div>
+      </div>
+
+      <div class="season-detail-card">
+        <div class="season-detail-card-heading">
+          <div>
+            <span class="seasons-kicker">ESTRUCTURA</span>
+            <h3>Equipos de la temporada</h3>
+          </div>
+          <span class="season-detail-count">${rows.length}</span>
+        </div>
+        ${rows.length ? `
+          <div class="season-team-list">
+            ${rows.map((row) => {
+              const team = teamById.get(row.team_id);
+              return `
+                <article class="season-team-row">
+                  <div class="season-team-icon">🏀</div>
+                  <div class="season-team-info">
+                    <strong>${escapeHtml(row.display_name || team?.name || 'Equipo')}</strong>
+                    <span>${escapeHtml(row.competition_name || team?.category || 'Sin competición')}${row.group_name ? ` · ${escapeHtml(row.group_name)}` : ''}</span>
+                  </div>
+                  <span class="season-team-status">${team?.is_active === false ? 'Inactivo' : 'Activo'}</span>
+                </article>`;
+            }).join('')}
+          </div>` : `
+          <div class="season-detail-empty">
+            <div class="season-empty-icon">🏀</div>
+            <h3>Sin equipos vinculados</h3>
+            <p>Esta temporada todavía no tiene equipos asociados.</p>
+          </div>`}
+      </div>`;
+
+    els.detail.querySelector('#backToSeasons').addEventListener('click', hideDetail);
+    els.detail.querySelector('#detailActivate')?.addEventListener('click', () => activateSeason(id));
+    els.detail.querySelector('#deleteSeason').addEventListener('click', () => deleteSeason(id));
+    els.detail.scrollIntoView({ behavior:'smooth', block:'start' });
+  };
+
   const load = async () => {
+    els.list.hidden = false;
+    els.detail.hidden = true;
     els.list.innerHTML = '<div class="season-loading">Cargando temporadas…</div>';
     showMessage('');
 
@@ -160,6 +274,48 @@ export function initTemporadas() {
     }
 
     showMessage(`La temporada ${season.name} está ahora activa.`, 'success');
+    await load();
+  };
+
+  const deleteSeason = async (id) => {
+    const season = seasons.find((item) => item.id === id);
+    if (!season) return;
+
+    if (season.is_active) {
+      showMessage('No se puede eliminar la temporada activa. Activa otra temporada antes de eliminarla.');
+      return;
+    }
+
+    const { count, error: dependencyError } = await supabase
+      .from('team_seasons')
+      .select('id', { count:'exact', head:true })
+      .eq('season_id', id);
+
+    if (dependencyError) {
+      showMessage(`No se pudo comprobar si la temporada tiene datos asociados: ${dependencyError.message}`);
+      return;
+    }
+
+    if ((count || 0) > 0) {
+      showMessage('No se puede eliminar esta temporada porque tiene equipos vinculados. Para proteger el historial, primero hay que gestionar esos equipos.');
+      return;
+    }
+
+    const confirmed = window.confirm(`¿Eliminar definitivamente la temporada "${season.name}"? Esta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from('seasons')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      showMessage(`No se pudo eliminar la temporada: ${error.message}`);
+      return;
+    }
+
+    hideDetail();
+    showMessage(`Temporada ${season.name} eliminada correctamente.`, 'success');
     await load();
   };
 
