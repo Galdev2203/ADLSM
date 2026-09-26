@@ -17,6 +17,21 @@ let teamSeasonRows = [];
 let searchTerm = '';
 let selectedSeasonId = '';
 let editingId = null;
+let saving = false;
+
+const withTimeout = async (promise, message = 'La operación está tardando demasiado. Comprueba la conexión e inténtalo de nuevo.', timeoutMs = 15000) => {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 export function initEquipos() {
   const els = {
@@ -292,7 +307,9 @@ export function initEquipos() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (saving) return;
     showMessage('');
+    saving = true;
 
     const seasonId = els.season.value;
     const name = els.name.value.trim();
@@ -313,7 +330,8 @@ export function initEquipos() {
     els.save.disabled = true;
     els.save.textContent = editingId ? 'Guardando…' : 'Creando…';
 
-    if (editingId) {
+    try {
+      if (editingId) {
       const row = teamSeasonRows.find((item) => item.id === editingId);
       if (!row) {
         showMessage('No se encontró el equipo que quieres editar.');
@@ -322,10 +340,12 @@ export function initEquipos() {
         return;
       }
 
-      const { error: teamError } = await supabase
-        .from('teams')
-        .update({ name, gender, category, notes, updated_at:new Date().toISOString() })
-        .eq('id', row.team_id);
+      const { error: teamError } = await withTimeout(
+        supabase
+          .from('teams')
+          .update({ name, gender, category, notes, updated_at:new Date().toISOString() })
+          .eq('id', row.team_id)
+      );
 
       if (teamError) {
         showMessage(`No se pudo actualizar el equipo: ${teamError.message}`);
@@ -334,19 +354,21 @@ export function initEquipos() {
         return;
       }
 
-      const { error: relationError } = await supabase
-        .from('team_seasons')
-        .update({
-          display_name:displayName,
-          gender,
-          competition_name:competition,
-          group_name:group,
-          venue_name:venue,
-          venue_address:address,
-          notes,
-          updated_at:new Date().toISOString()
-        })
-        .eq('id', editingId);
+      const { error: relationError } = await withTimeout(
+        supabase
+          .from('team_seasons')
+          .update({
+            display_name:displayName,
+            gender,
+            competition_name:competition,
+            group_name:group,
+            venue_name:venue,
+            venue_address:address,
+            notes,
+            updated_at:new Date().toISOString()
+          })
+          .eq('id', editingId)
+      );
 
       if (relationError) {
         showMessage(`No se pudieron guardar los datos de la temporada: ${relationError.message}`);
@@ -362,11 +384,13 @@ export function initEquipos() {
       return;
     }
 
-    const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .insert({ name, gender, category, notes, is_active:true })
-      .select('id,name,gender,category,notes,is_active')
-      .single();
+    const { data: team, error: teamError } = await withTimeout(
+      supabase
+        .from('teams')
+        .insert({ name, gender, category, notes, is_active:true })
+        .select('id,name,gender,category,notes,is_active')
+        .single()
+    );
 
     if (teamError) {
       showMessage(`No se pudo crear el equipo: ${teamError.message}`);
@@ -375,19 +399,21 @@ export function initEquipos() {
       return;
     }
 
-    const { error: relationError } = await supabase
-      .from('team_seasons')
-      .insert({
-        season_id:seasonId,
-        team_id:team.id,
-        display_name:displayName,
-        gender,
-        competition_name:competition,
-        group_name:group,
-        venue_name:venue,
-        venue_address:address,
-        notes
-      });
+    const { error: relationError } = await withTimeout(
+      supabase
+        .from('team_seasons')
+        .insert({
+          season_id:seasonId,
+          team_id:team.id,
+          display_name:displayName,
+          gender,
+          competition_name:competition,
+          group_name:group,
+          venue_name:venue,
+          venue_address:address,
+          notes
+        })
+    );
 
     if (relationError) {
       await supabase.from('teams').delete().eq('id', team.id);
@@ -397,10 +423,17 @@ export function initEquipos() {
       return;
     }
 
-    closeModal();
-    selectedSeasonId = seasonId;
-    showMessage(`Equipo ${displayName} creado correctamente.`, 'success');
-    await load();
+      closeModal();
+      selectedSeasonId = seasonId;
+      await load(false);
+      showMessage(`Equipo ${displayName} creado correctamente.`, 'success');
+    } catch (error) {
+      showMessage(error?.message || 'No se pudo guardar el equipo.');
+    } finally {
+      saving = false;
+      els.save.disabled = false;
+      els.save.textContent = editingId ? 'Guardar cambios' : 'Crear equipo';
+    }
   };
 
   els.search.addEventListener('input', () => {
