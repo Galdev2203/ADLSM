@@ -3,10 +3,13 @@ import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
 import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
 import { initTemporadas } from '../features/temporadas/controller.js';
+import { EQUIPOS_VIEW } from '../features/equipos/view.js';
+import { initEquipos } from '../features/equipos/controller.js';
 
 let horariosCleanup = null;
 let perfilLoaded = false;
 let temporadasCleanup = null;
+let equiposCleanup = null;
 
 function ensureStylesheet(href, id) {
   if (document.getElementById(id)) return;
@@ -21,6 +24,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-3', 'dashboard-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
+  ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-1', 'equipos-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
@@ -36,6 +40,9 @@ export async function initDashboard(app, user, onLogout) {
           </button>
           <button class="dashboard-nav-item" data-section="temporadas">
             <span>Temporadas</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="equipos">
+            <span>Equipos</span>
           </button>
           <button class="dashboard-nav-item" data-section="perfil">
             <span>Perfil</span>
@@ -61,6 +68,7 @@ export async function initDashboard(app, user, onLogout) {
         <div id="dashboardContent" class="dashboard-content">
           <section id="sectionHorarios" class="dashboard-section"></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
+          <section id="sectionEquipos" class="dashboard-section" hidden></section>
           <section id="sectionPerfil" class="dashboard-section" hidden></section>
         </div>
       </section>
@@ -70,6 +78,7 @@ export async function initDashboard(app, user, onLogout) {
   const horariosSection = document.querySelector('#sectionHorarios');
   const perfilSection = document.querySelector('#sectionPerfil');
   const temporadasSection = document.querySelector('#sectionTemporadas');
+  const equiposSection = document.querySelector('#sectionEquipos');
   const dashboardTitle = document.querySelector('#dashboardTitle');
   const navItems = [...document.querySelectorAll('.dashboard-nav-item')];
 
@@ -81,6 +90,10 @@ export async function initDashboard(app, user, onLogout) {
     if (temporadasCleanup) {
       temporadasCleanup();
       temporadasCleanup = null;
+    }
+    if (equiposCleanup) {
+      equiposCleanup();
+      equiposCleanup = null;
     }
     await onLogout();
   };
@@ -94,11 +107,15 @@ export async function initDashboard(app, user, onLogout) {
   const showSection = async (sectionName) => {
     const isPerfil = sectionName === 'perfil';
     const isTemporadas = sectionName === 'temporadas';
+    const isEquipos = sectionName === 'equipos';
 
-    horariosSection.hidden = isPerfil || isTemporadas;
+    horariosSection.hidden = isPerfil || isTemporadas || isEquipos;
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
-    dashboardTitle.textContent = isPerfil ? 'Perfil' : (isTemporadas ? 'Temporadas' : 'Horarios');
+    equiposSection.hidden = !isEquipos;
+    dashboardTitle.textContent = isPerfil
+      ? 'Perfil'
+      : (isTemporadas ? 'Temporadas' : (isEquipos ? 'Equipos' : 'Horarios'));
 
     navItems.forEach((item) => {
       item.classList.toggle('active', item.dataset.section === sectionName);
@@ -107,6 +124,11 @@ export async function initDashboard(app, user, onLogout) {
     if (isTemporadas && !temporadasCleanup) {
       temporadasSection.innerHTML = TEMPORADAS_VIEW;
       temporadasCleanup = initTemporadas();
+    }
+
+    if (isEquipos && !equiposCleanup) {
+      equiposSection.innerHTML = EQUIPOS_VIEW;
+      equiposCleanup = initEquipos();
     }
 
     if (isPerfil && !perfilLoaded) {
