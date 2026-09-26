@@ -1,50 +1,159 @@
 import { supabase } from './js/core/supabase.js';
 
-const app=document.querySelector('#app');
-const state={session:null,profile:null,roles:[],page:'dashboard',season:null,seasons:[],people:[],teams:[],matches:[],busy:false};
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const date=v=>v?new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${v}T00:00:00`)):'—';
-const shortDate=v=>v?new Intl.DateTimeFormat('es-ES',{weekday:'short',day:'2-digit',month:'short'}).format(new Date(`${v}T00:00:00`)):'—';
-const canWrite=()=>state.roles.includes('Coordinador');
-const activeSeason=()=>state.seasons.find(s=>s.is_active)||state.seasons[0]||null;
-async function select(table,columns='*',order='created_at',ascending=false){const {data,error}=await supabase.from(table).select(columns).order(order,{ascending});if(error)throw error;return data||[]}
-async function init(){const {data:{session}}=await supabase.auth.getSession();if(!session){return login()}state.session=session;const {data:profile,error:pe}=await supabase.from('user_profiles').select('*').eq('user_id',session.user.id).maybeSingle();if(pe)throw pe;state.profile=profile;const {data:roles,error:re}=await supabase.from('user_roles').select('role').eq('user_id',session.user.id);if(re)throw re;state.roles=(roles||[]).map(x=>x.role);if(!profile?.is_active){await supabase.auth.signOut();return login('Tu cuenta no está activa.')}await loadAll();render();}
-async function loadAll(){state.seasons=await select('seasons','*','start_year',false);state.people=await select('people','*','last_name',true);state.teams=await select('team_seasons','*,teams(name),seasons(name,is_active)','created_at',false);state.matches=await select('matches','*,team_seasons(display_name,teams(name),seasons(name))','match_date',true);state.season=activeSeason()}
-function login(message=''){app.innerHTML=`<div class="loginbody"><div class="login"><img src="assets/logos/ADLSM.jpg" alt="ADLSM"><h1>Bienvenido a ADLSM</h1><p>Gestión deportiva de La Salle Montemolín</p>${message?`<div class="errorbox" style="margin-top:18px">${esc(message)}</div>`:''}<form id="loginForm"><label>Email<input class="input" name="email" type="email" autocomplete="email" required placeholder="tu@email.com"></label><label>Contraseña<input class="input" name="password" type="password" autocomplete="current-password" required placeholder="••••••••"></label><button class="primary" type="submit">Iniciar sesión</button></form></div></div>`;document.querySelector('#loginForm').onsubmit=doLogin}
-async function doLogin(e){e.preventDefault();const f=new FormData(e.target),button=e.target.querySelector('button');button.disabled=true;button.textContent='Entrando…';const {error}=await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});if(error){button.disabled=false;button.textContent='Iniciar sesión';return login(error.message)}await init()}
-function nav(id,label,icon){return `<button class="nav ${state.page===id?'active':''}" data-page="${id}"><i>${icon}</i>${label}</button>`}
-function shell(view){const isMenu=location.hash==='#menu';return `<div class="shell ${isMenu?'menu-open':''}"><aside><div class="brand"><img src="assets/logos/ADLSM.jpg" alt="La Salle"><div><strong>ADLSM</strong><span>Gestión deportiva</span></div></div><div class="navgroup"><div class="navlabel">Principal</div>${nav('dashboard','Inicio','⌂')}${nav('people','Personas','♙')}${nav('teams','Equipos','▦')}${nav('seasons','Temporadas','◷')}${nav('matches','Partidos','⚑')}</div><div class="navgroup"><div class="navlabel">Competición</div>${nav('competition','Calendario y resultados','◉')}${nav('fab','FAB / FEB','↗')}</div><div class="navgroup"><div class="navlabel">Administración</div>${nav('users','Usuarios','⚙')}</div><div class="account"><div class="name">${esc(state.profile?.display_name||state.session.user.email)}</div><small>${esc(state.roles.join(' · ')||'Sin rol')}</small><button id="logout" class="ghost">Cerrar sesión</button></div></aside><main><header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="mobilemenu" id="mobileMenu">☰</button><div><small>AGRUPACIÓN DEPORTIVA LA SALLE MONTEMOLÍN</small><h1>${pageTitle()}</h1></div></div>${state.season?`<div class="season-chip">● ${esc(state.season.name)}</div>`:''}</header><div class="content">${view}</div></main></div>`}
-function pageTitle(){return ({dashboard:'Panel principal',people:'Personas',teams:'Equipos',seasons:'Temporadas',matches:'Partidos',competition:'Competición',fab:'Fuentes FAB / FEB',users:'Usuarios'})[state.page]||'ADLSM'}
-async function render(){try{let view='<div class="loading"><div class="spinner"></div></div>';app.innerHTML=shell(view);const fn={dashboard:dashboard,people:people,teams:teams,seasons:seasons,matches:matches,competition:competition,fab:fab,users:users}[state.page];view=await fn();app.innerHTML=shell(view);wire()}catch(e){app.innerHTML=shell(`<div class="panel"><div class="errorbox">${esc(e.message)}</div></div>`)}}
-function toolbar(left='',button=''){return `<div class="toolbar"><div class="toolbar-left">${left}</div>${button}</div>`}
-async function dashboard(){const s=state.season,teams=state.teams.filter(t=>!s||t.season_id===s.id),today=new Date().toISOString().slice(0,10),up=state.matches.filter(m=>m.match_date>=today).slice(0,6);return `<section class="hero"><div><span class="eyebrow">TEMPORADA ACTIVA</span><h2>${esc(s?.name||'Sin temporada')}</h2><p>La información del club, organizada en un solo lugar.</p></div><button class="primary" data-page="teams">Ver equipos</button></section><div class="stats"><div class="stat"><div class="icon">▦</div><b>${teams.length}</b><span>Equipos en la temporada</span></div><div class="stat"><div class="icon">♙</div><b>${state.people.length}</b><span>Personas registradas</span></div><div class="stat"><div class="icon">⚑</div><b>${state.matches.filter(m=>m.match_date>=today).length}</b><span>Partidos pendientes</span></div><div class="stat"><div class="icon">◷</div><b>${state.seasons.length}</b><span>Temporadas</span></div></div><div class="grid2"><div class="panel"><div class="panelhead"><h3>Próximos partidos</h3><button class="link" data-page="matches">Ver todos</button></div>${up.length?up.map(matchRow).join(''):`<div class="empty"><strong>No hay próximos partidos</strong>Cuando se registren partidos aparecerán aquí.</div>`}</div><div class="panel"><div class="panelhead"><h3>Equipos de ${esc(s?.name||'la temporada')}</h3><button class="link" data-page="teams">Ver todos</button></div>${teams.slice(0,7).map(t=>`<div class="listrow"><div class="grow"><b>${esc(t.display_name||t.teams?.name)}</b><small>${esc(t.category||'')} ${t.section?'· '+esc(t.section):''}</small></div><span class="badge">${esc(t.competition_name||'Sin competición')}</span></div>`).join('')||'<div class="empty">No hay equipos en esta temporada.</div>'}</div></div>`}
-function matchRow(m){return `<div class="matchrow"><div class="datebox"><b>${esc(shortDate(m.match_date))}</b><small>${esc(m.match_time||'')}</small></div><div class="matchmain"><b>${esc(m.team_seasons?.display_name||'Equipo')}</b><span>${m.is_home?'Local':'Visitante'} · ${esc(m.opponent_name)}</span></div><div class="score">${m.home_score!=null?`${m.home_score}–${m.away_score}`:'—'}</div></div>`}
-async function people(){return `${toolbar('<div class="search"><input id="tableSearch" placeholder="Buscar persona…"></div>',canWrite()?'<button class="primary" id="newPerson">+ Nueva persona</button>':'')}<div class="panel"><div class="tablewrap"><table><thead><tr><th>Persona</th><th>Contacto</th><th>Estado</th><th></th></tr></thead><tbody id="peopleBody">${state.people.map(p=>personRow(p)).join('')||'<tr><td colspan="4"><div class="empty">No hay personas registradas.</div></td></tr>'}</tbody></table></div></div>`}
-function personRow(p){return `<tr><td><div class="personname">${esc(`${p.first_name} ${p.last_name}`)}</div><small>${esc(p.email||'Sin email')}</small></td><td>${esc(p.phone||'—')}</td><td><span class="status ${p.is_active?'on':'off'}">${p.is_active?'Activo':'Inactivo'}</span></td><td class="actions">${canWrite()?`<button class="iconbtn" data-edit-person="${p.id}">Editar</button>`:''}</td></tr>`}
-async function seasons(){return `${toolbar('<div><span class="eyebrow">HISTÓRICO</span></div>',canWrite()?'<button class="primary" id="newSeason">+ Nueva temporada</button>':'')}<div class="season-grid">${state.seasons.map(s=>`<article class="seasoncard ${s.is_active?'active':''}"><span class="badge ${s.is_active?'yellow':'gray'}">${s.is_active?'ACTIVA':'HISTÓRICA'}</span><h3>${esc(s.name)}</h3><small>${s.start_year} / ${s.end_year}</small>${canWrite()&&!s.is_active?`<div class="actions" style="margin-top:17px"><button class="secondary" data-activate="${s.id}">Activar temporada</button></div>`:''}</article>`).join('')||'<div class="panel empty">No hay temporadas todavía.</div>'}</div>`}
-async function teams(){const rows=state.teams.filter(t=>!state.season||t.season_id===state.season.id);return `${toolbar('<div class="toolbar-left"><select class="filter" id="teamSection"><option value="">Todas las secciones</option><option>Escolar masculina</option><option>Escolar femenina</option><option>Escuela</option><option>Federados</option></select></div>',canWrite()?'<button class="primary" id="newTeam">+ Nuevo equipo</button>':'')}<div id="teamsGrid" class="teamgrid">${rows.map(teamCard).join('')||'<div class="panel empty" style="grid-column:1/-1"><strong>No hay equipos en la temporada activa</strong>Crea el primer equipo para empezar a trabajar.</div>'}</div>`}
-function teamCard(t){return `<article class="teamcard" data-team="${t.id}"><div class="teamtop"><span class="badge">${esc(t.section||t.category||'Equipo')}</span><span class="badge gray">${esc(t.gender||'')}</span></div><h3>${esc(t.display_name||t.teams?.name||'Equipo')}</h3><p>${esc(t.competition_name||'Sin competición')}${t.group_name?' · '+esc(t.group_name):''}</p><div class="teammeta"><span>${esc(t.seasons?.name||'')}</span><span>${esc(t.venue_name||'Sin pabellón')}</span></div></article>`}
-async function matches(){const today=new Date().toISOString().slice(0,10);return `${toolbar('<div class="toolbar-left"><select id="matchFilter" class="filter"><option value="all">Todos</option><option value="upcoming">Próximos</option><option value="played">Jugados</option></select></div>',canWrite()?'<button class="primary" id="newMatch">+ Nuevo partido</button>':'')}<div class="panel"><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Equipo</th><th>Rival</th><th>Condición</th><th>Resultado</th></tr></thead><tbody id="matchesBody">${state.matches.map(m=>matchTableRow(m)).join('')||'<tr><td colspan="5"><div class="empty">No hay partidos.</div></td></tr>'}</tbody></table></div></div>`}
-function matchTableRow(m){return `<tr data-match-date="${m.match_date}" data-match-played="${m.home_score!=null}"><td><b>${esc(date(m.match_date))}</b><small>${esc(m.match_time||'')}</small></td><td><b>${esc(m.team_seasons?.display_name||'')}</b><small>${esc(m.team_seasons?.seasons?.name||'')}</small></td><td>${esc(m.opponent_name)}</td><td><span class="badge ${m.is_home?'green':'gray'}">${m.is_home?'LOCAL':'VISITANTE'}</span></td><td>${m.home_score!=null?`<b>${m.home_score} – ${m.away_score}</b>`:'<span class="status">Pendiente</span>'}</td></tr>`}
-async function competition(){const upcoming=state.matches.filter(m=>m.match_date>=new Date().toISOString().slice(0,10));const played=state.matches.filter(m=>m.home_score!=null).slice(-8).reverse();return `<div class="grid2"><div class="panel"><div class="panelhead"><h3>Calendario</h3><span class="badge">${upcoming.length} próximos</span></div>${upcoming.slice(0,10).map(matchRow).join('')||'<div class="empty">No hay partidos próximos.</div>'}</div><div class="panel"><div class="panelhead"><h3>Resultados recientes</h3></div>${played.map(matchRow).join('')||'<div class="empty">No hay resultados registrados.</div>'}</div></div><div class="panel" style="margin-top:18px"><div class="panelhead"><div><h3>Clasificación</h3><p>Se mostrará cuando exista información de clasificación disponible para la competición.</p></div></div><div class="empty">Sin datos de clasificación.</div></div>`}
-async function fab(){const rows=await select('external_team_mappings','*,team_seasons(display_name,seasons(name))','created_at',false);return `${toolbar('<div><span class="eyebrow">INTEGRACIONES</span></div>',canWrite()?'<button class="primary" id="newFab">+ Vincular equipo</button>':'')}<div class="panel"><div class="tablewrap"><table><thead><tr><th>Equipo ADLSM</th><th>Fuente</th><th>ID externo</th><th>Nombre externo</th><th>Grupo</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.team_seasons?.display_name||'')}</b><small>${esc(x.team_seasons?.seasons?.name||'')}</small></td><td><span class="badge">${esc(x.source)}</span></td><td>${esc(x.external_id||'—')}</td><td>${esc(x.external_name||'—')}</td><td>${esc(x.group_name||'—')}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty">No hay vinculaciones FAB/FEB.</div></td></tr>'}</tbody></table></div></div>`}
-async function users(){const profiles=await select('user_profiles','*','created_at',false);const roles=await select('user_roles','*','role',true);return `<div class="panel"><div class="panelhead"><div><h3>Cuentas de acceso</h3><p>La autenticación se gestiona mediante Supabase Auth.</p></div></div><div class="tablewrap"><table><thead><tr><th>Cuenta</th><th>Persona</th><th>Roles</th><th>Estado</th></tr></thead><tbody>${profiles.map(u=>`<tr><td><b>${esc(u.display_name||'Sin nombre')}</b><small>${esc(u.user_id)}</small></td><td>${esc(state.people.find(p=>p.id===u.person_id)?`${state.people.find(p=>p.id===u.person_id).first_name} ${state.people.find(p=>p.id===u.person_id).last_name}`:'Sin persona asociada')}</td><td>${roles.filter(r=>r.user_id===u.user_id).map(r=>`<span class="badge">${esc(r.role)}</span>`).join(' ')||'—'}</td><td><span class="status ${u.is_active?'on':'off'}">${u.is_active?'Activo':'Inactivo'}</span></td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">No hay perfiles de usuario.</div></td></tr>'}</tbody></table></div></div>`}
-function modal(title,body){document.body.insertAdjacentHTML('beforeend',`<div class="modalback" id="modal"><div class="modal"><div class="modalhead"><h3>${title}</h3><button class="close" id="closeModal">×</button></div>${body}</div></div>`);document.querySelector('#closeModal').onclick=closeModal;document.querySelector('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()})}
-function closeModal(){document.querySelector('#modal')?.remove()}
-function formActions(){return `<div class="modalactions"><button type="button" class="secondary" id="cancelModal">Cancelar</button><button class="primary" type="submit">Guardar</button></div>`}
-function personModal(p=null){const title=p?'Editar persona':'Nueva persona';modal(title,`<form class="form" id="personForm"><div class="formgrid"><label>Nombre<input class="input" name="first_name" value="${esc(p?.first_name)}" required></label><label>Apellidos<input class="input" name="last_name" value="${esc(p?.last_name)}" required></label><label>Teléfono<input class="input" name="phone" value="${esc(p?.phone)}"></label><label>Email<input class="input" name="email" type="email" value="${esc(p?.email)}"></label><label>Fecha de nacimiento<input class="input" name="birth_date" type="date" value="${esc(p?.birth_date)}"></label><label>Estado<select name="is_active"><option value="true" ${p?.is_active!==false?'selected':''}>Activo</option><option value="false" ${p?.is_active===false?'selected':''}>Inactivo</option></select></label></div>${!p?`<div><div class="eyebrow" style="margin-bottom:9px">FUNCIONES</div><div class="checkgrid"><label class="checkcard"><input type="checkbox" name="player"> Jugador</label><label class="checkcard"><input type="checkbox" name="coach"> Entrenador</label><label class="checkcard"><input type="checkbox" name="responsible"> Responsable</label><label class="checkcard"><input type="checkbox" name="coordinator"> Coordinador</label></div></div>`:''}${formActions()}</form>`);document.querySelector('#cancelModal').onclick=closeModal;document.querySelector('#personForm').onsubmit=e=>savePerson(e,p)}
-async function savePerson(e,p){e.preventDefault();const f=new FormData(e.target);try{const payload={first_name:f.get('first_name'),last_name:f.get('last_name'),phone:f.get('phone')||null,email:f.get('email')||null,birth_date:f.get('birth_date')||null,is_active:f.get('is_active')==='true'};if(p){const {error}=await supabase.from('people').update(payload).eq('id',p.id);if(error)throw error}else{const {data:newP,error}=await supabase.from('people').insert(payload).select().single();if(error)throw error;const id=newP.id;if(f.get('player')){const {error}=await supabase.from('player_profiles').insert({person_id:id});if(error)throw error}if(f.get('coach')){const {error}=await supabase.from('coach_profiles').insert({person_id:id});if(error)throw error}if(f.get('responsible')){const {error}=await supabase.from('responsibilities').insert({person_id:id,section:'Federados'});if(error)throw error}if(f.get('coordinator')){toast('La persona se ha creado. Su rol de usuario se gestiona desde Usuarios.')} }closeModal();await loadAll();await render();toast(p?'Persona actualizada':'Persona creada')}catch(err){toast(err.message,true)}}
-function seasonModal(){modal('Nueva temporada',`<form class="form" id="seasonForm"><div class="formgrid"><label>Nombre<input class="input" name="name" placeholder="2026/27" required></label><label>Año de inicio<input class="input" name="start_year" type="number" required></label><label>Año de fin<input class="input" name="end_year" type="number" required></label><label>Estado<select name="active"><option value="false">Histórica</option><option value="true">Activa</option></select></label></div>${formActions()}</form>`);document.querySelector('#cancelModal').onclick=closeModal;document.querySelector('#seasonForm').onsubmit=saveSeason}
-async function saveSeason(e){e.preventDefault();const f=new FormData(e.target);try{const start=Number(f.get('start_year')),end=Number(f.get('end_year'));if(end!==start+1)throw Error('El año final debe ser exactamente un año posterior al inicial.');if(f.get('active')==='true'){const {error}=await supabase.from('seasons').update({is_active:false}).eq('is_active',true);if(error)throw error}const {error}=await supabase.from('seasons').insert({name:f.get('name'),start_year:start,end_year:end,is_active:f.get('active')==='true'});if(error)throw error;closeModal();await loadAll();await render();toast('Temporada creada')}catch(err){toast(err.message,true)}}
-async function activateSeason(id){if(!confirm('¿Activar esta temporada? La temporada activa actual dejará de estar activa.'))return;try{let r=await supabase.from('seasons').update({is_active:false}).eq('is_active',true);if(r.error)throw r.error;r=await supabase.from('seasons').update({is_active:true}).eq('id',id);if(r.error)throw r.error;await loadAll();await render();toast('Temporada activada')}catch(e){toast(e.message,true)}}
-function teamModal(){const seasons=state.seasons;modal('Nuevo equipo',`<form class="form" id="teamForm"><div class="formgrid"><label>Nombre del equipo<input class="input" name="team_name" required placeholder="Ej. Cadete Masculino A"></label><label>Temporada<select name="season_id" required>${seasons.map(s=>`<option value="${s.id}" ${s.id===state.season?.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><label>Nombre visible<input class="input" name="display_name" placeholder="Opcional"></label><label>Sección<select name="section"><option>Federados</option><option>Escolar masculina</option><option>Escolar femenina</option><option>Escuela</option></select></label><label>Categoría<input class="input" name="category"></label><label>Género<select name="gender"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Mixto">Mixto</option></select></label><label>Competición<input class="input" name="competition_name"></label><label>Grupo<input class="input" name="group_name"></label><label>Pabellón<input class="input" name="venue_name"></label><label>Dirección<input class="input" name="venue_address"></label></div>${formActions()}</form>`);document.querySelector('#cancelModal').onclick=closeModal;document.querySelector('#teamForm').onsubmit=saveTeam}
-async function saveTeam(e){e.preventDefault();const f=new FormData(e.target);try{const team={name:f.get('team_name'),gender:f.get('gender'),category:f.get('category')||null,is_active:true};const {data:t,error:te}=await supabase.from('teams').insert(team).select().single();if(te)throw te;const {error}=await supabase.from('team_seasons').insert({team_id:t.id,season_id:f.get('season_id'),display_name:f.get('display_name')||f.get('team_name'),section:f.get('section'),category:f.get('category')||null,gender:f.get('gender'),competition_name:f.get('competition_name')||null,group_name:f.get('group_name')||null,venue_name:f.get('venue_name')||null,venue_address:f.get('venue_address')||null});if(error)throw error;closeModal();await loadAll();await render();toast('Equipo creado')}catch(err){toast(err.message,true)}}
-function matchModal(){modal('Nuevo partido',`<form class="form" id="matchForm"><div class="formgrid"><label>Equipo<select name="team_season_id" required>${state.teams.map(t=>`<option value="${t.id}">${esc(t.display_name||t.teams?.name)} · ${esc(t.seasons?.name||'')}</option>`).join('')}</select></label><label>Rival<input class="input" name="opponent_name" required></label><label>Fecha<input class="input" name="match_date" type="date" required></label><label>Hora<input class="input" name="match_time" type="time"></label><label>Condición<select name="is_home"><option value="true">Local</option><option value="false">Visitante</option></select></label><label>Jornada<input class="input" name="jornada" type="number"></label><label>Competición<input class="input" name="competition_name"></label><label>Pabellón<input class="input" name="venue_name"></label></div>${formActions()}</form>`);document.querySelector('#cancelModal').onclick=closeModal;document.querySelector('#matchForm').onsubmit=saveMatch}
-async function saveMatch(e){e.preventDefault();const f=new FormData(e.target);try{const payload={team_season_id:f.get('team_season_id'),opponent_name:f.get('opponent_name'),match_date:f.get('match_date'),match_time:f.get('match_time')||null,is_home:f.get('is_home')==='true',jornada:f.get('jornada')?Number(f.get('jornada')):null,competition_name:f.get('competition_name')||null,venue_name:f.get('venue_name')||null,status:'scheduled'};const {error}=await supabase.from('matches').insert(payload);if(error)throw error;closeModal();await loadAll();await render();toast('Partido creado')}catch(err){toast(err.message,true)}}
-async function fabModal(){const rows=state.teams;modal('Vincular equipo FAB / FEB',`<form class="form" id="fabForm"><div class="formgrid"><label>Equipo ADLSM<select name="team_season_id" required>${rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.teams?.name)} · ${esc(t.seasons?.name||'')}</option>`).join('')}</select></label><label>Fuente<select name="source"><option>FAB</option><option>FEB</option></select></label><label>ID externo<input class="input" name="external_id"></label><label>Nombre externo<input class="input" name="external_name"></label><label>Categoría externa<input class="input" name="external_category"></label><label>Grupo externo<input class="input" name="group_name"></label><label class="full">URL de origen<input class="input" name="source_url" type="url"></label></div>${formActions()}</form>`);document.querySelector('#cancelModal').onclick=closeModal;document.querySelector('#fabForm').onsubmit=saveFab}
-async function saveFab(e){e.preventDefault();const f=new FormData(e.target);try{const {error}=await supabase.from('external_team_mappings').insert({team_season_id:f.get('team_season_id'),source:f.get('source'),external_id:f.get('external_id')||null,external_name:f.get('external_name')||null,external_category:f.get('external_category')||null,group_name:f.get('group_name')||null,source_url:f.get('source_url')||null});if(error)throw error;closeModal();await render();toast('Vinculación guardada')}catch(err){toast(err.message,true)}}
-function wire(){document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;window.scrollTo({top:0,behavior:'smooth'});render()});document.querySelector('#logout')?.addEventListener('click',async()=>{await supabase.auth.signOut();login()});document.querySelector('#mobileMenu')?.addEventListener('click',()=>{document.querySelector('.shell')?.classList.toggle('menu-open')});document.querySelector('#newPerson')?.addEventListener('click',()=>personModal());document.querySelector('#newSeason')?.addEventListener('click',seasonModal);document.querySelector('#newTeam')?.addEventListener('click',teamModal);document.querySelector('#newMatch')?.addEventListener('click',matchModal);document.querySelector('#newFab')?.addEventListener('click',fabModal);document.querySelectorAll('[data-activate]').forEach(b=>b.onclick=()=>activateSeason(b.dataset.activate));document.querySelectorAll('[data-edit-person]').forEach(b=>b.onclick=()=>personModal(state.people.find(p=>p.id===b.dataset.editPerson)));document.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>teamDetail(b.dataset.team));document.querySelector('#tableSearch')?.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#peopleBody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')});document.querySelector('#teamSection')?.addEventListener('change',e=>{document.querySelectorAll('[data-team]').forEach(c=>{const id=c.dataset.team,t=state.teams.find(x=>x.id===id);c.style.display=!e.target.value||t?.section===e.target.value?'':'none'})});document.querySelector('#matchFilter')?.addEventListener('change',e=>{document.querySelectorAll('#matchesBody tr').forEach(r=>{const played=r.dataset.matchPlayed==='true',today=r.dataset.matchDate>=new Date().toISOString().slice(0,10);r.style.display=e.target.value==='all'||e.target.value==='played'&&played||e.target.value==='upcoming'&&today?'':'none'})})}
-async function teamDetail(id){const t=state.teams.find(x=>x.id===id);if(!t)return;const players=await supabase.from('team_players').select('*,player_profiles(people(first_name,last_name))').eq('team_season_id',id);const coaches=await supabase.from('team_coaches').select('*,coach_profiles(people(first_name,last_name))').eq('team_season_id',id);const games=state.matches.filter(m=>m.team_season_id===id);modal(t.display_name||t.teams?.name,`<div style="padding:0 23px 23px"><div class="stats" style="grid-template-columns:repeat(3,1fr);margin:18px 0"><div class="stat"><b>${players.data?.length||0}</b><span>Jugadores</span></div><div class="stat"><b>${coaches.data?.length||0}</b><span>Entrenadores</span></div><div class="stat"><b>${games.length}</b><span>Partidos</span></div></div><div class="tabs"><button class="tab active">Resumen</button></div><div class="panel" style="box-shadow:none"><p><b>Temporada:</b> ${esc(t.seasons?.name||'')}</p><p><b>Categoría:</b> ${esc(t.category||'—')}</p><p><b>Sección:</b> ${esc(t.section||'—')}</p><p><b>Competición:</b> ${esc(t.competition_name||'—')}</p><p><b>Pabellón:</b> ${esc(t.venue_name||'—')}</p></div></div>`)}
-function toast(message,error=false){document.querySelector('.toast')?.remove();const el=document.createElement('div');el.className=`toast${error?' error':''}`;el.textContent=message;document.body.appendChild(el);setTimeout(()=>el.remove(),3500)}
-supabase.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;login()}});
-init().catch(e=>login(e.message));
+const app = document.querySelector('#app');
+
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+}[char]));
+
+function landing() {
+  app.innerHTML = `
+    <main class="landing">
+      <nav class="nav">
+        <a class="brand" href="#" aria-label="ADLSM">
+          <img src="assets/logos/ADLSM.jpg" alt="ADLSM">
+          <span>ADLSM</span>
+        </a>
+        <button class="text-button" id="goLogin">Iniciar sesión</button>
+      </nav>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">AGRUPACIÓN DEPORTIVA LA SALLE MONTEMOLÍN</p>
+          <h1>Todo el club.<br><span>En un mismo lugar.</span></h1>
+          <p class="lead">
+            ADLSM es la plataforma interna para organizar y gestionar la actividad deportiva de La Salle Montemolín.
+          </p>
+          <button class="primary-button" id="heroLogin">
+            Acceder
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <div class="hero-mark" aria-hidden="true">
+          <div class="mark-line"></div>
+          <div class="mark-circle"></div>
+          <div class="mark-line mark-line-short"></div>
+        </div>
+      </section>
+
+      <footer class="landing-footer">
+        <span>ADLSM</span>
+        <span>La Salle Montemolín</span>
+      </footer>
+    </main>
+  `;
+
+  document.querySelector('#goLogin').onclick = showLogin;
+  document.querySelector('#heroLogin').onclick = showLogin;
+}
+
+function showLogin(message = '') {
+  app.innerHTML = `
+    <main class="login-page">
+      <section class="login-panel">
+        <button class="back-button" id="back">← Volver</button>
+
+        <div class="login-heading">
+          <img src="assets/logos/ADLSM.jpg" alt="ADLSM">
+          <p class="kicker">ADLSM</p>
+          <h1>Iniciar sesión</h1>
+          <p>Accede a la plataforma interna de La Salle Montemolín.</p>
+        </div>
+
+        ${message ? `<div class="message error">${esc(message)}</div>` : ''}
+
+        <form id="loginForm" novalidate>
+          <label>
+            Correo electrónico
+            <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
+          </label>
+
+          <label>
+            Contraseña
+            <input name="password" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+          </label>
+
+          <button class="primary-button full" type="submit">
+            Entrar
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+      </section>
+    </main>
+  `;
+
+  document.querySelector('#back').onclick = landing;
+  document.querySelector('#loginForm').onsubmit = login;
+}
+
+async function login(event) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const email = form.email.value.trim();
+  const password = form.password.value;
+
+  if (!email || !password) {
+    showLogin('Introduce tu correo y contraseña.');
+    return;
+  }
+
+  button.disabled = true;
+  button.innerHTML = 'Entrando…';
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    showLogin(error.message);
+    return;
+  }
+
+  await showAuthenticated();
+}
+
+async function showAuthenticated() {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  app.innerHTML = `
+    <main class="authenticated">
+      <div class="authenticated-content">
+        <img class="authenticated-logo" src="assets/logos/ADLSM.jpg" alt="ADLSM">
+        <p class="kicker">SESIÓN ACTIVA</p>
+        <h1>Bienvenido.</h1>
+        <p>${esc(user?.email || '')}</p>
+        <button class="primary-button" id="logout">Cerrar sesión</button>
+      </div>
+    </main>
+  `;
+
+  document.querySelector('#logout').onclick = async () => {
+    await supabase.auth.signOut();
+    landing();
+  };
+}
+
+async function init() {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session) {
+    await showAuthenticated();
+  } else {
+    landing();
+  }
+}
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session && !document.querySelector('#loginForm')) {
+    landing();
+  }
+});
+
+init().catch((error) => {
+  showLogin(error?.message || 'No se ha podido iniciar la aplicación.');
+});
