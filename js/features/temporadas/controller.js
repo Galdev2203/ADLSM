@@ -17,6 +17,7 @@ let searchTerm = '';
 export function initTemporadas() {
   const els = {
     list: document.querySelector('#seasonList'),
+    toolbar: document.querySelector('#seasonsToolbar'),
     total: document.querySelector('#seasonTotal'),
     active: document.querySelector('#seasonActive'),
     historical: document.querySelector('#seasonHistorical'),
@@ -57,6 +58,7 @@ export function initTemporadas() {
   const hideDetail = () => {
     els.detail.hidden = true;
     els.list.hidden = false;
+    els.toolbar.hidden = false;
     els.detail.innerHTML = '';
   };
 
@@ -119,6 +121,7 @@ export function initTemporadas() {
 
     els.detail.hidden = false;
     els.list.hidden = true;
+    els.toolbar.hidden = true;
     els.detail.innerHTML = `<div class="season-detail-loading">Cargando información de ${escapeHtml(season.name)}…</div>`;
 
     const { data: teamRows, error } = await supabase
