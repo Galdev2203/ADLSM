@@ -25,6 +25,8 @@ export const TEMPORADAS_VIEW = `
   <div id="seasonList" class="season-list">
     <div class="season-loading">Cargando temporadas…</div>
   </div>
+
+  <section id="seasonDetail" class="season-detail" hidden></section>
 </section>
 
 <div class="season-modal-backdrop" id="seasonModal" hidden>
