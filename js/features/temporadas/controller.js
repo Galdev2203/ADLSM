@@ -35,10 +35,20 @@ export function initTemporadas() {
     newButton: document.querySelector('#newSeasonButton')
   };
 
+  let messageTimer = null;
+
   const showMessage = (message, type = 'error') => {
+    window.clearTimeout(messageTimer);
     els.message.hidden = !message;
     els.message.className = `season-message ${type}`;
     els.message.textContent = message || '';
+
+    if (message) {
+      messageTimer = window.setTimeout(() => {
+        els.message.hidden = true;
+        els.message.textContent = '';
+      }, type === 'success' ? 3200 : 5000);
+    }
   };
 
   const openModal = () => {
