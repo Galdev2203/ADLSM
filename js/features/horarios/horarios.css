@@ -10,15 +10,15 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; }
 body.modal-open { overflow: hidden; }
 button, input, select { font: inherit; }
 button, select, input { max-width: 100%; }
-.app { width: min(1160px, calc(100% - 40px)); margin: 0 auto; padding: clamp(24px, 5vw, 48px) 0 64px; }
-.hero { display: flex; justify-content: space-between; gap: 28px; align-items: end; margin-bottom: 28px; }
+.horarios-app { width: min(1320px, calc(100% - 72px)); margin: 0 auto; padding: 42px 0 64px; }
+.horarios-app .hero { display: flex; justify-content: space-between; gap: 28px; align-items: end; margin-bottom: 26px; }
 .eyebrow { margin: 0 0 8px; font-size: 12px; font-weight: 800; letter-spacing: .12em; color: #2756a6; }
 h1 { margin: 0; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; }
 .subtitle { max-width: 680px; margin: 12px 0 0; color: #637087; font-size: 16px; line-height: 1.5; }
 .primary { border: 0; border-radius: 0; padding: 13px 18px; background: #2455a4; color: white; font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(36,85,164,.18); white-space: nowrap; }
 .primary:hover { background: #1c468b; }
 .primary:disabled, .secondary:disabled { opacity: .55; cursor: not-allowed; }
-.panel { background: white; border: 1px solid #e2e8f0; border-radius: 0; padding: clamp(16px, 3vw, 24px); margin-top: 18px; box-shadow: 0 8px 28px rgba(26, 42, 68, .05); }
+.horarios-app .panel { background: white; border: 1px solid #e2e8f0; border-radius: 0; padding: clamp(16px, 3vw, 24px); margin-top: 18px; box-shadow: 0 8px 28px rgba(26, 42, 68, .05); }
 .panel-header { display: flex; justify-content: space-between; gap: 20px; align-items: center; }
 .results-header { align-items: center; }
 h2 { margin: 0; font-size: 20px; }
@@ -124,7 +124,7 @@ h3 { margin: 0; font-size: 16px; }
 .preview-page-label { margin: 10px 0 0; text-align: center; color: #6d788a; font-size: 12px; }
 .template-actions { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .editor-actions { border-top: 1px solid #e7ecf3; padding-top: 16px; }
-.app-footer { width: min(1160px, calc(100% - 40px)); margin: 0 auto; padding: 0 0 24px; text-align: right; color: #7a8698; font-size: 11px; letter-spacing: .04em; }
+.horarios-app .app-footer { width: 100%; margin: 0 auto; padding: 0 0 24px; text-align: right; color: #7a8698; font-size: 11px; letter-spacing: .04em; }
 
 @media (max-width: 900px) {
   .filters { grid-template-columns: 1fr 1fr; }
@@ -138,7 +138,7 @@ h3 { margin: 0; font-size: 16px; }
   .template-preview { width: min(100%, 480px); }
 }
 @media (max-width: 680px) {
-  .app { width: min(100% - 24px, 560px); padding-top: 20px; padding-bottom: 40px; }
+  .horarios-app { width: min(100% - 28px, 720px); padding-top: 22px; padding-bottom: 40px; }
   .hero, .panel-header, .fallback { align-items: stretch; flex-direction: column; }
   .hero { gap: 18px; margin-bottom: 18px; }
   .primary { width: 100%; }
@@ -169,7 +169,7 @@ h3 { margin: 0; font-size: 16px; }
   .editor-order-button { width: 40px; height: 40px; }
   .template-actions { align-items: stretch; flex-direction: column-reverse; }
   .template-actions .secondary, .template-actions .primary { width: 100%; }
-  .app-footer { width: min(100% - 24px, 1160px); text-align: center; }
+  .horarios-app .app-footer { width: 100%; text-align: center; }
 }
 @media (max-width: 380px) {
   h1 { font-size: 29px; }
