@@ -1,4 +1,5 @@
 import { supabase } from '../../core/supabase.js';
+import { notify } from '../../core/notifications.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -62,20 +63,9 @@ export function initEquipos() {
     newButton: document.querySelector('#newTeamButton')
   };
 
-  let messageTimer = null;
-
   const showMessage = (message, type = 'error') => {
-    window.clearTimeout(messageTimer);
-    els.message.hidden = !message;
-    els.message.className = `team-message ${type}`;
-    els.message.textContent = message || '';
-
-    if (message) {
-      messageTimer = window.setTimeout(() => {
-        els.message.hidden = true;
-        els.message.textContent = '';
-      }, type === 'success' ? 3200 : 5000);
-    }
+    if (!message) return;
+    notify(message, type === 'success' ? 'success' : 'error');
   };
 
   const getSeason = (id) => seasons.find((season) => season.id === id);
@@ -544,6 +534,5 @@ export function initEquipos() {
     searchTerm = '';
     selectedSeasonId = '';
     editingId = null;
-    window.clearTimeout(messageTimer);
   };
 }
