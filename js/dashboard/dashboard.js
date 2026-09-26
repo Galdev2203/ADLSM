@@ -61,7 +61,7 @@ export async function initDashboard(app, user, onLogout) {
   const section = document.querySelector('#sectionHorarios');
   section.innerHTML = HORARIOS_VIEW;
 
-  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-4', 'horarios-styles');
+  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-5', 'horarios-styles');
 
   if (horariosCleanup) horariosCleanup();
   horariosCleanup = initHorarios();
