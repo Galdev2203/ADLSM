@@ -346,3 +346,106 @@
   background:#eaf1fb;
   color:#082957;
 }
+
+/* Global notifications */
+.adlsm-notifications{
+  position:fixed;
+  top:18px;
+  right:20px;
+  z-index:1000;
+  width:min(390px,calc(100vw - 32px));
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:10px;
+  pointer-events:none;
+}
+
+.adlsm-notification{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr) 28px;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  padding:10px 11px;
+  border:1px solid #e1e7ef;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(16,24,40,.16);
+  color:#1d2939;
+  font-size:12px;
+  font-weight:650;
+  opacity:0;
+  transform:translate3d(22px,-6px,0);
+  transition:opacity .18s ease,transform .18s ease;
+  pointer-events:auto;
+}
+
+.adlsm-notification.visible{
+  opacity:1;
+  transform:translate3d(0,0,0);
+}
+
+.adlsm-notification.leaving{
+  opacity:0;
+  transform:translate3d(22px,-6px,0);
+}
+
+.adlsm-notification-icon{
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  font-size:14px;
+  font-weight:850;
+}
+
+.adlsm-notification.success .adlsm-notification-icon{
+  background:#edf9f1;
+  color:#19733a;
+}
+
+.adlsm-notification.error .adlsm-notification-icon{
+  background:#fff0f0;
+  color:#b42318;
+}
+
+.adlsm-notification.warning .adlsm-notification-icon{
+  background:#fff7e6;
+  color:#9a6700;
+}
+
+.adlsm-notification.info .adlsm-notification-icon{
+  background:#eef4fb;
+  color:#174a9a;
+}
+
+.adlsm-notification-message{
+  line-height:1.4;
+}
+
+.adlsm-notification-close{
+  width:28px;
+  height:28px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#98a2b3;
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.adlsm-notification-close:hover{
+  background:#f4f6f9;
+  color:#344054;
+}
+
+@media(max-width:520px){
+  .adlsm-notifications{
+    top:12px;
+    right:12px;
+    width:calc(100vw - 24px);
+  }
+}
