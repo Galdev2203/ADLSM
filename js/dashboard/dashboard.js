@@ -41,7 +41,7 @@ export async function initDashboard(app, user, onLogout) {
         <header class="dashboard-topbar">
           <div>
             <span class="dashboard-kicker">PANEL DE CONTROL</span>
-            <h1 id="dashboardTitle">Generar horarios</h1>
+            <h1 id="dashboardTitle">Horarios</h1>
           </div>
           <div class="dashboard-status"><span></span>Conectado</div>
         </header>
@@ -61,7 +61,7 @@ export async function initDashboard(app, user, onLogout) {
   const section = document.querySelector('#sectionHorarios');
   section.innerHTML = HORARIOS_VIEW;
 
-  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-5', 'horarios-styles');
+  ensureStylesheet('./js/features/horarios/horarios.css?v=20260926-6', 'horarios-styles');
 
   if (horariosCleanup) horariosCleanup();
   horariosCleanup = initHorarios();
