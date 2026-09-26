@@ -2,9 +2,9 @@ import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
 import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
-import { initTemporadas } from '../features/temporadas/controller.js';
+import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-2';
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
-import { initEquipos } from '../features/equipos/controller.js';
+import { initEquipos } from '../features/equipos/controller.js?v=20260926-2';
 
 let horariosCleanup = null;
 let perfilLoaded = false;
