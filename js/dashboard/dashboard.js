@@ -13,7 +13,7 @@ function ensureStylesheet(href, id) {
 }
 
 export async function initDashboard(app, user, onLogout) {
-  ensureStylesheet('./js/dashboard/dashboard.css', 'dashboard-styles');
+  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-2', 'dashboard-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
