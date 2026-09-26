@@ -5,6 +5,7 @@ import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
 import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-4';
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
+import { confirmDialog } from '../core/dialogs.js';
 
 let horariosCleanup = null;
 let perfilLoaded = false;
@@ -83,6 +84,14 @@ export async function initDashboard(app, user, onLogout) {
   const navItems = [...document.querySelectorAll('.dashboard-nav-item')];
 
   document.querySelector('#dashboardLogout').onclick = async () => {
+    const confirmed = await confirmDialog({
+      title: 'Cerrar sesión',
+      message: '¿Quieres cerrar tu sesión de ADLSM?',
+      confirmText: 'Cerrar sesión',
+      cancelText: 'Cancelar'
+    });
+    if (!confirmed) return;
+
     if (horariosCleanup) {
       horariosCleanup();
       horariosCleanup = null;
