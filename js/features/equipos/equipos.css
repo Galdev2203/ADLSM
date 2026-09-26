@@ -104,3 +104,7 @@
   .team-detail-card-wide{grid-column:auto}
   .team-form-grid{grid-template-columns:1fr}
 }
+
+.team-delete{border:0;border-radius:9px;background:#fff1f1;color:#b42318;padding:9px 13px;font-size:11px;font-weight:800;cursor:pointer}
+.team-delete:hover{background:#ffe4e4}
+.team-delete:disabled{opacity:.6;cursor:wait}
