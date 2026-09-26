@@ -7,7 +7,7 @@
 .teams-summary strong{color:#082957;font-size:19px}
 .teams-summary span{color:#667085;font-size:11px}
 .teams-filter{order:2;display:flex;align-items:center;gap:9px;color:#667085;font-size:11px;font-weight:700}
-.teams-filter select{height:38px;min-width:185px;border:1px solid #d8e0ea;border-radius:9px;padding:0 32px 0 12px;outline:none;color:#1d2939;background:#fbfcfe}
+.teams-filter select{height:38px;min-width:185px;border:1px solid #d8e0ea;border-radius:9px;padding:0 38px 0 12px;outline:none;color:#1d2939;background-color:#fbfcfe;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23667085' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:14px 14px;cursor:pointer}
 .teams-search{order:3;display:flex;align-items:center;gap:9px;margin-left:auto;color:#667085;font-size:11px;font-weight:700}
 .teams-search input{width:220px;height:38px;border:1px solid #d8e0ea;border-radius:9px;padding:0 12px;outline:none;color:#1d2939;background:#fbfcfe}
 .teams-search input:focus,.teams-filter select:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
@@ -68,8 +68,11 @@
 .team-close{width:32px;height:32px;border:0;border-radius:8px;background:#f4f6f9;color:#667085;font-size:22px;line-height:1;cursor:pointer}
 #teamForm{padding:22px 24px 24px;display:grid;gap:0}
 #teamForm label{display:block;margin-bottom:15px;color:#344054;font-size:11px;font-weight:750}
-#teamForm input,#teamForm select,#teamForm textarea{display:block;width:100%;margin-top:7px;border:1px solid #d7e0ea;border-radius:9px;padding:10px 12px;box-sizing:border-box;outline:none;color:#1d2939;font-size:13px;background:#fff}
+#teamForm input,#teamForm select,#teamForm textarea{display:block;width:100%;margin-top:7px;border:1px solid #d7e0ea;border-radius:9px;padding:10px 12px;box-sizing:border-box;outline:none;color:#1d2939;font-size:13px;background-color:#fff}
 #teamForm input,#teamForm select{height:42px}
+#teamForm select{padding:0 38px 0 12px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23667085' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:14px 14px;cursor:pointer}
+#teamForm select option{background:#fff;color:#1d2939}
+#teamForm select option:checked{background:#eaf1fb;color:#082957}
 #teamForm textarea{resize:vertical;min-height:82px;font-family:inherit}
 #teamForm input:focus,#teamForm select:focus,#teamForm textarea:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
 .team-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
