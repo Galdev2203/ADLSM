@@ -1,6 +1,7 @@
 import { HORARIOS_VIEW } from '../features/horarios/view.js';
+import { initHorarios } from '../features/horarios/controller.js';
 
-let horariosLoaded = false;
+let horariosCleanup = null;
 
 function ensureStylesheet(href, id) {
   if (document.getElementById(id)) return;
@@ -52,15 +53,16 @@ export async function initDashboard(app, user, onLogout) {
     </main>
   `;
 
-  document.querySelector('#dashboardLogout').onclick = onLogout;
+  document.querySelector('#dashboardLogout').onclick = async () => {
+    if (horariosCleanup) { horariosCleanup(); horariosCleanup = null; }
+    await onLogout();
+  };
 
   const section = document.querySelector('#sectionHorarios');
   section.innerHTML = HORARIOS_VIEW;
 
   ensureStylesheet('./js/features/horarios/horarios.css', 'horarios-styles');
 
-  if (!horariosLoaded) {
-    await import('../features/horarios/controller.js?v=20260926-01');
-    horariosLoaded = true;
-  }
+  if (horariosCleanup) horariosCleanup();
+  horariosCleanup = initHorarios();
 }
