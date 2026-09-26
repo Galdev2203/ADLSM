@@ -354,6 +354,11 @@ export function initTemporadas() {
     await load();
   };
 
+  els.start.addEventListener('input', () => {
+    const startYear = Number(els.start.value);
+    els.end.value = Number.isFinite(startYear) && startYear > 0 ? startYear + 1 : '';
+  });
+
   els.search.addEventListener('input', () => {
     searchTerm = els.search.value.trim().toLowerCase();
     render();
