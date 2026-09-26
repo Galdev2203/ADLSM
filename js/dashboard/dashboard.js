@@ -1,9 +1,12 @@
 import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
+import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
+import { initTemporadas } from '../features/temporadas/controller.js';
 
 let horariosCleanup = null;
 let perfilLoaded = false;
+let temporadasCleanup = null;
 
 function ensureStylesheet(href, id) {
   if (document.getElementById(id)) return;
@@ -17,6 +20,7 @@ function ensureStylesheet(href, id) {
 export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-3', 'dashboard-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
+  ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-1', 'temporadas-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
@@ -29,6 +33,9 @@ export async function initDashboard(app, user, onLogout) {
         <nav class="dashboard-nav" aria-label="Navegación principal">
           <button class="dashboard-nav-item active" data-section="horarios">
             <span>Horarios</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="temporadas">
+            <span>Temporadas</span>
           </button>
           <button class="dashboard-nav-item" data-section="perfil">
             <span>Perfil</span>
@@ -53,6 +60,7 @@ export async function initDashboard(app, user, onLogout) {
 
         <div id="dashboardContent" class="dashboard-content">
           <section id="sectionHorarios" class="dashboard-section"></section>
+          <section id="sectionTemporadas" class="dashboard-section" hidden></section>
           <section id="sectionPerfil" class="dashboard-section" hidden></section>
         </div>
       </section>
@@ -61,6 +69,7 @@ export async function initDashboard(app, user, onLogout) {
 
   const horariosSection = document.querySelector('#sectionHorarios');
   const perfilSection = document.querySelector('#sectionPerfil');
+  const temporadasSection = document.querySelector('#sectionTemporadas');
   const dashboardTitle = document.querySelector('#dashboardTitle');
   const navItems = [...document.querySelectorAll('.dashboard-nav-item')];
 
@@ -68,6 +77,10 @@ export async function initDashboard(app, user, onLogout) {
     if (horariosCleanup) {
       horariosCleanup();
       horariosCleanup = null;
+    }
+    if (temporadasCleanup) {
+      temporadasCleanup();
+      temporadasCleanup = null;
     }
     await onLogout();
   };
@@ -80,14 +93,21 @@ export async function initDashboard(app, user, onLogout) {
 
   const showSection = async (sectionName) => {
     const isPerfil = sectionName === 'perfil';
+    const isTemporadas = sectionName === 'temporadas';
 
-    horariosSection.hidden = isPerfil;
+    horariosSection.hidden = isPerfil || isTemporadas;
     perfilSection.hidden = !isPerfil;
-    dashboardTitle.textContent = isPerfil ? 'Perfil' : 'Horarios';
+    temporadasSection.hidden = !isTemporadas;
+    dashboardTitle.textContent = isPerfil ? 'Perfil' : (isTemporadas ? 'Temporadas' : 'Horarios');
 
     navItems.forEach((item) => {
       item.classList.toggle('active', item.dataset.section === sectionName);
     });
+
+    if (isTemporadas && !temporadasCleanup) {
+      temporadasSection.innerHTML = TEMPORADAS_VIEW;
+      temporadasCleanup = initTemporadas();
+    }
 
     if (isPerfil && !perfilLoaded) {
       perfilLoaded = true;
