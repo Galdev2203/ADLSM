@@ -281,6 +281,7 @@ export function initEquipos() {
         </div>
         <div class="team-detail-actions">
           <button class="team-action" id="detailEdit" type="button">Editar equipo</button>
+          <button class="team-delete" id="detailDelete" type="button">Eliminar equipo</button>
         </div>
       </div>
 
