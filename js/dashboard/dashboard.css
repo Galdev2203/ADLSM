@@ -4,7 +4,7 @@
   height:100dvh;
   min-height:100vh;
   display:grid;
-  grid-template-columns:260px minmax(0,1fr);
+  grid-template-columns:236px minmax(0,1fr);
   overflow:hidden;
   background:#f6f8fb;
   color:#101828;
@@ -16,7 +16,7 @@
 }
 
 .dashboard-sidebar{
-  width:260px;
+  width:236px;
   height:100dvh;
   min-height:100vh;
   position:relative;
@@ -145,10 +145,10 @@
 
 .dashboard-topbar{
   flex:0 0 auto;
-  min-height:118px;
+  min-height:82px;
   background:#fff;
   border-bottom:1px solid #e4e7ec;
-  padding:28px clamp(22px,4vw,48px);
+  padding:18px clamp(24px,3vw,42px);
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -166,7 +166,7 @@
 
 .dashboard-topbar h1{
   margin:0;
-  font-size:34px;
+  font-size:28px;
   line-height:1.1;
   letter-spacing:-.045em;
   color:#082957;
@@ -276,4 +276,20 @@
   .dashboard-status{
     display:none;
   }
+}
+
+/* Compact dashboard chrome */
+.dashboard-sidebar{padding:22px 16px}
+.dashboard-brand{padding:0 8px 20px}
+.dashboard-nav{padding-top:16px}
+.dashboard-nav-item{min-height:44px;border-radius:9px}
+.dashboard-main{background:#f6f8fb}
+.dashboard-topbar{box-shadow:0 1px 0 rgba(16,24,40,.02)}
+.dashboard-content{padding:0}
+.dashboard-status{padding:7px 10px;border:1px solid #e8edf3;border-radius:999px;background:#fff}
+.dashboard-status span{width:6px;height:6px;flex-basis:6px}
+@media(max-width:900px){
+ .dashboard-sidebar{padding:18px 16px}
+ .dashboard-topbar{min-height:76px;padding:16px 20px}
+ .dashboard-topbar h1{font-size:26px}
 }
