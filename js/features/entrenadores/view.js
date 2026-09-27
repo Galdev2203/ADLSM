@@ -47,7 +47,6 @@ export const ENTRENADORES_VIEW = `
       </div>
       <div class="coach-form-grid">
         <label>Rol<select id="coachRole"><option value="principal">Entrenador principal</option><option value="assistant">Ayudante</option></select></label>
-        <label>Estado<select id="coachStatus"><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
       </div>
       <label class="coach-checkbox"><input id="coachPrimary" type="checkbox"> Marcar como entrenador principal del equipo</label>
       <p class="coach-form-hint">Si la persona ya existe en ADLSM, se reutilizará su ficha. Así puede ser jugador y entrenador sin duplicarse.</p>
