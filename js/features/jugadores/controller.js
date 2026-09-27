@@ -2,7 +2,7 @@ import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
 
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const normalize = (v) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+const normalize = (v) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const seasonLabel = s => s ? `${s.start_year}/${String(s.end_year).slice(-2)}` : '—';
 const initials = p => [p?.first_name,p?.last_name].map(normalize).filter(Boolean).map(x=>x[0].toUpperCase()).join('').slice(0,2) || 'J';
 
