@@ -31,7 +31,8 @@ function ensureStylesheet(href, id) {
 }
 
 export async function initDashboard(app, user, onLogout) {
-  ensureStylesheet('./js/dashboard/dashboard.css?v=20260926-6', 'dashboard-styles');
+  ensureStylesheet('./js/dashboard/dashboard.css?v=20260927-1', 'dashboard-styles');
+  ensureStylesheet('./js/dashboard/responsive.css?v=20260927-1', 'responsive-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
@@ -45,9 +46,10 @@ export async function initDashboard(app, user, onLogout) {
         <div class="dashboard-brand">
           <img src="assets/logos/ADLSM.jpg" alt="ADLSM">
           <div><strong>ADLSM</strong><span>Gestión deportiva</span></div>
+          <button class="dashboard-mobile-toggle" id="dashboardMobileToggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="dashboardNav">☰</button>
         </div>
 
-        <nav class="dashboard-nav" aria-label="Navegación principal">
+        <nav class="dashboard-nav" id="dashboardNav" aria-label="Navegación principal">
           <button class="dashboard-nav-item active" data-section="horarios">
             <span>Horarios</span>
           </button>
@@ -109,6 +111,22 @@ export async function initDashboard(app, user, onLogout) {
   const entrenadoresSection = document.querySelector('#sectionEntrenadores');
   const dashboardTitle = document.querySelector('#dashboardTitle');
   const navItems = [...document.querySelectorAll('.dashboard-nav-item')];
+  const sidebar = document.querySelector('.dashboard-sidebar');
+  const mobileToggle = document.querySelector('#dashboardMobileToggle');
+
+  const closeMobileNav = () => {
+    sidebar?.classList.remove('mobile-open');
+    mobileToggle?.setAttribute('aria-expanded', 'false');
+    mobileToggle?.setAttribute('aria-label', 'Abrir menú');
+    if (mobileToggle) mobileToggle.textContent = '☰';
+  };
+
+  mobileToggle?.addEventListener('click', () => {
+    const open = sidebar.classList.toggle('mobile-open');
+    mobileToggle.setAttribute('aria-expanded', String(open));
+    mobileToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    mobileToggle.textContent = open ? '×' : '☰';
+  });
 
   document.querySelector('#dashboardLogout').onclick = async () => {
     const confirmed = await confirmDialog({
@@ -214,6 +232,13 @@ export async function initDashboard(app, user, onLogout) {
   };
 
   navItems.forEach((item) => {
-    item.addEventListener('click', () => showSection(item.dataset.section));
+    item.addEventListener('click', () => {
+      showSection(item.dataset.section);
+      closeMobileNav();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) closeMobileNav();
   });
 }
