@@ -113,3 +113,129 @@
 .person-modal-backdrop{position:fixed!important;inset:0!important;z-index:1200!important;display:grid!important;place-items:center!important;padding:20px!important;background:rgba(5,25,54,.44)!important;backdrop-filter:blur(4px)!important}
 .person-modal-backdrop[hidden]{display:none!important}
 .person-modal{position:relative!important;width:min(680px,calc(100vw - 32px))!important;max-height:min(88dvh,760px)!important;margin:0!important}
+
+/* Personas — align with the common dashboard toolbar/list language */
+.personas-panel{width:min(1180px,100%);margin:0 auto;padding:24px clamp(20px,3vw,42px) 48px}
+.personas-toolbar{
+  display:grid;
+  grid-template-columns:auto auto minmax(175px,auto) minmax(165px,auto) minmax(240px,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  margin-bottom:14px;
+  border:1px solid #e3e9f1;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(16,24,40,.035);
+}
+.personas-toolbar .toolbar-main,
+.personas-toolbar .toolbar-filters{display:contents}
+.personas-toolbar .primary-button{order:1;white-space:nowrap}
+.personas-toolbar .toolbar-summary{order:2;margin:0;gap:6px;white-space:nowrap}
+.personas-toolbar #peopleFunctionFilter{order:3}
+.personas-toolbar #peopleStatusFilter{order:4}
+.personas-toolbar #peopleSearch{order:5;width:100%;min-width:0}
+.personas-toolbar .list-view-toggle{order:6}
+.personas-toolbar select,
+.personas-toolbar input{
+  height:38px;
+  min-width:0;
+  border:1px solid #d8e0ea;
+  border-radius:9px;
+  padding:0 12px;
+  outline:none;
+  color:#1d2939;
+  background:#fbfcfe;
+  font:inherit;
+  font-size:12px;
+}
+.personas-toolbar select{
+  min-width:0;
+  padding-right:34px;
+  appearance:none;
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23667085' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 11px center;
+  background-size:14px;
+  cursor:pointer;
+}
+.personas-toolbar select:focus,
+.personas-toolbar input:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
+.personas-toolbar .primary-button,
+.person-modal .primary-button,
+.person-modal .secondary-button,
+.person-action{
+  border:0;
+  border-radius:10px;
+  min-height:38px;
+  padding:0 15px;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.personas-toolbar .primary-button,
+.person-modal .primary-button{
+  background:#082f70;
+  color:#fff;
+  box-shadow:0 7px 16px rgba(8,47,112,.16);
+}
+.personas-toolbar .primary-button:hover,
+.person-modal .primary-button:hover{background:#06275d;transform:translateY(-1px)}
+.person-modal .secondary-button,
+.person-action{
+  background:#eef3fa;
+  color:#174a9a;
+}
+.person-modal .secondary-button:hover,
+.person-action:hover{background:#e3ebf6}
+.person-action{min-height:36px}
+.person-table-wrap{width:100%;max-width:none}
+.people-list.list-view-table{display:block;width:100%}
+.people-list.list-view-table .person-table-wrap{width:100%}
+.person-table{width:100%;min-width:0;table-layout:auto}
+.person-table th:first-child{width:28%}
+.person-table th:nth-child(2){width:28%}
+.person-table th:nth-child(3){width:24%}
+.person-table th:nth-child(4){width:12%}
+.person-table th:last-child{width:8%;text-align:right}
+.person-table td:last-child{text-align:right}
+.person-table-person{min-width:0}
+.person-table-person strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person-table .person-action{min-height:34px;padding:0 12px}
+
+/* The person editor uses the same button proportions as the rest of ADLSM. */
+.person-modal .modal-actions{gap:8px}
+.person-modal .modal-actions .secondary-button,
+.person-modal .modal-actions .primary-button{min-height:40px}
+@media(max-width:1080px){
+  .personas-toolbar{grid-template-columns:auto 1fr 175px 165px minmax(180px,1fr) auto}
+}
+@media(max-width:900px){
+  .personas-toolbar{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .personas-toolbar .toolbar-main,
+  .personas-toolbar .toolbar-filters{display:contents}
+  .personas-toolbar .primary-button{order:1}
+  .personas-toolbar .toolbar-summary{order:2}
+  .personas-toolbar #peopleFunctionFilter{order:3;flex:1 1 180px}
+  .personas-toolbar #peopleStatusFilter{order:4;flex:1 1 160px}
+  .personas-toolbar #peopleSearch{order:5;flex:1 1 260px}
+  .personas-toolbar .list-view-toggle{order:6}
+}
+@media(max-width:600px){
+  .personas-toolbar{align-items:stretch}
+  .personas-toolbar .primary-button,
+  .personas-toolbar .toolbar-summary,
+  .personas-toolbar #peopleFunctionFilter,
+  .personas-toolbar #peopleStatusFilter,
+  .personas-toolbar #peopleSearch,
+  .personas-toolbar .list-view-toggle{width:100%;flex:1 1 100%}
+  .personas-toolbar .toolbar-summary{justify-content:flex-start}
+  .person-table{min-width:720px}
+  .person-table-wrap{overflow-x:auto}
+}
