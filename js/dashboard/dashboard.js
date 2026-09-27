@@ -273,6 +273,8 @@ export async function initDashboard(app, user, onLogout) {
     });
   });
 
+  showSection('inicio');
+
   window.addEventListener('resize', () => {
     if (window.innerWidth > 900) closeMobileNav();
   });
