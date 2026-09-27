@@ -4,6 +4,8 @@ import { initPerfil } from '../features/perfil/profile.js';
 import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
 import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-4';
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
+import { JUGADORES_VIEW } from '../features/jugadores/view.js';
+import { initJugadores } from '../features/jugadores/controller.js';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 import { confirmDialog } from '../core/dialogs.js';
 
@@ -11,6 +13,7 @@ let horariosCleanup = null;
 let perfilLoaded = false;
 let temporadasCleanup = null;
 let equiposCleanup = null;
+let jugadoresCleanup = null;
 
 function ensureStylesheet(href, id) {
   if (document.getElementById(id)) return;
@@ -26,6 +29,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
+  ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-1', 'jugadores-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
@@ -69,7 +73,7 @@ export async function initDashboard(app, user, onLogout) {
         <div id="dashboardContent" class="dashboard-content">
           <section id="sectionHorarios" class="dashboard-section"></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
-          <section id="sectionEquipos" class="dashboard-section" hidden></section>
+          <section id="sectionEquipos" class="dashboard-section" hidden></section>\n          <section id="sectionJugadores" class="dashboard-section" hidden></section>
           <section id="sectionPerfil" class="dashboard-section" hidden></section>
         </div>
       </section>
@@ -80,6 +84,7 @@ export async function initDashboard(app, user, onLogout) {
   const perfilSection = document.querySelector('#sectionPerfil');
   const temporadasSection = document.querySelector('#sectionTemporadas');
   const equiposSection = document.querySelector('#sectionEquipos');
+  const jugadoresSection = document.querySelector('#sectionJugadores');
   const dashboardTitle = document.querySelector('#dashboardTitle');
   const navItems = [...document.querySelectorAll('.dashboard-nav-item')];
 
@@ -117,6 +122,7 @@ export async function initDashboard(app, user, onLogout) {
     const isPerfil = sectionName === 'perfil';
     const isTemporadas = sectionName === 'temporadas';
     const isEquipos = sectionName === 'equipos';
+    const isJugadores = sectionName === 'jugadores';
 
     horariosSection.hidden = isPerfil || isTemporadas || isEquipos;
     perfilSection.hidden = !isPerfil;
@@ -140,7 +146,7 @@ export async function initDashboard(app, user, onLogout) {
       equiposCleanup = initEquipos();
     }
 
-    if (isPerfil && !perfilLoaded) {
+    if (isJugadores && !jugadoresCleanup) {\n      jugadoresSection.innerHTML = JUGADORES_VIEW;\n      jugadoresCleanup = initJugadores();\n    }\n\n    if (isPerfil && !perfilLoaded) {
       perfilLoaded = true;
       await initPerfil(perfilSection, user);
     }
