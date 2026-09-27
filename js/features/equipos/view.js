@@ -1,26 +1,16 @@
+import { createSectionToolbar } from '../../components/section-toolbar.js';
+
 export const EQUIPOS_VIEW = `
 <section class="teams-page">
-  <div class="teams-toolbar" id="teamsToolbar">
-    <button class="teams-primary teams-toolbar-new" id="newTeamButton" type="button">+ Nuevo equipo</button>
-
-    <div class="teams-summary">
-      <div><strong id="teamTotal">0</strong><span>equipos</span></div>
-      <div><strong id="teamActive">0</strong><span>activos</span></div>
-      <div><strong id="teamSeasonCount">0</strong><span>en temporada</span></div>
-    </div>
-
-    <label class="teams-filter">
-      <span>Temporada</span>
-      <select id="teamSeasonFilter">
-        <option value="">Todas</option>
-      </select>
-    </label>
-
-    <label class="teams-search">
-      <span>Buscar</span>
-      <input id="teamSearch" type="search" placeholder="Buscar equipo…">
-    </label>
-  </div>
+    ${createSectionToolbar({
+    className: 'teams-toolbar', id: 'teamsToolbar',
+    summary: [
+      { id: 'teamTotal', label: 'equipos' }, { id: 'teamActive', label: 'activos' }, { id: 'teamSeasonCount', label: 'en temporada' }
+    ],
+    primaryAction: { id: 'newTeamButton', label: '+ Nuevo equipo' },
+    search: { id: 'teamSearch', placeholder: 'Buscar equipo…' },
+    filters: [{ id: 'teamSeasonFilter', label: 'Temporada', options: [{ value: '', label: 'Todas' }] }]
+  })}
 
   <div id="teamMessage" class="team-message" hidden></div>
 
