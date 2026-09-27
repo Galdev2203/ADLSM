@@ -7,7 +7,7 @@ import { EQUIPOS_VIEW } from '../features/equipos/view.js';
 import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
-import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-1';
+import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-2';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 import { confirmDialog } from '../core/dialogs.js';
 
