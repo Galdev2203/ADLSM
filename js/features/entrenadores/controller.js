@@ -22,7 +22,7 @@ export function initEntrenadores(){
     firstName:document.querySelector('#coachFirstName'),lastName:document.querySelector('#coachLastName'),birthDate:document.querySelector('#coachBirthDate'),
     phone:document.querySelector('#coachPhone'),email:document.querySelector('#coachEmail'),license:document.querySelector('#coachLicense'),
     qualification:document.querySelector('#coachQualification'),notes:document.querySelector('#coachNotes'),season:document.querySelector('#coachSeason'),
-    teamSeason:document.querySelector('#coachTeamSeason'),role:document.querySelector('#coachRole'),status:document.querySelector('#coachStatus'),
+    teamSeason:document.querySelector('#coachTeamSeason'),role:document.querySelector('#coachRole'),
     primary:document.querySelector('#coachPrimary')
   };
 
@@ -82,7 +82,7 @@ export function initEntrenadores(){
     els.firstName.value=p.first_name||'';els.lastName.value=p.last_name||'';els.birthDate.value=p.birth_date||'';els.phone.value=p.phone||'';els.email.value=p.email||'';
     els.license.value=prof.federation_license||'';els.qualification.value=prof.qualification||'';els.notes.value=prof.notes||a.notes||'';
     const team=teamSeasonById.get(String(a.team_season_id))||a.embeddedTeamSeason||null;els.season.value=team?.season_id||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';
-    els.role.value=a.role||'assistant';els.status.value=a.status||'active';els.primary.checked=!!a.is_primary;els.modal.hidden=false;await populateTeams();els.teamSeason.value=a.team_season_id||'';requestAnimationFrame(()=>els.firstName.focus());
+    els.role.value=a.role||'assistant';els.primary.checked=!!a.is_primary;els.modal.hidden=false;await populateTeams();els.teamSeason.value=a.team_season_id||'';requestAnimationFrame(()=>els.firstName.focus());
   };
   const closeModal=()=>{els.modal.hidden=true;els.form.reset();editingCoachId=null;editingAssignmentId=null};
   const showDetail=(personId,assignmentId)=>{
