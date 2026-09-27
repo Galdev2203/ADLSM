@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
 
 export const TEMPORADAS_VIEW = `
 <section class="seasons-page">
@@ -7,6 +7,7 @@ export const TEMPORADAS_VIEW = `
     summary: [
       { id: 'seasonTotal', label: 'temporadas' }, { id: 'seasonActive', label: 'activa' }, { id: 'seasonHistorical', label: 'históricas' }
     ],
+    viewToggle: { cardsId: 'seasonCardsView', tableId: 'seasonTableView', label: 'Vista de temporadas' },
     primaryAction: { id: 'newSeasonButton', label: '+ Nueva temporada' },
     search: { id: 'seasonSearch', placeholder: 'Buscar temporada…' }
   })}
