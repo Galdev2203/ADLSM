@@ -1,39 +1,29 @@
+import { createSectionToolbar } from '../../components/section-toolbar.js';
+
 export const PERSONAS_VIEW = `
 <section class="panel personas-panel">
-  <div class="section-toolbar personas-toolbar">
-    <div class="toolbar-main">
-      <button class="primary-button" id="newPerson">+ Nueva persona</button>
-      <div class="toolbar-summary">
-        <strong id="peopleCount">0</strong><span>personas</span>
-        <strong id="peopleActive">0</strong><span>activas</span>
-      </div>
-    </div>
-    <div class="toolbar-filters">
-      <label class="personas-filter-label">Función
-        <select id="peopleFunctionFilter" aria-label="Filtrar por función">
-          <option value="">Todas las funciones</option>
-          <option value="player">Jugador</option>
-          <option value="coach">Entrenador</option>
-          <option value="responsible">Responsable</option>
-          <option value="coordinator">Coordinador</option>
-          <option value="none">Sin función</option>
-        </select>
-      </label>
-      <label class="personas-filter-label">Estado
-        <select id="peopleStatusFilter" aria-label="Filtrar por estado">
-          <option value="">Todos los estados</option>
-          <option value="active">Activas</option>
-          <option value="inactive">Inactivas</option>
-        </select>
-      </label>
-      <label class="personas-search-label">Buscar
-        <input id="peopleSearch" type="search" placeholder="Buscar persona..." autocomplete="off">
-      </label>
-      <div class="list-view-toggle" role="group" aria-label="Vista de personas">
-        <button id="peopleCardsView" type="button" class="list-view-button active">Tarjetas</button>
-        <button id="peopleTableView" type="button" class="list-view-button">Tabla</button>
-      </div>    </div>
-  </div>
+    ${createSectionToolbar({
+    className: 'personas-toolbar',
+    id: 'personasToolbar',
+    summary: [
+      { id: 'peopleCount', label: 'personas' },
+      { id: 'peopleActive', label: 'activas' }
+    ],
+    primaryAction: { id: 'newPerson', label: '+ Nueva persona' },
+    search: { id: 'peopleSearch', placeholder: 'Buscar persona…' },
+    filters: [
+      { id: 'peopleFunctionFilter', label: 'Función', options: [
+        { value: '', label: 'Todas las funciones' }, { value: 'player', label: 'Jugador' },
+        { value: 'coach', label: 'Entrenador' }, { value: 'responsible', label: 'Responsable' },
+        { value: 'coordinator', label: 'Coordinador' }, { value: 'none', label: 'Sin función' }
+      ]},
+      { id: 'peopleStatusFilter', label: 'Estado', options: [
+        { value: '', label: 'Todos los estados' }, { value: 'active', label: 'Activas' },
+        { value: 'inactive', label: 'Inactivas' }
+      ]}
+    ],
+    viewToggle: { cardsId: 'peopleCardsView', tableId: 'peopleTableView', label: 'Vista de personas' }
+  })}
 
   <div id="peopleList" class="people-list"></div>
   <div id="peoplePagination" class="list-pagination" hidden></div>
