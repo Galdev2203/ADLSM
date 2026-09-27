@@ -1,16 +1,17 @@
+import { createSectionToolbar } from '../../components/section-toolbar.js';
+
 export const JUGADORES_VIEW = `
 <section class="players-page">
-  <div class="players-toolbar" id="playersToolbar">
-    <button class="players-primary" id="newPlayerButton" type="button">+ Nuevo jugador</button>
-    <div class="players-summary">
-      <div><strong id="playerTotal">0</strong><span>jugadores</span></div>
-      <div><strong id="playerActive">0</strong><span>activos</span></div>
-      <div><strong id="playerSeasonCount">0</strong><span>en temporada</span></div>
-    </div>
-    <label class="players-filter"><span>Temporada</span><select id="playerSeasonFilter"><option value="">Todas</option></select></label>
-    <label class="players-search"><span>Buscar</span><input id="playerSearch" type="search" placeholder="Buscar jugador…"></label>
-    <div class="list-view-toggle" role="group" aria-label="Vista de jugadores"><button id="playersCardsView" type="button" class="list-view-button active">Tarjetas</button><button id="playersTableView" type="button" class="list-view-button">Tabla</button></div>
-  </div>
+    ${createSectionToolbar({
+    className: 'players-toolbar', id: 'playersToolbar',
+    summary: [
+      { id: 'playerTotal', label: 'jugadores' }, { id: 'playerActive', label: 'activos' }, { id: 'playerSeasonCount', label: 'en temporada' }
+    ],
+    primaryAction: { id: 'newPlayerButton', label: '+ Nuevo jugador' },
+    search: { id: 'playerSearch', placeholder: 'Buscar jugador…' },
+    filters: [{ id: 'playerSeasonFilter', label: 'Temporada', options: [{ value: '', label: 'Todas' }] }],
+    viewToggle: { cardsId: 'playersCardsView', tableId: 'playersTableView', label: 'Vista de jugadores' }
+  })}
 
   <div id="playerList" class="player-list"><div class="player-loading">Cargando jugadores…</div></div>
   <div id="playerPagination" class="list-pagination" hidden></div>
