@@ -9,9 +9,11 @@ export const JUGADORES_VIEW = `
     </div>
     <label class="players-filter"><span>Temporada</span><select id="playerSeasonFilter"><option value="">Todas</option></select></label>
     <label class="players-search"><span>Buscar</span><input id="playerSearch" type="search" placeholder="Buscar jugador…"></label>
+    <div class="players-view-toggle" role="group" aria-label="Vista de jugadores"><button id="playersCardsView" type="button" class="players-view-button active">Tarjetas</button><button id="playersTableView" type="button" class="players-view-button">Tabla</button></div>
   </div>
 
   <div id="playerList" class="player-list"><div class="player-loading">Cargando jugadores…</div></div>
+  <div id="playerPagination" class="player-pagination" hidden></div>
   <section id="playerDetail" class="player-detail" hidden></section>
 </section>
 
