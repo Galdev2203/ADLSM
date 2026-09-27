@@ -179,3 +179,17 @@
     grid-template-columns:1fr;
   }
 }
+
+/* Native hidden attribute must always win over the grid display rule. */
+.section-toolbar-panel[hidden]{
+  display:none !important;
+}
+
+.section-toolbar-panel:not([hidden]){
+  display:grid;
+  width:100%;
+  flex:0 0 100%;
+  max-width:none;
+  box-sizing:border-box;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
