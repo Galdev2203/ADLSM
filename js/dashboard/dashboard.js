@@ -29,7 +29,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
-  ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-1', 'jugadores-styles');
+  ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-2', 'jugadores-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
