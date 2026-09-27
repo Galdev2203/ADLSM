@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-4';
 
 export const TEMPORADAS_VIEW = `
 <section class="seasons-page">
