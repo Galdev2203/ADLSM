@@ -75,3 +75,19 @@
 .person-detail-card.wide{min-height:0}
 @media(max-width:1200px){.people-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.people-list{grid-template-columns:1fr}.personas-toolbar{padding:14px}.personas-toolbar .toolbar-main,.personas-toolbar .toolbar-filters{width:100%}.personas-toolbar .toolbar-filters>*{min-width:0;width:100%}}
+
+/* Personas page spacing */
+.personas-panel{width:min(1280px,100%);margin:0 auto;padding:24px clamp(20px,3vw,42px) 48px}
+
+/* Persona modal */
+.person-modal-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(5,25,54,.44);backdrop-filter:blur(4px)}
+.person-modal-backdrop[hidden]{display:none!important}
+.person-modal{width:min(680px,calc(100vw - 32px));max-height:min(88dvh,760px);display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;border:1px solid #e1e7ef;border-radius:18px;background:#fff;box-shadow:0 28px 80px rgba(5,25,54,.25)}
+.person-modal form{min-height:0;overflow-y:auto;padding:20px 24px 24px}
+.person-modal .modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px 16px;border-bottom:1px solid #e8edf3}
+.person-modal .modal-header h2{margin:5px 0 0;color:#082957;font-size:20px;letter-spacing:-.03em}
+.person-modal .modal-kicker{display:block;color:#174a9a;font-size:9px;font-weight:850;letter-spacing:.15em}
+.person-modal .modal-close{width:34px;height:34px;border:0;border-radius:9px;background:#f3f5f8;color:#667085;font-size:21px;cursor:pointer}
+.person-modal .modal-close:hover{background:#e9edf3;color:#344054}
+.person-modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px;margin-top:4px;border-top:1px solid #edf0f4}
+@media(max-width:600px){.personas-panel{padding:18px 16px 36px}.person-modal-backdrop{padding:10px}.person-modal{width:100%;max-height:calc(100dvh - 20px);border-radius:14px}.person-modal form{padding:18px}.person-modal .modal-header{padding:18px}.person-modal .modal-actions>*{flex:1}}
