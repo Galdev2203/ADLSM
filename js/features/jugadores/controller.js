@@ -35,12 +35,36 @@ export function initJugadores(){
     els.season.value=selectedSeasonId || seasons.find(s=>s.is_active)?.id || seasons[0]?.id || '';
     populateTeams();
   };
-  const populateTeams=()=>{
+  const populateTeams=async()=>{
     const sid=String(els.season.value || '');
-    const rows=teams
-      .filter(t => String(t.season_id || '') === sid)
-      .sort((a,b)=>String(a.display_name || a.team?.name || '').localeCompare(String(b.display_name || b.team?.name || ''), 'es'));
-    els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')}${t.team?.category ? ` · ${esc(t.team.category)}` : ''}</option>`).join('');
+    els.teamSeason.disabled=true;
+    els.teamSeason.innerHTML='<option value="">Cargando equipos…</option>';
+    if(!sid){
+      els.teamSeason.innerHTML='<option value="">Selecciona una temporada primero</option>';
+      els.teamSeason.disabled=false;
+      return;
+    }
+    try{
+      const {data,error}=await timeout(
+        supabase
+          .from('team_seasons')
+          .select('id,season_id,team_id,display_name,gender,competition_name,group_name')
+          .eq('season_id',sid)
+          .order('display_name',{ascending:true})
+      );
+      if(error) throw error;
+      const rows=(data||[]).map(row=>({
+        ...row,
+        team:teams.find(t=>t.team_id===row.team_id)?.team || teams.find(t=>t.id===row.id)?.team || null
+      }));
+      els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')}${t.team?.category ? ` · ${esc(t.team.category)}` : ''}</option>`).join('');
+      if(!rows.length) els.teamSeason.innerHTML='<option value="">No hay equipos en esta temporada</option>';
+    }catch(error){
+      els.teamSeason.innerHTML='<option value="">No se pudieron cargar los equipos</option>';
+      notify('No se pudieron cargar los equipos: '+(error?.message||'Error desconocido'),'error');
+    }finally{
+      els.teamSeason.disabled=false;
+    }
   };
   const rowData=(a)=>{
     const p=people.find(x=>x.id===a.player_id);
@@ -62,7 +86,7 @@ export function initJugadores(){
     els.list.innerHTML=rows.map(r=>{const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Jugador';return `<article class="player-card"><div class="player-card-main"><div class="player-avatar">${esc(initials(r.person))}</div><div class="player-card-info"><div class="player-title-row"><h3>${esc(name)}</h3><span class="player-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p>${esc(r.team?.display_name||r.team?.team?.name||'Sin equipo')}</p><div class="player-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span>${r.profile?.position?`<span>${esc(r.profile.position)}</span>`:''}${r.profile?.shirt_number!=null?`<span>Dorsal ${esc(r.profile.shirt_number)}</span>`:''}</div></div></div><div class="player-card-actions"><button class="player-action" data-player="${r.player_id}" type="button">Ver jugador</button></div></article>`}).join('');
     els.list.querySelectorAll('[data-player]').forEach(b=>b.addEventListener('click',()=>showDetail(b.dataset.player)));
   };
-  const openModal=()=>{els.form.reset();els.season.value=selectedSeasonId||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';populateTeams();els.modal.hidden=false;requestAnimationFrame(()=>els.firstName.focus())};
+  const openModal=async()=>{els.form.reset();els.season.value=selectedSeasonId||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';els.modal.hidden=false;await populateTeams();requestAnimationFrame(()=>els.firstName.focus())};
   const closeModal=()=>{els.modal.hidden=true;els.form.reset()};
   const showDetail=(personId)=>{
     const p=people.find(x=>x.id===personId);const prof=profiles.find(x=>x.person_id===personId);const history=assignments.filter(a=>a.player_id===personId).map(rowData).sort((a,b)=>String(b.team?.season?.start_year||0).localeCompare(String(a.team?.season?.start_year||0)));
@@ -123,7 +147,7 @@ export function initJugadores(){
   };
   els.newButton.addEventListener('click',openModal);els.close.addEventListener('click',closeModal);els.cancel.addEventListener('click',closeModal);
   els.modal.addEventListener('click',e=>{if(e.target===els.modal)closeModal()});
-  els.form.addEventListener('submit',save);els.season.addEventListener('change',populateTeams);
+  els.form.addEventListener('submit',save);els.season.addEventListener('change',()=>populateTeams());
   els.seasonFilter.addEventListener('change',()=>{selectedSeasonId=els.seasonFilter.value;render()});
   els.search.addEventListener('input',()=>{searchTerm=normalize(els.search.value);render()});
   load();
