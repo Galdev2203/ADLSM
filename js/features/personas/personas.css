@@ -239,3 +239,69 @@
   .person-table{min-width:720px}
   .person-table-wrap{overflow-x:auto}
 }
+
+/* Person detail actions — same button system as the rest of ADLSM */
+.person-detail-actions{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto;
+}
+.person-detail-actions .secondary-button,
+.person-detail-actions .primary-button{
+  min-height:38px;
+  height:38px;
+  border:0;
+  border-radius:10px;
+  padding:0 15px;
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+  line-height:1;
+  cursor:pointer;
+  transition:background .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.person-detail-actions .secondary-button{
+  background:#eef3fa;
+  color:#174a9a;
+}
+.person-detail-actions .secondary-button:hover{
+  background:#e3ebf6;
+  transform:translateY(-1px);
+}
+.person-detail-actions .primary-button{
+  background:#082f70;
+  color:#fff;
+  box-shadow:0 7px 16px rgba(8,47,112,.14);
+}
+.person-detail-actions .primary-button:hover{
+  background:#06275d;
+  transform:translateY(-1px);
+}
+.person-detail-actions .secondary-button:focus-visible,
+.person-detail-actions .primary-button:focus-visible,
+.person-detail-back:focus-visible{
+  outline:3px solid rgba(23,74,154,.16);
+  outline-offset:2px;
+}
+.person-detail-back{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:34px;
+  margin:0 0 12px;
+  padding:0 2px;
+  border:0;
+  background:transparent;
+  color:#174a9a;
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+}
+.person-detail-back:hover{color:#082f70}
+@media(max-width:600px){
+  .person-detail-actions{width:100%;margin-left:0}
+  .person-detail-actions button{flex:1}
+}
