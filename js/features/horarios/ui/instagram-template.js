@@ -147,7 +147,7 @@ function normalizeLogo(item) {
 }
 
 async function drawBackground(ctx) {
-  const bg = await loadImage('assets/background.svg');
+  const bg = await loadImage('assets/background.png');
   if (bg) ctx.drawImage(bg, 0, 0, WIDTH, HEIGHT);
   else {
     const g = ctx.createLinearGradient(0, 0, 0, HEIGHT);
