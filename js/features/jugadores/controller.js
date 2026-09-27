@@ -7,7 +7,7 @@ const seasonLabel = s => s ? `${s.start_year}/${String(s.end_year).slice(-2)}` :
 const initials = p => [p?.first_name,p?.last_name].map(normalize).filter(Boolean).map(x=>x[0].toUpperCase()).join('').slice(0,2) || 'J';
 const supabaseErrorText = error => [error?.message,error?.details,error?.hint].filter(Boolean).join(' · ') || 'Error desconocido';
 
-let seasons=[], teams=[], people=[], profiles=[], assignments=[];
+let seasons=[], teamSeasons=[], teamSeasonById=new Map(), people=[], profiles=[], assignments=[];
 let selectedSeasonId='', searchTerm='', saving=false, editingPlayerId=null, editingAssignmentId=null;
 
 const timeout = async (promise, ms=15000) => {
@@ -56,7 +56,7 @@ export function initJugadores(){
       if(error) throw error;
       const rows=(data||[]).map(row=>({
         ...row,
-        team:teams.find(t=>t.team_id===row.team_id)?.team || teams.find(t=>t.id===row.id)?.team || null
+        team:teamSeasonById.get(String(row.id))?.team || null
       }));
       els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')}${t.team?.category ? ` · ${esc(t.team.category)}` : ''}</option>`).join('');
       if(!rows.length) els.teamSeason.innerHTML='<option value="">No hay equipos en esta temporada</option>';
@@ -70,7 +70,7 @@ export function initJugadores(){
   const rowData=(a)=>{
     const p=people.find(x=>x.id===a.player_id);
     const prof=profiles.find(x=>x.person_id===a.player_id);
-    const team=teams.find(x=>x.id===a.team_season_id);
+    const team=teamSeasonById.get(String(a.team_season_id)) || null;
     return {...a,person:p,profile:prof,team};
   };
   const filtered=()=>assignments.map(rowData).filter(a=>{
@@ -82,7 +82,7 @@ export function initJugadores(){
     const rows=filtered();
     els.total.textContent=new Set(rows.map(r=>r.player_id)).size;
     els.active.textContent=new Set(rows.filter(r=>r.person?.is_active!==false).map(r=>r.player_id)).size;
-    els.seasonCount.textContent=selectedSeasonId ? rows.length : assignments.filter(a=>teams.find(t=>t.id===a.team_season_id)?.season?.is_active).length;
+    els.seasonCount.textContent=selectedSeasonId ? rows.length : assignments.filter(a=>teamSeasonById.get(String(a.team_season_id))?.season?.is_active).length;
     if(!rows.length){els.list.innerHTML=`<div class="player-empty"><h3>${assignments.length?'No hay jugadores que coincidan':'Todavía no hay jugadores'}</h3><p>${assignments.length?'Prueba con otra temporada o búsqueda.':'Crea el primer jugador para empezar a gestionar las plantillas.'}</p><button class="players-primary" id="emptyNewPlayer" type="button">Crear jugador</button></div>`;document.querySelector('#emptyNewPlayer')?.addEventListener('click',openModal);return}
     els.list.innerHTML=rows.map(r=>{const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Jugador';return `<article class="player-card"><div class="player-card-main"><div class="player-avatar">${esc(initials(r.person))}</div><div class="player-card-info"><div class="player-title-row"><h3>${esc(name)}</h3><span class="player-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p>${esc(r.team?.display_name||r.team?.team?.name||'Sin equipo')}</p><div class="player-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span>${r.profile?.position?`<span>${esc(r.profile.position)}</span>`:''}${r.profile?.shirt_number!=null?`<span>Dorsal ${esc(r.profile.shirt_number)}</span>`:''}</div></div></div><div class="player-card-actions"><button class="player-action" data-player="${r.player_id}" data-assignment="${r.id}" type="button">Ver jugador</button><button class="player-action player-action-light" data-edit-player="${r.player_id}" data-assignment="${r.id}" type="button">Editar</button></div></article>`}).join('');
     els.list.querySelectorAll('[data-player]').forEach(b=>b.addEventListener('click',()=>showDetail(b.dataset.player,b.dataset.assignment)));
@@ -102,7 +102,7 @@ export function initJugadores(){
     els.firstName.value=p.first_name||''; els.lastName.value=p.last_name||''; els.birthDate.value=p.birth_date||'';
     els.phone.value=p.phone||''; els.email.value=p.email||''; els.license.value=prof.federation_license||'';
     els.position.value=prof.position||''; els.shirt.value=prof.shirt_number ?? a.shirt_number ?? ''; els.status.value=a.status||'active'; els.notes.value=prof.notes||a.notes||'';
-    const team=teams.find(t=>t.id===a.team_season_id);
+    const team=teamSeasonById.get(String(a.team_season_id)) || null;
     els.season.value=team?.season_id||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';
     els.modal.hidden=false; await populateTeams(); els.teamSeason.value=a.team_season_id||'';
     requestAnimationFrame(()=>els.firstName.focus());
@@ -134,7 +134,9 @@ export function initJugadores(){
     if(err){els.list.innerHTML=`<div class="player-empty"><h3>No se pudieron cargar los jugadores</h3><p>${esc(err.message)}</p></div>`;return}
     seasons=s.data||[];people=p.data||[];profiles=pr.data||[];
     const teamMap=new Map((ts.data||[]).map(x=>[x.id,{...x,season:seasons.find(s=>s.id===x.season_id),team:(t.data||[]).find(y=>y.id===x.team_id)}]));
-    teams=[...teamMap.values()];assignments=tp.data||[];
+    teamSeasons=[...teamMap.values()];
+    teamSeasonById=new Map(teamSeasons.map(x=>[String(x.id),x]));
+    assignments=tp.data||[];
     populateSeasons();render();
   };
   const save=async(e)=>{
@@ -186,7 +188,9 @@ export function initJugadores(){
     try{
       const {error:assignmentError}=await timeout(supabase.from('team_players').delete().eq('player_id',personId)); if(assignmentError)throw assignmentError;
       const {error:profileError}=await timeout(supabase.from('player_profiles').delete().eq('person_id',personId)); if(profileError)throw profileError;
-      await load();notify('Jugador eliminado correctamente.','success');
+      await load();
+      hideDetail();
+      notify('Jugador eliminado correctamente.','success');
     }catch(error){notify('No se pudo eliminar el jugador: '+supabaseErrorText(error),'error')}finally{saving=false}
   };
 
