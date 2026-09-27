@@ -136,6 +136,7 @@ export async function initDashboard(app, user, onLogout) {
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
     equiposSection.hidden = !isEquipos;
+    jugadoresSection.hidden = !isJugadores;
     dashboardTitle.textContent = isPerfil
       ? 'Perfil'
       : (isTemporadas ? 'Temporadas' : (isEquipos ? 'Equipos' : (isJugadores ? 'Jugadores' : 'Horarios')));
