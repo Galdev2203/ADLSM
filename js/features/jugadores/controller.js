@@ -70,7 +70,7 @@ export function initJugadores(){
   const rowData=(a)=>{
     const p=people.find(x=>x.id===a.player_id);
     const prof=profiles.find(x=>x.person_id===a.player_id);
-    const team=teamSeasonById.get(String(a.team_season_id)) || null;
+    const team=a.embeddedTeamSeason || teamSeasonById.get(String(a.team_season_id)) || null;
     return {...a,person:p,profile:prof,team};
   };
   const filtered=()=>assignments.map(rowData).filter(a=>{
@@ -129,14 +129,24 @@ export function initJugadores(){
       supabase.from('team_seasons').select('id,season_id,team_id,display_name,gender,competition_name,group_name'),
       supabase.from('teams').select('id,name,gender,category,is_active')
     ]);
-    const tp=await supabase.from('team_players').select('id,team_season_id,player_id,is_primary,shirt_number,joined_at,left_at,status,notes,created_at').order('created_at',{ascending:false});
+    const tp=await supabase.from('team_players').select(`
+      id,team_season_id,player_id,is_primary,shirt_number,joined_at,left_at,status,notes,created_at,
+      teamSeason:team_seasons(
+        id,season_id,team_id,display_name,gender,competition_name,group_name,
+        team:teams(id,name,gender,category,is_active),
+        season:seasons(id,name,start_year,end_year,is_active)
+      )
+    `).order('created_at',{ascending:false});
     const err=[s,p,pr,t,ts,tp].find(x=>x.error)?.error;
     if(err){els.list.innerHTML=`<div class="player-empty"><h3>No se pudieron cargar los jugadores</h3><p>${esc(err.message)}</p></div>`;return}
     seasons=s.data||[];people=p.data||[];profiles=pr.data||[];
     const teamMap=new Map((ts.data||[]).map(x=>[x.id,{...x,season:seasons.find(s=>s.id===x.season_id),team:(t.data||[]).find(y=>y.id===x.team_id)}]));
     teamSeasons=[...teamMap.values()];
     teamSeasonById=new Map(teamSeasons.map(x=>[String(x.id),x]));
-    assignments=tp.data||[];
+    assignments=(tp.data||[]).map(row=>({
+      ...row,
+      embeddedTeamSeason:row.teamSeason || null
+    }));
     populateSeasons();render();
   };
   const save=async(e)=>{
