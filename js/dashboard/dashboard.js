@@ -6,8 +6,10 @@ import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
 import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
+import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
 import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-2';
+import { initPersonas } from '../features/personas/controller.js?v=20260927-1';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 import { confirmDialog } from '../core/dialogs.js';
 
@@ -17,6 +19,7 @@ let temporadasCleanup = null;
 let equiposCleanup = null;
 let jugadoresCleanup = null;
 let entrenadoresCleanup = null;
+let personasCleanup = null;
 
 function ensureStylesheet(href, id) {
   if (document.getElementById(id)) return;
@@ -34,6 +37,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
   ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-4', 'jugadores-styles');
   ensureStylesheet('./js/features/entrenadores/entrenadores.css?v=20260927-1', 'entrenadores-styles');
+  ensureStylesheet('./js/features/personas/personas.css?v=20260927-1', 'personas-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
@@ -52,6 +56,9 @@ export async function initDashboard(app, user, onLogout) {
           </button>
           <button class="dashboard-nav-item" data-section="equipos">
             <span>Equipos</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="personas">
+            <span>Personas</span>
           </button>
           <button class="dashboard-nav-item" data-section="jugadores">
             <span>Jugadores</span>
@@ -84,6 +91,7 @@ export async function initDashboard(app, user, onLogout) {
           <section id="sectionHorarios" class="dashboard-section"></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
           <section id="sectionEquipos" class="dashboard-section" hidden></section>
+          <section id="sectionPersonas" class="dashboard-section" hidden></section>
           <section id="sectionJugadores" class="dashboard-section" hidden></section>
           <section id="sectionEntrenadores" class="dashboard-section" hidden></section>
           <section id="sectionPerfil" class="dashboard-section" hidden></section>
@@ -96,6 +104,7 @@ export async function initDashboard(app, user, onLogout) {
   const perfilSection = document.querySelector('#sectionPerfil');
   const temporadasSection = document.querySelector('#sectionTemporadas');
   const equiposSection = document.querySelector('#sectionEquipos');
+  const personasSection = document.querySelector('#sectionPersonas');
   const jugadoresSection = document.querySelector('#sectionJugadores');
   const entrenadoresSection = document.querySelector('#sectionEntrenadores');
   const dashboardTitle = document.querySelector('#dashboardTitle');
@@ -126,6 +135,10 @@ export async function initDashboard(app, user, onLogout) {
       jugadoresCleanup();
       jugadoresCleanup = null;
     }
+    if (personasCleanup) {
+      personasCleanup();
+      personasCleanup = null;
+    }
     if (entrenadoresCleanup) {
       entrenadoresCleanup();
       entrenadoresCleanup = null;
@@ -143,19 +156,22 @@ export async function initDashboard(app, user, onLogout) {
     const isPerfil = sectionName === 'perfil';
     const isTemporadas = sectionName === 'temporadas';
     const isEquipos = sectionName === 'equipos';
+    const isPersonas = sectionName === 'personas';
     const isJugadores = sectionName === 'jugadores';
     const isEntrenadores = sectionName === 'entrenadores';
 
-    horariosSection.hidden = isPerfil || isTemporadas || isEquipos || isJugadores || isEntrenadores;
+    horariosSection.hidden = isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
     equiposSection.hidden = !isEquipos;
+    personasSection.hidden = !isPersonas;
     jugadoresSection.hidden = !isJugadores;
     entrenadoresSection.hidden = !isEntrenadores;
     const sectionTitles = {
       horarios: 'Horarios',
       temporadas: 'Temporadas',
       equipos: 'Equipos',
+      personas: 'Personas',
       jugadores: 'Jugadores',
       entrenadores: 'Entrenadores',
       perfil: 'Perfil'
@@ -174,6 +190,11 @@ export async function initDashboard(app, user, onLogout) {
     if (isEquipos && !equiposCleanup) {
       equiposSection.innerHTML = EQUIPOS_VIEW;
       equiposCleanup = initEquipos();
+    }
+
+    if (isPersonas && !personasCleanup) {
+      personasSection.innerHTML = PERSONAS_VIEW;
+      personasCleanup = initPersonas();
     }
 
     if (isJugadores && !jugadoresCleanup) {
