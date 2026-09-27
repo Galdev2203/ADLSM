@@ -23,15 +23,17 @@ export const PERSONAS_VIEW = `
         <option value="inactive">Inactivas</option>
       </select>
       <input id="peopleSearch" type="search" placeholder="Buscar persona..." autocomplete="off">
+      <div class="list-view-toggle" role="group" aria-label="Vista de personas"><button id="peopleCardsView" type="button" class="list-view-button active">Tarjetas</button><button id="peopleTableView" type="button" class="list-view-button">Tabla</button></div>
     </div>
   </div>
 
   <div id="peopleList" class="people-list"></div>
+  <div id="peoplePagination" class="list-pagination" hidden></div>
   <section id="personDetail" class="person-detail" hidden></section>
 </section>
 
-<div class="adlsm-modal-backdrop" id="personModal" hidden>
-  <div class="adlsm-modal person-modal" role="dialog" aria-modal="true" aria-labelledby="personModalTitle">
+<div class="person-modal-backdrop" id="personModal" hidden>
+  <div class="person-modal" role="dialog" aria-modal="true" aria-labelledby="personModalTitle">
     <div class="modal-header">
       <div>
         <span class="modal-kicker">PERSONAS</span>
