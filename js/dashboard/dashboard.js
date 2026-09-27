@@ -152,9 +152,15 @@ export async function initDashboard(app, user, onLogout) {
     equiposSection.hidden = !isEquipos;
     jugadoresSection.hidden = !isJugadores;
     entrenadoresSection.hidden = !isEntrenadores;
-    dashboardTitle.textContent = isPerfil
-      ? 'Perfil'
-      : (isTemporadas ? 'Temporadas' : (isEquipos ? 'Equipos' : (isJugadores ? 'Jugadores' : (isEntrenadores ? 'Entrenadores' : 'Horarios')))));
+    const sectionTitles = {
+      horarios: 'Horarios',
+      temporadas: 'Temporadas',
+      equipos: 'Equipos',
+      jugadores: 'Jugadores',
+      entrenadores: 'Entrenadores',
+      perfil: 'Perfil'
+    };
+    dashboardTitle.textContent = sectionTitles[sectionName] || 'Horarios';
 
     navItems.forEach((item) => {
       item.classList.toggle('active', item.dataset.section === sectionName);
