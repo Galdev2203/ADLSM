@@ -32,20 +32,6 @@ export function initPersonas(){
     photoUrl:document.querySelector('#personPhotoUrl'),notes:document.querySelector('#personNotes'),save:document.querySelector('#savePerson')
   };
 
-  listView=createListView({
-    container:els.list,
-    pagination:els.pagination,
-    cardsButton:els.cardsView,
-    tableButton:els.tableView,
-    pageSize:8,
-    getRows:filtered,
-    renderCards,
-    renderTable,
-    onRender:()=>{
-      els.list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>showDetail(b.dataset.person));
-    }
-  });
-
   const load=async()=>{
     const [p,pp,cp,r,c]=await Promise.all([
       timeout(supabase.from('people').select('id,first_name,last_name,phone,email,birth_date,photo_url,notes,is_active,created_at,updated_at').order('last_name',{ascending:true})),
@@ -98,6 +84,20 @@ export function initPersonas(){
     }
     listView?.render();
   };
+
+  listView=createListView({
+    container:els.list,
+    pagination:els.pagination,
+    cardsButton:els.cardsView,
+    tableButton:els.tableView,
+    pageSize:8,
+    getRows:filtered,
+    renderCards,
+    renderTable,
+    onRender:()=>{
+      els.list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>showDetail(b.dataset.person));
+    }
+  });
 
   const showDetail=id=>{
     const p=people.find(x=>x.id===id);if(!p)return;
