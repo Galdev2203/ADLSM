@@ -111,7 +111,7 @@ export function initPersonas(){
     document.querySelector('.personas-toolbar').hidden=true;
     els.detail.hidden=false;
     const avatar=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="">':'<span>'+esc(initials(p))+'</span>';
-    els.detail.innerHTML='<button class="person-detail-back" id="backPeople" type="button">← Volver a personas</button><div class="person-detail-head" style="margin-top:12px"><div class="person-avatar">'+avatar+'</div><div><span class="modal-kicker">PERSONA</span><h2>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</h2><p>'+esc(p.email||p.phone||'Sin datos de contacto')+'</p></div><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span><div class="person-detail-actions"><button class="secondary-button" id="editPersonDetail" type="button">Editar</button>'+(p.is_active!==false?'<button class="secondary-button" id="deactivatePerson" type="button">Desactivar</button>':'<button class="primary-button" id="activatePerson" type="button">Activar</button>')+'<button class="danger-button" id="deletePerson" type="button">Eliminar</button></div></div><div class="person-detail-grid"><article class="person-detail-card"><h3>Datos personales</h3><dl><div><dt>Fecha de nacimiento</dt><dd>'+esc(p.birth_date||'—')+'</dd></div><div><dt>Teléfono</dt><dd>'+esc(p.phone||'—')+'</dd></div><div><dt>Email</dt><dd>'+esc(p.email||'—')+'</dd></div></dl></article><article class="person-detail-card"><h3>Funciones</h3><div class="person-functions">'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(''):'<span class="person-function">Sin función</span>')+'</div></article><article class="person-detail-card wide"><h3>Responsabilidades</h3><div class="person-contact">'+(resp.length?resp.map(x=>esc(x.section)+(x.is_active?' · Activa':' · Inactiva')).join('<br>'):'No tiene responsabilidades registradas.')+'</div><h3 style="margin-top:18px">Coordinación</h3><div class="person-contact">'+(coord.length?'Tiene asignación de coordinación.':'No tiene asignación de coordinación.')+'</div></article><article class="person-detail-card wide"><h3>Notas</h3><div class="person-contact">'+esc(p.notes||'Sin notas.')+'</div></article></div>';
+    els.detail.innerHTML='<button class="person-detail-back" id="backPeople" type="button">← Volver a personas</button><div class="person-detail-head" style="margin-top:12px"><div class="person-avatar">'+avatar+'</div><div><span class="modal-kicker">PERSONA</span><h2>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</h2><p>'+esc(p.email||p.phone||'Sin datos de contacto')+'</p></div><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span><div class="person-detail-actions"><button class="secondary-button" id="editPersonDetail" type="button">Editar</button>'+(p.is_active!==false?'<button class="secondary-button" id="deactivatePerson" type="button">Desactivar</button>':'<button class="primary-button" id="activatePerson" type="button">Activar</button>')+'<button class="person-delete-button" id="deletePerson" type="button">Eliminar</button></div></div><div class="person-detail-grid"><article class="person-detail-card"><h3>Datos personales</h3><dl><div><dt>Fecha de nacimiento</dt><dd>'+esc(p.birth_date||'—')+'</dd></div><div><dt>Teléfono</dt><dd>'+esc(p.phone||'—')+'</dd></div><div><dt>Email</dt><dd>'+esc(p.email||'—')+'</dd></div></dl></article><article class="person-detail-card"><h3>Funciones</h3><div class="person-functions">'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(''):'<span class="person-function">Sin función</span>')+'</div></article><article class="person-detail-card wide"><h3>Responsabilidades</h3><div class="person-contact">'+(resp.length?resp.map(x=>esc(x.section)+(x.is_active?' · Activa':' · Inactiva')).join('<br>'):'No tiene responsabilidades registradas.')+'</div><h3 style="margin-top:18px">Coordinación</h3><div class="person-contact">'+(coord.length?'Tiene asignación de coordinación.':'No tiene asignación de coordinación.')+'</div></article><article class="person-detail-card wide"><h3>Notas</h3><div class="person-contact">'+esc(p.notes||'Sin notas.')+'</div></article></div>';
     document.querySelector('#backPeople').onclick=()=>{els.detail.hidden=true;els.list.hidden=false;els.pagination.hidden=false;document.querySelector('.personas-toolbar').hidden=false;render()};
     document.querySelector('#editPersonDetail').onclick=()=>openModal(p);
     const deactivate=document.querySelector('#deactivatePerson');
@@ -122,15 +122,69 @@ export function initPersonas(){
     if(deleteButton)deleteButton.onclick=()=>deletePerson(p);
   };
 
+  const getPersonDependencies=async(personId)=>{
+    const [player,coach,responsibility,coordinator]=await Promise.all([
+      timeout(supabase.from('team_players').select('id,team_season_id,is_primary,status,teamSeason:team_seasons(id,display_name,team:teams(name),season:seasons(name,start_year,end_year))').eq('player_id',personId)),
+      timeout(supabase.from('team_coaches').select('id,team_season_id,role,is_primary,teamSeason:team_seasons(id,display_name,team:teams(name),season:seasons(name,start_year,end_year))').eq('coach_id',personId)),
+      timeout(supabase.from('responsibilities').select('id,section,is_active,start_date,end_date').eq('person_id',personId)),
+      timeout(supabase.from('coordinator_assignments').select('id,is_active,start_date,end_date').eq('person_id',personId))
+    ]);
+    for(const result of [player,coach,responsibility,coordinator]) if(result.error) throw result.error;
+    return {
+      player:player.data||[],
+      coach:coach.data||[],
+      responsibility:responsibility.data||[],
+      coordinator:coordinator.data||[]
+    };
+  };
+
+  const dependencyTeamLabel=row=>{
+    const team=row.teamSeason;
+    const teamName=team?.display_name||team?.team?.name||'Equipo';
+    const season=team?.season;
+    const seasonName=season?.name || (season?.start_year&&season?.end_year ? season.start_year+'/'+String(season.end_year).slice(-2) : '');
+    return seasonName ? teamName+' · '+seasonName : teamName;
+  };
+
   const deletePerson=async(p)=>{
     const name=[p.first_name,p.last_name].filter(Boolean).join(' ')||'esta persona';
-    const ok=await confirmDialog({
-      title:'Eliminar persona',
-      message:'Se eliminará permanentemente '+name+' y esta acción no se puede deshacer. Si tiene datos relacionados, ADLSM impedirá la eliminación para proteger el historial. ¿Continuar?',
-      confirmText:'Eliminar',
-      cancelText:'Cancelar',
-      danger:true
-    });
+    try{
+      const deps=await getPersonDependencies(p.id);
+      const lines=[];
+      if(deps.player.length){
+        lines.push('Jugador: '+deps.player.length+' asignación'+(deps.player.length===1?'':'es'));
+        deps.player.slice(0,5).forEach(row=>lines.push('  · '+dependencyTeamLabel(row)+(row.is_primary?' · Equipo principal':' · Participación')));
+        if(deps.player.length>5) lines.push('  · +'+(deps.player.length-5)+' más');
+      }
+      if(deps.coach.length){
+        lines.push('Entrenador: '+deps.coach.length+' equipo'+(deps.coach.length===1?'':'s'));
+        deps.coach.slice(0,5).forEach(row=>lines.push('  · '+dependencyTeamLabel(row)+(row.role==='principal'?' · Principal':' · Ayudante')));
+        if(deps.coach.length>5) lines.push('  · +'+(deps.coach.length-5)+' más');
+      }
+      if(deps.responsibility.length){
+        lines.push('Responsable: '+deps.responsibility.length+' responsabilidad'+(deps.responsibility.length===1?'':'es'));
+        deps.responsibility.slice(0,5).forEach(row=>lines.push('  · '+(row.section||'Sección sin indicar')+(row.is_active===false?' · Inactiva':' · Activa')));
+        if(deps.responsibility.length>5) lines.push('  · +'+(deps.responsibility.length-5)+' más');
+      }
+      if(deps.coordinator.length){
+        lines.push('Coordinador: '+deps.coordinator.length+' asignación'+(deps.coordinator.length===1?'':'es'));
+      }
+      const total=deps.player.length+deps.coach.length+deps.responsibility.length+deps.coordinator.length;
+      const dependencyText=lines.length
+        ? '\\n\\nDependencias detectadas:\\n'+lines.join('\\n')+'\\n\\nSi continúas, ADLSM intentará eliminar la persona. Si alguna relación lo impide, no se eliminará para proteger el historial.'
+        : '\\n\\nNo se han detectado dependencias de jugador, entrenador, responsable o coordinador.';
+      const ok=await confirmDialog({
+        title:'Eliminar persona',
+        message:'Vas a eliminar permanentemente a '+name+'. Esta acción no se puede deshacer.'+dependencyText,
+        confirmText:total?'Eliminar igualmente':'Eliminar persona',
+        cancelText:'Cancelar',
+        danger:true
+      });
+      if(!ok)return;
+    }catch(e){
+      notify('No se pudieron comprobar las dependencias de la persona: '+errorText(e),'error');
+      return;
+    }
     if(!ok)return;
     try{
       const res=await timeout(supabase.from('people').delete().eq('id',p.id));
