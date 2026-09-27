@@ -193,3 +193,17 @@
   box-sizing:border-box;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
 }
+
+
+/* Action order: create first, filters second, view selector always at the far right. */
+.section-toolbar .section-toolbar-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin-left:auto;
+}
+
+.section-toolbar .section-toolbar-primary{order:1 !important}
+.section-toolbar .section-toolbar-toggle{order:2 !important}
+.section-toolbar .section-toolbar-view{order:3 !important}
