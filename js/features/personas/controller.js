@@ -32,6 +32,8 @@ export function initPersonas(){
     photoUrl:document.querySelector('#personPhotoUrl'),notes:document.querySelector('#personNotes'),save:document.querySelector('#savePerson')
   };
 
+  if (els.modal && els.modal.parentElement !== document.body) document.body.appendChild(els.modal);
+
   const load=async()=>{
     const [p,pp,cp,r,c]=await Promise.all([
       timeout(supabase.from('people').select('id,first_name,last_name,phone,email,birth_date,photo_url,notes,is_active,created_at,updated_at').order('last_name',{ascending:true})),
@@ -105,11 +107,12 @@ export function initPersonas(){
     const resp=responsibilities.filter(x=>x.person_id===id);
     const coord=coordinators.filter(x=>x.person_id===id);
     els.list.hidden=true;
+    els.pagination.hidden=true;
     document.querySelector('.personas-toolbar').hidden=true;
     els.detail.hidden=false;
     const avatar=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="">':'<span>'+esc(initials(p))+'</span>';
     els.detail.innerHTML='<button class="person-detail-back" id="backPeople" type="button">← Volver a personas</button><div class="person-detail-head" style="margin-top:12px"><div class="person-avatar">'+avatar+'</div><div><span class="modal-kicker">PERSONA</span><h2>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</h2><p>'+esc(p.email||p.phone||'Sin datos de contacto')+'</p></div><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span><div class="person-detail-actions"><button class="secondary-button" id="editPersonDetail" type="button">Editar</button>'+(p.is_active!==false?'<button class="secondary-button" id="deactivatePerson" type="button">Desactivar</button>':'<button class="primary-button" id="activatePerson" type="button">Activar</button>')+'</div></div><div class="person-detail-grid"><article class="person-detail-card"><h3>Datos personales</h3><dl><div><dt>Fecha de nacimiento</dt><dd>'+esc(p.birth_date||'—')+'</dd></div><div><dt>Teléfono</dt><dd>'+esc(p.phone||'—')+'</dd></div><div><dt>Email</dt><dd>'+esc(p.email||'—')+'</dd></div></dl></article><article class="person-detail-card"><h3>Funciones</h3><div class="person-functions">'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(''):'<span class="person-function">Sin función</span>')+'</div></article><article class="person-detail-card wide"><h3>Responsabilidades</h3><div class="person-contact">'+(resp.length?resp.map(x=>esc(x.section)+(x.is_active?' · Activa':' · Inactiva')).join('<br>'):'No tiene responsabilidades registradas.')+'</div><h3 style="margin-top:18px">Coordinación</h3><div class="person-contact">'+(coord.length?'Tiene asignación de coordinación.':'No tiene asignación de coordinación.')+'</div></article><article class="person-detail-card wide"><h3>Notas</h3><div class="person-contact">'+esc(p.notes||'Sin notas.')+'</div></article></div>';
-    document.querySelector('#backPeople').onclick=()=>{els.detail.hidden=true;els.list.hidden=false;document.querySelector('.personas-toolbar').hidden=false};
+    document.querySelector('#backPeople').onclick=()=>{els.detail.hidden=true;els.list.hidden=false;els.pagination.hidden=false;document.querySelector('.personas-toolbar').hidden=false;render()};
     document.querySelector('#editPersonDetail').onclick=()=>openModal(p);
     const deactivate=document.querySelector('#deactivatePerson');
     const activate=document.querySelector('#activatePerson');
