@@ -43,3 +43,35 @@
 .person-form-grid input:focus,.person-form-grid textarea:focus{outline:2px solid rgba(45,103,178,.14);border-color:#7aa1ce}
 @media(max-width:900px){.personas-toolbar{align-items:stretch;flex-direction:column}.personas-toolbar .toolbar-filters{justify-content:stretch}.personas-toolbar .toolbar-filters>*{flex:1;min-width:150px}.people-list{grid-template-columns:1fr}.person-detail-grid{grid-template-columns:1fr}.person-detail-card.wide{grid-column:auto}}
 @media(max-width:600px){.person-form-grid{grid-template-columns:1fr}.person-form-grid label.full{grid-column:auto}.person-detail-head{align-items:flex-start;flex-wrap:wrap}.person-detail-actions{margin-left:0;width:100%}}
+/* Personas: estados de vista */
+.people-list[hidden],
+.personas-toolbar[hidden],
+.person-detail[hidden]{display:none!important}
+
+/* Refinamiento visual */
+.personas-toolbar{padding:16px 18px;background:#fff;border:1px solid #e3e8ef;border-radius:16px;box-shadow:0 6px 20px rgba(25,42,70,.04)}
+.personas-toolbar .primary-button{white-space:nowrap}
+.personas-toolbar .toolbar-filters input,
+.personas-toolbar .toolbar-filters select{min-width:170px}
+.people-list{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+.person-card{display:flex;flex-direction:column;min-height:190px;padding:17px}
+.person-card-main{align-items:flex-start}
+.person-avatar{box-shadow:inset 0 0 0 1px rgba(30,67,112,.06)}
+.person-card-info{padding-top:2px}
+.person-title-row h3{font-size:15px}
+.person-functions{margin-top:15px}
+.person-card-actions{margin-top:auto;padding-top:16px;border-top:1px solid #eef1f5}
+.person-action{transition:.15s ease}
+.person-action:hover{background:#eaf1f9;color:#163f70}
+.person-detail{padding-bottom:24px}
+.person-detail-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:12px;background:transparent;border:0;color:#31557e;font-weight:700;padding:5px 2px;cursor:pointer}
+.person-detail-head{margin:0 0 14px!important;padding:22px}
+.person-detail-head .person-status{margin-left:4px}
+.person-detail-head h2{font-size:24px;letter-spacing:-.02em}
+.person-detail-actions .secondary-button,
+.person-detail-actions .primary-button{border-radius:9px}
+.person-detail-card{min-height:120px}
+.person-detail-card h3{font-size:13px;text-transform:none}
+.person-detail-card.wide{min-height:0}
+@media(max-width:1200px){.people-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.people-list{grid-template-columns:1fr}.personas-toolbar{padding:14px}.personas-toolbar .toolbar-main,.personas-toolbar .toolbar-filters{width:100%}.personas-toolbar .toolbar-filters>*{min-width:0;width:100%}}
