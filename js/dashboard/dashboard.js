@@ -8,7 +8,7 @@ import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
 import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
-import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-4';
+import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-5';
 import { initPersonas } from '../features/personas/controller.js?v=20260927-4';
 import { initEquipos } from '../features/equipos/controller.js?v=20260927-2';
 import { confirmDialog } from '../core/dialogs.js';
@@ -35,10 +35,10 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/dashboard/responsive.css?v=20260927-1', 'responsive-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
-  ensureStylesheet('./js/features/equipos/equipos.css?v=20260927-1', 'equipos-styles');
+  ensureStylesheet('./js/features/equipos/equipos.css?v=20260927-2', 'equipos-styles');
   ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-5', 'jugadores-styles');
   ensureStylesheet('./js/features/entrenadores/entrenadores.css?v=20260927-1', 'entrenadores-styles');
-  ensureStylesheet('./js/features/personas/personas.css?v=20260927-9', 'personas-styles');
+  ensureStylesheet('./js/features/personas/personas.css?v=20260927-10', 'personas-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
