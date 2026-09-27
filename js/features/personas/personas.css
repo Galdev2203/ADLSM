@@ -1,0 +1,45 @@
+.personas-panel{padding:0;background:transparent;border:0;box-shadow:none}
+.personas-toolbar{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px}
+.personas-toolbar .toolbar-main,.personas-toolbar .toolbar-filters{display:flex;align-items:center;gap:10px}
+.personas-toolbar .toolbar-filters{flex-wrap:wrap;justify-content:flex-end}
+.toolbar-summary{display:flex;align-items:baseline;gap:6px;color:#7b8798;font-size:13px;margin-left:8px}
+.toolbar-summary strong{color:#172033;font-size:18px;margin-left:8px}
+.people-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.person-card{background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(24,39,75,.05);transition:.18s ease}
+.person-card:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(24,39,75,.08)}
+.person-card-main{display:flex;gap:13px;align-items:center}
+.person-avatar{width:48px;height:48px;border-radius:14px;background:#edf3fb;color:#1d4f91;display:grid;place-items:center;font-weight:800;overflow:hidden;flex:0 0 48px}
+.person-avatar img{width:100%;height:100%;object-fit:cover}
+.person-card-info{min-width:0;flex:1}
+.person-title-row{display:flex;align-items:center;gap:8px}
+.person-title-row h3{margin:0;font-size:16px;color:#182235;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person-status{font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 7px;border-radius:999px;background:#e9f7ef;color:#147a43}
+.person-status.inactive{background:#f2f3f5;color:#737b87}
+.person-contact{margin:5px 0 0;color:#7a8493;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person-functions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.person-function{font-size:11px;font-weight:700;padding:5px 8px;border-radius:999px;background:#f2f5f9;color:#475569}
+.person-card-actions{display:flex;justify-content:flex-end;margin-top:14px}
+.person-action{border:0;background:#f4f6f9;color:#31557e;border-radius:9px;padding:8px 11px;font-weight:700;cursor:pointer}
+.person-empty{background:#fff;border:1px dashed #d6dce5;border-radius:16px;padding:42px;text-align:center;color:#778195}
+.person-detail{margin-top:4px}
+.person-detail-head{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid #e5eaf1;border-radius:18px;padding:20px;margin-bottom:16px}
+.person-detail-head .person-avatar{width:64px;height:64px;border-radius:18px;flex-basis:64px}
+.person-detail-head h2{margin:2px 0 5px;color:#172033}
+.person-detail-head p{margin:0;color:#7b8798;font-size:13px}
+.person-detail-actions{margin-left:auto;display:flex;gap:8px}
+.person-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.person-detail-card{background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px}
+.person-detail-card.wide{grid-column:1/-1}
+.person-detail-card h3{margin:0 0 14px;color:#253047;font-size:14px}
+.person-detail-card dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.person-detail-card dt{font-size:11px;color:#8a94a3;text-transform:uppercase;letter-spacing:.04em}
+.person-detail-card dd{margin:3px 0 0;color:#243047;font-weight:600;font-size:13px}
+.person-modal{width:min(680px,calc(100vw - 32px))}
+.person-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.person-form-grid label{display:flex;flex-direction:column;gap:6px}
+.person-form-grid label.full{grid-column:1/-1}
+.person-form-grid label span{font-size:12px;font-weight:700;color:#5f6b7b}
+.person-form-grid input,.person-form-grid textarea{width:100%;box-sizing:border-box;border:1px solid #dce2ea;border-radius:10px;padding:10px 12px;font:inherit;color:#1c2738;background:#fff}
+.person-form-grid input:focus,.person-form-grid textarea:focus{outline:2px solid rgba(45,103,178,.14);border-color:#7aa1ce}
+@media(max-width:900px){.personas-toolbar{align-items:stretch;flex-direction:column}.personas-toolbar .toolbar-filters{justify-content:stretch}.personas-toolbar .toolbar-filters>*{flex:1;min-width:150px}.people-list{grid-template-columns:1fr}.person-detail-grid{grid-template-columns:1fr}.person-detail-card.wide{grid-column:auto}}
+@media(max-width:600px){.person-form-grid{grid-template-columns:1fr}.person-form-grid label.full{grid-column:auto}.person-detail-head{align-items:flex-start;flex-wrap:wrap}.person-detail-actions{margin-left:0;width:100%}}
