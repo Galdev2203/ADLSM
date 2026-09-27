@@ -20,7 +20,7 @@ const timeout = async (promise, ms=15000) => {
 export function initJugadores(){
   const els={
     toolbar:document.querySelector('#playersToolbar'), list:document.querySelector('#playerList'), detail:document.querySelector('#playerDetail'),
-    total:document.querySelector('#playerTotal'), active:document.querySelector('#playerActive'), seasonCount:document.querySelector('#playerSeasonCount');
+    total:document.querySelector('#playerTotal'), active:document.querySelector('#playerActive'), seasonCount:document.querySelector('#playerSeasonCount'), pagination:document.querySelector('#playerPagination'), cardsView:document.querySelector('#playersCardsView'), tableView:document.querySelector('#playersTableView'),
     seasonFilter:document.querySelector('#playerSeasonFilter'), search:document.querySelector('#playerSearch'), modal:document.querySelector('#playerModal'),
     form:document.querySelector('#playerForm'), close:document.querySelector('#closePlayerModal'), cancel:document.querySelector('#cancelPlayer'),
     newButton:document.querySelector('#newPlayerButton'), save:document.querySelector('#savePlayer'), modalTitle:document.querySelector('#playerModalTitle'),
