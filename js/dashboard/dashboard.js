@@ -132,13 +132,13 @@ export async function initDashboard(app, user, onLogout) {
     const isEquipos = sectionName === 'equipos';
     const isJugadores = sectionName === 'jugadores';
 
-    horariosSection.hidden = isPerfil || isTemporadas || isEquipos;
+    horariosSection.hidden = isPerfil || isTemporadas || isEquipos || isJugadores;
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
     equiposSection.hidden = !isEquipos;
     dashboardTitle.textContent = isPerfil
       ? 'Perfil'
-      : (isTemporadas ? 'Temporadas' : (isEquipos ? 'Equipos' : 'Horarios'));
+      : (isTemporadas ? 'Temporadas' : (isEquipos ? 'Equipos' : (isJugadores ? 'Jugadores' : 'Horarios')));
 
     navItems.forEach((item) => {
       item.classList.toggle('active', item.dataset.section === sectionName);
