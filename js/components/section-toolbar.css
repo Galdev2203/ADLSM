@@ -38,3 +38,85 @@
 .teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:4;justify-self:end;margin:0}
 @media(max-width:900px){.section-toolbar-main{grid-template-columns:1fr}.section-toolbar-summary{grid-column:1}.section-toolbar-actions{grid-column:1;justify-content:flex-start;flex-wrap:wrap}.section-toolbar-panel{grid-column:1}.teams-page .list-view-table .team-card,.coaches-page .list-view-table .coach-card,.seasons-page .list-view-table .season-card{grid-template-columns:minmax(160px,1.4fr) minmax(120px,1fr) auto}.teams-page .list-view-table .team-card-meta,.coaches-page .list-view-table .coach-card-meta,.seasons-page .list-view-table .season-card-meta{grid-column:2}.teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:3}}
 @media(max-width:760px){.section-toolbar{padding:12px}.section-toolbar-summary{gap:16px;flex-wrap:wrap}.section-toolbar-actions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.section-toolbar-actions .section-toolbar-view{grid-column:1/-1;width:max-content}.section-toolbar-actions .section-toolbar-toggle{width:100%}.section-toolbar-actions .section-toolbar-primary{width:100%;min-height:42px}.section-toolbar-panel{grid-template-columns:1fr}.section-toolbar-search{min-width:0}.teams-page .list-view-table .team-card,.coaches-page .list-view-table .coach-card,.seasons-page .list-view-table .season-card{grid-template-columns:1fr;gap:8px}.teams-page .list-view-table .team-card-title-row h3,.teams-page .list-view-table .team-card-info>p,.teams-page .list-view-table .team-card-meta,.coaches-page .list-view-table .coach-title-row h3,.coaches-page .list-view-table .coach-card-info>p,.coaches-page .list-view-table .coach-card-meta,.seasons-page .list-view-table .season-card-title-row h3,.seasons-page .list-view-table .season-card-info>p,.seasons-page .list-view-table .season-card-meta,.teams-page .list-view-table .team-status,.coaches-page .list-view-table .coach-status,.seasons-page .list-view-table .season-status{grid-column:1}.teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:1;justify-self:start}}
+
+
+/* Final shared-toolbar normalization: page-specific legacy toolbar rules must not change
+   the common layout, ordering, or filter-panel width. */
+.section-toolbar.personas-toolbar,
+.section-toolbar.seasons-toolbar,
+.section-toolbar.teams-toolbar,
+.section-toolbar.players-toolbar,
+.section-toolbar.coaches-toolbar{
+  display:block;
+  width:100%;
+  margin:0 0 14px;
+  padding:14px 16px;
+  border:1px solid #e3e9f1;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(16,24,40,.035);
+}
+
+.section-toolbar .section-toolbar-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.section-toolbar .section-toolbar-view,
+.section-toolbar .section-toolbar-toggle,
+.section-toolbar .section-toolbar-primary{
+  order:initial !important;
+}
+
+.section-toolbar .section-toolbar-view{order:1 !important}
+.section-toolbar .section-toolbar-toggle{order:2 !important}
+.section-toolbar .section-toolbar-primary{order:3 !important}
+
+.section-toolbar .section-toolbar-panel{
+  width:100%;
+  grid-template-columns:repeat(auto-fit,minmax(220px,280px));
+  justify-content:start;
+}
+
+.section-toolbar .section-toolbar-panel .section-toolbar-field{
+  width:100%;
+  min-width:0;
+}
+
+.section-toolbar .section-toolbar-panel input,
+.section-toolbar .section-toolbar-panel select{
+  width:100%;
+  min-width:0;
+  height:38px;
+  box-sizing:border-box;
+  margin:0;
+}
+
+.section-toolbar .section-toolbar-panel #peopleSearch,
+.section-toolbar .section-toolbar-panel #teamSearch,
+.section-toolbar .section-toolbar-panel #playerSearch,
+.section-toolbar .section-toolbar-panel #coachSearch,
+.section-toolbar .section-toolbar-panel #seasonSearch{
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+
+@media(max-width:900px){
+  .section-toolbar .section-toolbar-actions{
+    justify-content:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .section-toolbar .section-toolbar-panel{
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  }
+}
+
+@media(max-width:760px){
+  .section-toolbar .section-toolbar-panel{
+    grid-template-columns:1fr;
+  }
+}
