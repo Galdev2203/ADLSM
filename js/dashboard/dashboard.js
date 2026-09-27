@@ -5,7 +5,7 @@ import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
 import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-4';
 import { EQUIPOS_VIEW } from '../features/equipos/view.js';
 import { JUGADORES_VIEW } from '../features/jugadores/view.js';
-import { initJugadores } from '../features/jugadores/controller.js?v=20260927-6';
+import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 import { confirmDialog } from '../core/dialogs.js';
 
