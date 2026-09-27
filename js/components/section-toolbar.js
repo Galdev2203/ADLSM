@@ -27,8 +27,8 @@ export function createSectionToolbar({
 
   const viewHtml = viewToggle ? `
     <div class="section-toolbar-view list-view-toggle" role="group" aria-label="${viewToggle.label || 'Vista'}">
-      <button id="${viewToggle.cardsId}" type="button" class="list-view-button active">Tarjetas</button>
-      <button id="${viewToggle.tableId}" type="button" class="list-view-button">Tabla</button>
+      <button id="${viewToggle.cardsId}" type="button" class="list-view-button active" aria-label="Vista de tarjetas" title="Vista de tarjetas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
+      <button id="${viewToggle.tableId}" type="button" class="list-view-button" aria-label="Vista de tabla" title="Vista de tabla"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 10h16M4 14h16M10 5v14"/></svg></button>
     </div>` : '';
 
   const hasFilters = Boolean(searchHtml || filtersHtml);
@@ -51,7 +51,7 @@ export function createSectionToolbar({
           <div class="section-toolbar-panel" id="${id || 'sectionToolbar'}Filters" hidden>
             ${searchHtml}
             ${filtersHtml}
-          </div>` : ''}}
+          </div>` : ''}
       </div>
     </div>`;
 }
