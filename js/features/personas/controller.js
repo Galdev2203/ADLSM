@@ -148,6 +148,7 @@ export function initPersonas(){
 
   const deletePerson=async(p)=>{
     const name=[p.first_name,p.last_name].filter(Boolean).join(' ')||'esta persona';
+    let confirmed=false;
     try{
       const deps=await getPersonDependencies(p.id);
       const lines=[];
@@ -173,19 +174,18 @@ export function initPersonas(){
       const dependencyText=lines.length
         ? '\\n\\nDependencias detectadas:\\n'+lines.join('\\n')+'\\n\\nSi continúas, ADLSM intentará eliminar la persona. Si alguna relación lo impide, no se eliminará para proteger el historial.'
         : '\\n\\nNo se han detectado dependencias de jugador, entrenador, responsable o coordinador.';
-      const ok=await confirmDialog({
+      confirmed=await confirmDialog({
         title:'Eliminar persona',
         message:'Vas a eliminar permanentemente a '+name+'. Esta acción no se puede deshacer.'+dependencyText,
         confirmText:total?'Eliminar igualmente':'Eliminar persona',
         cancelText:'Cancelar',
         danger:true
       });
-      if(!ok)return;
     }catch(e){
       notify('No se pudieron comprobar las dependencias de la persona: '+errorText(e),'error');
       return;
     }
-    if(!ok)return;
+    if(!confirmed)return;
     try{
       const res=await timeout(supabase.from('people').delete().eq('id',p.id));
       if(res.error)throw res.error;
