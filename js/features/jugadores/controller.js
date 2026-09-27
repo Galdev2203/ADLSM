@@ -36,9 +36,11 @@ export function initJugadores(){
     populateTeams();
   };
   const populateTeams=()=>{
-    const sid=els.season.value;
-    const rows=teams.filter(t=>t.season_id===sid);
-    els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')} · ${esc(t.team?.category||'')}</option>`).join('');
+    const sid=String(els.season.value || '');
+    const rows=teams
+      .filter(t => String(t.season_id || '') === sid && t.team)
+      .sort((a,b)=>String(a.display_name || a.team?.name || '').localeCompare(String(b.display_name || b.team?.name || ''), 'es'));
+    els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')}${t.team?.category ? ` · ${esc(t.team.category)}` : ''}</option>`).join('');
   };
   const rowData=(a)=>{
     const p=people.find(x=>x.id===a.player_id);
