@@ -49,6 +49,9 @@ export async function initDashboard(app, user, onLogout) {
           <button class="dashboard-nav-item" data-section="equipos">
             <span>Equipos</span>
           </button>
+          <button class="dashboard-nav-item" data-section="jugadores">
+            <span>Jugadores</span>
+          </button>
           <button class="dashboard-nav-item" data-section="perfil">
             <span>Perfil</span>
           </button>
@@ -151,7 +154,12 @@ export async function initDashboard(app, user, onLogout) {
       equiposCleanup = initEquipos();
     }
 
-    if (isJugadores && !jugadoresCleanup) {\n      jugadoresSection.innerHTML = JUGADORES_VIEW;\n      jugadoresCleanup = initJugadores();\n    }\n\n    if (isPerfil && !perfilLoaded) {
+    if (isJugadores && !jugadoresCleanup) {
+      jugadoresSection.innerHTML = JUGADORES_VIEW;
+      jugadoresCleanup = initJugadores();
+    }
+
+    if (isPerfil && !perfilLoaded) {
       perfilLoaded = true;
       await initPerfil(perfilSection, user);
     }
