@@ -9,28 +9,30 @@ export const PERSONAS_VIEW = `
       </div>
     </div>
     <div class="toolbar-filters">
-      <select id="peopleFunctionFilter" aria-label="Filtrar por función">
-        <option value="">Todas las funciones</option>
-        <option value="player">Jugador</option>
-        <option value="coach">Entrenador</option>
-        <option value="responsible">Responsable</option>
-        <option value="coordinator">Coordinador</option>
-        <option value="none">Sin función</option>
-      </select>
+      <label class="personas-filter-label">Función
+        <select id="peopleFunctionFilter" aria-label="Filtrar por función">
+          <option value="">Todas las funciones</option>
+          <option value="player">Jugador</option>
+          <option value="coach">Entrenador</option>
+          <option value="responsible">Responsable</option>
+          <option value="coordinator">Coordinador</option>
+          <option value="none">Sin función</option>
+        </select>
       </label>
       <label class="personas-filter-label">Estado
-      <select id="peopleStatusFilter" aria-label="Filtrar por estado">
-        <option value="">Todos los estados</option>
-        <option value="active">Activas</option>
-        <option value="inactive">Inactivas</option>
-      </select>
+        <select id="peopleStatusFilter" aria-label="Filtrar por estado">
+          <option value="">Todos los estados</option>
+          <option value="active">Activas</option>
+          <option value="inactive">Inactivas</option>
+        </select>
       </label>
       <label class="personas-search-label">Buscar
-      <input id="peopleSearch" type="search" placeholder="Buscar persona..." autocomplete="off">
+        <input id="peopleSearch" type="search" placeholder="Buscar persona..." autocomplete="off">
       </label>
-      </label>
-      <div class="list-view-toggle" role="group" aria-label="Vista de personas"><button id="peopleCardsView" type="button" class="list-view-button active">Tarjetas</button><button id="peopleTableView" type="button" class="list-view-button">Tabla</button></div>
-    </div>
+      <div class="list-view-toggle" role="group" aria-label="Vista de personas">
+        <button id="peopleCardsView" type="button" class="list-view-button active">Tarjetas</button>
+        <button id="peopleTableView" type="button" class="list-view-button">Tabla</button>
+      </div>    </div>
   </div>
 
   <div id="peopleList" class="people-list"></div>
