@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
 import { confirmDialog } from '../../core/dialogs.js';
+import { createListView } from '../../core/list-view.js';
 
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const normalize=v=>String(v??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -23,13 +24,27 @@ const functionsFor=personId=>{
 export function initPersonas(){
   const els={
     list:document.querySelector('#peopleList'),count:document.querySelector('#peopleCount'),active:document.querySelector('#peopleActive'),
-    search:document.querySelector('#peopleSearch'),functionFilter:document.querySelector('#peopleFunctionFilter'),statusFilter:document.querySelector('#peopleStatusFilter'),
+    search:document.querySelector('#peopleSearch'),functionFilter:document.querySelector('#peopleFunctionFilter'),statusFilter:document.querySelector('#peopleStatusFilter'),pagination:document.querySelector('#peoplePagination'),cardsView:document.querySelector('#peopleCardsView'),tableView:document.querySelector('#peopleTableView'),
     newPerson:document.querySelector('#newPerson'),detail:document.querySelector('#personDetail'),modal:document.querySelector('#personModal'),
     modalTitle:document.querySelector('#personModalTitle'),closeModal:document.querySelector('#closePersonModal'),cancel:document.querySelector('#cancelPerson'),
     form:document.querySelector('#personForm'),firstName:document.querySelector('#personFirstName'),lastName:document.querySelector('#personLastName'),
     birthDate:document.querySelector('#personBirthDate'),phone:document.querySelector('#personPhone'),email:document.querySelector('#personEmail'),
     photoUrl:document.querySelector('#personPhotoUrl'),notes:document.querySelector('#personNotes'),save:document.querySelector('#savePerson')
   };
+
+  listView=createListView({
+    container:els.list,
+    pagination:els.pagination,
+    cardsButton:els.cardsView,
+    tableButton:els.tableView,
+    pageSize:8,
+    getRows:filtered,
+    renderCards,
+    renderTable,
+    onRender:()=>{
+      els.list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>showDetail(b.dataset.person));
+    }
+  });
 
   const load=async()=>{
     const [p,pp,cp,r,c]=await Promise.all([
@@ -58,17 +73,30 @@ export function initPersonas(){
     });
   };
 
+  let listView=null;
+
+  const renderCards=rows=>rows.map(p=>{
+    const funcs=functionsFor(p.id);
+    const avatar=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="" loading="lazy">':'<span>'+esc(initials(p))+'</span>';
+    return '<article class="person-card"><div class="person-card-main"><div class="person-avatar">'+avatar+'</div><div class="person-card-info"><div class="person-title-row"><h3>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</h3><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span></div><p class="person-contact">'+esc(p.email||p.phone||'Sin datos de contacto')+'</p></div></div><div class="person-functions">'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(''):'<span class="person-function">Sin función</span>')+'</div><div class="person-card-actions"><button class="person-action" data-person="'+p.id+'" type="button">Ver persona</button></div></article>';
+  }).join('');
+
+  const renderTable=rows=>'<div class="person-table-wrap"><table class="person-table"><thead><tr><th>Persona</th><th>Funciones</th><th>Contacto</th><th>Estado</th><th></th></tr></thead><tbody>'+rows.map(p=>{
+    const funcs=functionsFor(p.id);
+    return '<tr><td><div class="person-table-person"><span class="person-table-avatar">'+esc(initials(p))+'</span><strong>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</strong></div></td><td>'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(' '):'<span class="person-function">Sin función</span>')+'</td><td>'+esc(p.email||p.phone||'—')+'</td><td><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span></td><td><button class="person-action" data-person="'+p.id+'" type="button">Ver</button></td></tr>';
+  }).join('')+'</tbody></table></div>';
+
   const render=()=>{
     els.count.textContent=people.length;
     els.active.textContent=people.filter(p=>p.is_active!==false).length;
     const rows=filtered();
-    if(!rows.length){els.list.innerHTML='<div class="person-empty"><h3>No hay personas</h3><p>Prueba otro filtro o crea una nueva persona.</p></div>';return}
-    els.list.innerHTML=rows.map(p=>{
-      const funcs=functionsFor(p.id);
-      const avatar=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="" loading="lazy">':'<span>'+esc(initials(p))+'</span>';
-      return '<article class="person-card"><div class="person-card-main"><div class="person-avatar">'+avatar+'</div><div class="person-card-info"><div class="person-title-row"><h3>'+esc([p.first_name,p.last_name].filter(Boolean).join(' '))+'</h3><span class="person-status '+(p.is_active!==false?'':'inactive')+'">'+(p.is_active!==false?'ACTIVA':'INACTIVA')+'</span></div><p class="person-contact">'+esc(p.email||p.phone||'Sin datos de contacto')+'</p></div></div><div class="person-functions">'+(funcs.length?funcs.map(f=>'<span class="person-function">'+esc(f.label)+'</span>').join(''):'<span class="person-function">Sin función</span>')+'</div><div class="person-card-actions"><button class="person-action" data-person="'+p.id+'" type="button">Ver persona</button></div></article>';
-    }).join('');
-    els.list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>showDetail(b.dataset.person));
+    if(!rows.length){
+      els.list.className='people-list';
+      els.list.innerHTML='<div class="person-empty"><h3>No hay personas</h3><p>Prueba otro filtro o crea una nueva persona.</p></div>';
+      els.pagination.hidden=true;
+      return;
+    }
+    listView?.render();
   };
 
   const showDetail=id=>{
@@ -102,7 +130,7 @@ export function initPersonas(){
   const closeModal=()=>{els.modal.hidden=true;editingPersonId=null;els.form.reset()};
   els.newPerson.onclick=()=>openModal();els.closeModal.onclick=closeModal;els.cancel.onclick=closeModal;
   els.modal.addEventListener('click',e=>{if(e.target===els.modal)closeModal()});
-  els.search.oninput=e=>{searchTerm=e.target.value;render()};els.functionFilter.onchange=e=>{functionFilter=e.target.value;render()};els.statusFilter.onchange=e=>{statusFilter=e.target.value;render()};
+  els.search.oninput=e=>{searchTerm=e.target.value;listView?.resetPage()};els.functionFilter.onchange=e=>{functionFilter=e.target.value;listView?.resetPage()};els.statusFilter.onchange=e=>{statusFilter=e.target.value;listView?.resetPage()};
   els.form.onsubmit=async e=>{
     e.preventDefault();if(saving)return;saving=true;els.save.disabled=true;els.save.textContent='Guardando…';
     const payload={first_name:els.firstName.value.trim(),last_name:els.lastName.value.trim(),birth_date:els.birthDate.value||null,phone:els.phone.value.trim()||null,email:els.email.value.trim()||null,photo_url:els.photoUrl.value.trim()||null,notes:els.notes.value.trim()||null,updated_at:new Date().toISOString()};
