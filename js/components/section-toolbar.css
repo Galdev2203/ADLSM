@@ -16,8 +16,11 @@
 .section-toolbar-field input:focus,.section-toolbar-field select:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
 .section-toolbar-search{min-width:220px}
 .section-toolbar-view{display:flex;align-items:center;gap:3px;height:38px;padding:3px;border:1px solid #d8e0ea;border-radius:9px;background:#fbfcfe}
-.section-toolbar-view .list-view-button{height:30px;border:0;border-radius:6px;padding:0 11px;background:transparent;color:#667085;font-size:10px;font-weight:750;cursor:pointer}
+.section-toolbar-view .list-view-button{width:34px;height:30px;border:0;border-radius:6px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#667085;cursor:pointer}
+.section-toolbar-view .list-view-button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .section-toolbar-view .list-view-button.active{background:#082f70;color:#fff}
+.section-toolbar-view .list-view-button:hover{background:#eef3f8;color:#082f70}
+.section-toolbar-view .list-view-button.active:hover{background:#06275d;color:#fff}
 .section-toolbar-primary{min-height:38px;border:0;border-radius:9px;padding:0 16px;background:#082f70;color:#fff;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap;box-shadow:0 7px 16px rgba(8,47,112,.16);transition:.18s ease}
 .section-toolbar-primary:hover{background:#06275d;transform:translateY(-1px)}.section-toolbar-primary:disabled{opacity:.6;cursor:wait;transform:none}
 
