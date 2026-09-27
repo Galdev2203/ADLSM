@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-4';
 
 export const ENTRENADORES_VIEW = `
 <section class="coaches-page">
