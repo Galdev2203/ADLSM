@@ -1,17 +1,15 @@
+import { createSectionToolbar } from '../../components/section-toolbar.js';
+
 export const TEMPORADAS_VIEW = `
 <section class="seasons-page">
-  <div class="seasons-toolbar" id="seasonsToolbar">
-    <button class="seasons-primary seasons-toolbar-new" id="newSeasonButton">+ Nueva temporada</button>
-    <div class="seasons-summary">
-      <div><strong id="seasonTotal">0</strong><span>temporadas</span></div>
-      <div><strong id="seasonActive">0</strong><span>activa</span></div>
-      <div><strong id="seasonHistorical">0</strong><span>históricas</span></div>
-    </div>
-    <label class="seasons-search">
-      <span>Buscar</span>
-      <input id="seasonSearch" type="search" placeholder="Buscar temporada…">
-    </label>
-  </div>
+    ${createSectionToolbar({
+    className: 'seasons-toolbar', id: 'seasonsToolbar',
+    summary: [
+      { id: 'seasonTotal', label: 'temporadas' }, { id: 'seasonActive', label: 'activa' }, { id: 'seasonHistorical', label: 'históricas' }
+    ],
+    primaryAction: { id: 'newSeasonButton', label: '+ Nueva temporada' },
+    search: { id: 'seasonSearch', placeholder: 'Buscar temporada…' }
+  })}
 
   <div id="seasonMessage" class="season-message" hidden></div>
   <div id="seasonList" class="season-list">
