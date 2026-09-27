@@ -91,3 +91,25 @@
 .person-modal .modal-close:hover{background:#e9edf3;color:#344054}
 .person-modal .modal-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px;margin-top:4px;border-top:1px solid #edf0f4}
 @media(max-width:600px){.personas-panel{padding:18px 16px 36px}.person-modal-backdrop{padding:10px}.person-modal{width:100%;max-height:calc(100dvh - 20px);border-radius:14px}.person-modal form{padding:18px}.person-modal .modal-header{padding:18px}.person-modal .modal-actions>*{flex:1}}
+
+.person-table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 7px 22px rgba(16,24,40,.045)}
+.person-table{width:100%;border-collapse:collapse;min-width:760px}
+.person-table th{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e5eaf1;color:#667085;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:800}
+.person-table td{padding:13px 16px;border-bottom:1px solid #edf0f4;color:#344054;font-size:12px;vertical-align:middle}
+.person-table tbody tr:last-child td{border-bottom:0}
+.person-table tbody tr:hover{background:#fbfcfe}
+.person-table-person{display:flex;align-items:center;gap:10px;min-width:190px}
+.person-table-person strong{color:#172b4d;font-size:12px}
+.person-table-avatar{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:#eef4fb;color:#174a9a;font-size:10px;font-weight:850}
+.person-table .person-function{display:inline-flex;margin:2px}
+.person-table .person-action{padding:8px 10px}
+
+/* Form controls inside Personas */
+.personas-toolbar input{height:40px;border:1px solid #d7e0ea;border-radius:9px;padding:0 12px;outline:none;color:#1d2939;background:#fff;font:inherit;font-size:12px;box-shadow:0 1px 2px rgba(16,24,40,.02)}
+.personas-toolbar input:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
+.personas-toolbar select{min-width:180px}
+
+/* Ensure the person editor is always a real viewport modal */
+.person-modal-backdrop{position:fixed!important;inset:0!important;z-index:1200!important;display:grid!important;place-items:center!important;padding:20px!important;background:rgba(5,25,54,.44)!important;backdrop-filter:blur(4px)!important}
+.person-modal-backdrop[hidden]{display:none!important}
+.person-modal{position:relative!important;width:min(680px,calc(100vw - 32px))!important;max-height:min(88dvh,760px)!important;margin:0!important}
