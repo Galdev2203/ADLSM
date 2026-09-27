@@ -80,8 +80,9 @@ export function initPersonas(){
     const rows=filtered();
     if(!rows.length){
       els.list.className='people-list';
-      els.list.innerHTML='<div class="person-empty"><h3>No hay personas</h3><p>Prueba otro filtro o crea una nueva persona.</p></div>';
+      els.list.innerHTML='<div class="person-empty"><h3>No hay personas</h3><p>Prueba otro filtro o crea una nueva persona.</p>'+(!people.length?'<button class="primary-button person-empty-create" id="emptyNewPerson" type="button">Crear persona</button>':'')+'</div>';
       els.pagination.hidden=true;
+      document.querySelector('#emptyNewPerson')?.addEventListener('click',()=>openModal());
       return;
     }
     listView?.render();
