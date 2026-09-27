@@ -73,7 +73,8 @@ export async function initDashboard(app, user, onLogout) {
         <div id="dashboardContent" class="dashboard-content">
           <section id="sectionHorarios" class="dashboard-section"></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
-          <section id="sectionEquipos" class="dashboard-section" hidden></section>\n          <section id="sectionJugadores" class="dashboard-section" hidden></section>
+          <section id="sectionEquipos" class="dashboard-section" hidden></section>
+          <section id="sectionJugadores" class="dashboard-section" hidden></section>
           <section id="sectionPerfil" class="dashboard-section" hidden></section>
         </div>
       </section>
@@ -108,6 +109,10 @@ export async function initDashboard(app, user, onLogout) {
     if (equiposCleanup) {
       equiposCleanup();
       equiposCleanup = null;
+    }
+    if (jugadoresCleanup) {
+      jugadoresCleanup();
+      jugadoresCleanup = null;
     }
     await onLogout();
   };
