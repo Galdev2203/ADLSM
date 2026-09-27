@@ -492,3 +492,54 @@
   }
   .personas-toolbar #peopleSearch{margin-left:0}
 }
+
+
+/* Final alignment with Teams toolbar */
+.personas-filter-label,
+.personas-search-label{
+  order:initial;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#667085;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.personas-filter-label select{width:170px}
+.personas-search-label input{width:220px}
+.personas-toolbar .personas-filter-label:nth-of-type(1){order:3}
+.personas-toolbar .personas-filter-label:nth-of-type(2){order:4}
+.personas-toolbar .personas-search-label{order:5;margin-left:auto}
+.personas-toolbar .list-view-toggle{order:6}
+.person-empty{
+  min-height:282px;
+  padding:64px 24px;
+}
+.person-empty-create{
+  margin-top:18px;
+  border:0;
+  border-radius:10px;
+  padding:11px 16px;
+  background:#082f70;
+  color:#fff;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+  box-shadow:0 7px 16px rgba(8,47,112,.16);
+}
+.person-empty-create:hover{background:#06275d;transform:translateY(-1px)}
+@media(max-width:1050px){
+  .personas-search-label{margin-left:0!important}
+}
+@media(max-width:760px){
+  .personas-filter-label,
+  .personas-search-label{
+    width:100%;
+    align-items:stretch;
+    flex-direction:column;
+    gap:6px;
+  }
+  .personas-filter-label select,
+  .personas-search-label input{width:100%}
+}
