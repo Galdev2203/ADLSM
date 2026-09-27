@@ -149,7 +149,6 @@ export function initEquipos() {
     if (!filtered.length) {
       els.list.innerHTML = `
         <div class="team-empty">
-          <div class="team-empty-icon">🏀</div>
           <h3>${teamSeasonRows.length ? 'No hay equipos que coincidan' : 'Todavía no hay equipos'}</h3>
           <p>${teamSeasonRows.length
             ? 'Prueba con otra temporada o término de búsqueda.'
