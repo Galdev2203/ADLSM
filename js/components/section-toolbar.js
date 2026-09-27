@@ -38,19 +38,29 @@ export function createSectionToolbar({
       <div class="section-toolbar-main">
         <div class="section-toolbar-summary">${summaryHtml}</div>
         ${hasFilters ? `
-          <details class="section-toolbar-details">
-            <summary>
-              <span class="section-toolbar-filter-icon">⌕</span>
-              <span class="section-toolbar-open-label">Buscar y filtrar</span>
-              <span class="section-toolbar-close-label">Ocultar filtros</span>
-            </summary>
-            <div class="section-toolbar-panel">
-              ${searchHtml}
-              ${filtersHtml}
-              ${viewHtml}
-            </div>
-          </details>` : ''}
+          <button class="section-toolbar-toggle" type="button" aria-expanded="false" aria-controls="${id || 'sectionToolbar'}Filters">
+            <span class="section-toolbar-filter-icon">⌕</span>
+            <span class="section-toolbar-open-label">Buscar y filtrar</span>
+            <span class="section-toolbar-close-label">Ocultar filtros</span>
+          </button>
+          <div class="section-toolbar-panel" id="${id || 'sectionToolbar'}Filters" hidden>
+            ${searchHtml}
+            ${filtersHtml}
+            ${viewHtml}
+          </div>` : ''}
         ${primaryAction ? `<button class="${primaryAction.className || 'section-toolbar-primary'}" id="${primaryAction.id}" type="button">${primaryAction.label}</button>` : ''}
       </div>
     </div>`;
 }
+
+document.addEventListener('click', (event) => {
+  const toggle = event.target.closest('.section-toolbar-toggle');
+  if (!toggle) return;
+  const toolbar = toggle.closest('.section-toolbar');
+  const panel = toolbar?.querySelector('.section-toolbar-panel');
+  if (!toolbar || !panel) return;
+  const open = !toolbar.classList.contains('is-open');
+  toolbar.classList.toggle('is-open', open);
+  toggle.setAttribute('aria-expanded', String(open));
+  panel.hidden = !open;
+});
