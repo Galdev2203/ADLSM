@@ -1,0 +1,490 @@
+/* ADLSM responsive layer
+   Keeps the desktop design intact and adapts the dashboard to phone/tablet widths.
+*/
+html,body,#app{max-width:100%;min-width:0;overflow-x:hidden}
+
+img,svg,canvas,video{max-width:100%}
+
+.dashboard-shell,
+.dashboard-main,
+.dashboard-content,
+.dashboard-section,
+.dashboard-section > *{min-width:0}
+
+.dashboard-mobile-toggle{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  background:rgba(255,255,255,.07);
+  color:#fff;
+  font-size:20px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.dashboard-mobile-toggle:hover{background:rgba(255,255,255,.12)}
+.dashboard-mobile-toggle:focus-visible{
+  outline:3px solid rgba(246,201,0,.35);
+  outline-offset:2px;
+}
+
+/* Tablet */
+@media (max-width: 900px){
+  .dashboard-shell{
+    display:block;
+    width:100%;
+    height:auto;
+    min-height:100vh;
+    overflow:visible;
+  }
+
+  .dashboard-sidebar{
+    position:sticky;
+    top:0;
+    width:100%;
+    height:auto;
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    padding:10px 16px;
+    z-index:50;
+  }
+
+  .dashboard-brand{
+    min-height:48px;
+    padding:0 0 0 2px;
+    border-bottom:0;
+  }
+
+  .dashboard-brand img{
+    width:40px;
+    height:40px;
+    flex-basis:40px;
+  }
+
+  .dashboard-brand strong{font-size:16px}
+  .dashboard-brand span{font-size:9px}
+
+  .dashboard-mobile-toggle{display:inline-flex;position:absolute;right:16px;top:14px}
+
+  .dashboard-nav{
+    display:none;
+    padding:10px 0 4px;
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+
+  .dashboard-sidebar.mobile-open .dashboard-nav{
+    display:grid;
+    gap:3px;
+  }
+
+  .dashboard-nav-item{
+    min-height:44px;
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:13px;
+  }
+
+  .dashboard-account{
+    display:none;
+  }
+
+  .dashboard-main{
+    width:100%;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+
+  .dashboard-topbar{
+    position:sticky;
+    top:68px;
+    z-index:40;
+    width:100%;
+    min-height:78px;
+    padding:15px 20px;
+  }
+
+  .dashboard-content{
+    width:100%;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+
+  .dashboard-section{width:100%;max-width:100%;overflow:visible}
+
+  /* Common page containers */
+  .horarios-app,
+  .players-page,
+  .teams-page,
+  .coaches-page,
+  .seasons-page,
+  .profile-page,
+  .personas-panel{
+    width:100%;
+    max-width:1180px;
+    min-width:0;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  .horarios-app{padding-left:20px;padding-right:20px}
+  .players-page,
+  .teams-page,
+  .coaches-page,
+  .seasons-page,
+  .profile-page,
+  .personas-panel{padding-left:20px;padding-right:20px}
+
+  /* Prevent flex/grid children from forcing the viewport wider. */
+  .panel-header,
+  .results-header,
+  .source-toolbar,
+  .template-header,
+  .season-detail-header,
+  .team-detail-header,
+  .coach-detail-title,
+  .person-detail-head,
+  .profile-hero{
+    min-width:0;
+  }
+
+  .panel-header > *,
+  .results-header > *,
+  .source-toolbar > *,
+  .template-header > *,
+  .season-detail-header > *,
+  .team-detail-header > *,
+  .coach-detail-title > *,
+  .person-detail-head > *,
+  .profile-hero > *{min-width:0}
+
+  .matches-table,
+  .person-table,
+  .player-table{
+    max-width:none;
+  }
+
+  .table-wrap,
+  .person-table-wrap,
+  .player-table-wrap{
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .template-dialog,
+  .person-modal,
+  .team-modal,
+  .coach-modal,
+  .season-modal{
+    max-width:calc(100vw - 20px);
+  }
+}
+
+/* Phone */
+@media (max-width: 600px){
+  .dashboard-sidebar{padding:9px 12px}
+  .dashboard-mobile-toggle{right:12px;top:13px}
+  .dashboard-topbar{
+    top:66px;
+    min-height:72px;
+    padding:14px 16px;
+  }
+
+  .dashboard-topbar h1{font-size:24px}
+  .dashboard-kicker{font-size:9px;margin-bottom:6px}
+
+  .horarios-app,
+  .players-page,
+  .teams-page,
+  .coaches-page,
+  .seasons-page,
+  .profile-page,
+  .personas-panel{
+    padding-left:14px;
+    padding-right:14px;
+  }
+
+  .horarios-app{padding-top:16px;padding-bottom:32px}
+  .players-page,
+  .teams-page,
+  .coaches-page,
+  .seasons-page,
+  .profile-page,
+  .personas-panel{padding-top:16px;padding-bottom:32px}
+
+  /* Toolbars: one logical control per row, never wider than the viewport. */
+  .players-toolbar,
+  .teams-toolbar,
+  .coaches-toolbar,
+  .seasons-toolbar,
+  .personas-toolbar{
+    width:100%;
+    min-width:0;
+  }
+
+  .players-toolbar > *,
+  .teams-toolbar > *,
+  .coaches-toolbar > *,
+  .seasons-toolbar > *,
+  .personas-toolbar > *{
+    max-width:100%;
+    min-width:0;
+  }
+
+  .players-summary,
+  .teams-summary,
+  .coaches-summary,
+  .seasons-summary,
+  .toolbar-summary{
+    flex-wrap:wrap;
+    row-gap:8px;
+  }
+
+  .players-filter,
+  .players-search,
+  .teams-filter,
+  .teams-search,
+  .coaches-filter,
+  .coaches-search,
+  .seasons-search{
+    width:100%;
+    min-width:0;
+  }
+
+  .players-filter select,
+  .players-search input,
+  .teams-filter select,
+  .teams-search input,
+  .coaches-filter select,
+  .coaches-search input,
+  .seasons-search input{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  /* Cards/details */
+  .team-card,
+  .coach-card,
+  .season-card,
+  .person-detail-head{
+    width:100%;
+    max-width:100%;
+  }
+
+  .team-card-main,
+  .coach-card-main,
+  .season-card-main{
+    width:100%;
+    min-width:0;
+  }
+
+  .team-card-info,
+  .coach-card-info,
+  .season-card-info,
+  .person-card-info{
+    min-width:0;
+    overflow:hidden;
+  }
+
+  .team-card-actions,
+  .coach-card-actions,
+  .season-card-actions,
+  .person-detail-actions,
+  .team-detail-actions,
+  .coach-detail-actions{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  .team-card-actions button,
+  .coach-card-actions button,
+  .season-card-actions button,
+  .person-detail-actions button,
+  .team-detail-actions button,
+  .coach-detail-actions button{
+    flex:1 1 auto;
+    min-width:0;
+  }
+
+  .team-detail-stats,
+  .season-detail-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .team-detail-card,
+  .season-detail-card,
+  .coach-detail-card,
+  .person-detail-card,
+  .profile-card{
+    min-width:0;
+    max-width:100%;
+  }
+
+  .team-detail-card dl div,
+  .coach-detail-card dl div{
+    min-width:0;
+  }
+
+  .team-detail-card dd,
+  .coach-detail-card dd{
+    min-width:0;
+    max-width:60%;
+    overflow-wrap:anywhere;
+  }
+
+  /* Forms/modals */
+  .person-modal-backdrop,
+  .team-modal-backdrop,
+  .coach-modal-backdrop,
+  .season-modal-backdrop,
+  .template-modal{
+    padding:8px;
+  }
+
+  .person-modal,
+  .team-modal,
+  .coach-modal,
+  .season-modal,
+  .template-dialog{
+    width:100%;
+    max-width:100%;
+    max-height:calc(100dvh - 16px);
+  }
+
+  .person-modal form,
+  #teamForm,
+  #seasonForm{
+    min-width:0;
+  }
+
+  .person-form-grid,
+  .team-form-grid,
+  .season-form-grid,
+  .coach-form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .modal-actions,
+  .team-modal-actions,
+  .season-modal-actions,
+  .coach-modal-actions{
+    flex-wrap:wrap;
+  }
+
+  .modal-actions > *,
+  .team-modal-actions > *,
+  .season-modal-actions > *,
+  .coach-modal-actions > *{
+    flex:1 1 140px;
+    min-width:0;
+  }
+
+  /* Horarios */
+  .horarios-app .hero,
+  .horarios-app .panel-header,
+  .horarios-app .source-toolbar,
+  .horarios-app .fallback{
+    min-width:0;
+  }
+
+  .horarios-app .source-actions,
+  .horarios-app .results-actions{
+    width:100%;
+    min-width:0;
+  }
+
+  .horarios-app .source-actions > *,
+  .horarios-app .results-actions > *{
+    min-width:0;
+  }
+
+  .horarios-app .match-card,
+  .horarios-app .selection-bar,
+  .horarios-app .editor-match{
+    max-width:100%;
+  }
+
+  .horarios-app .match-teams{
+    min-width:0;
+  }
+
+  .horarios-app .match-teams span{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+
+  .horarios-app .template-preview{
+    width:100%;
+    max-width:430px;
+  }
+
+  /* Profile */
+  .profile-hero{width:100%;min-width:0}
+  .profile-hero > div:last-child{min-width:0}
+  .profile-hero h2{overflow-wrap:anywhere}
+  .profile-field strong{overflow-wrap:anywhere;white-space:normal}
+
+  /* Pagination stays inside the viewport. */
+  .list-pagination,
+  .player-pagination,
+  .pagination{
+    max-width:100%;
+    overflow:hidden;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 390px){
+  .dashboard-topbar{padding-left:14px;padding-right:14px}
+  .dashboard-topbar h1{font-size:22px}
+
+  .horarios-app,
+  .players-page,
+  .teams-page,
+  .coaches-page,
+  .seasons-page,
+  .profile-page,
+  .personas-panel{
+    padding-left:10px;
+    padding-right:10px;
+  }
+
+  .horarios-app .panel,
+  .players-toolbar,
+  .teams-toolbar,
+  .coaches-toolbar,
+  .seasons-toolbar,
+  .personas-toolbar,
+  .profile-card{
+    border-radius:12px;
+  }
+
+  .team-detail-stats,
+  .season-detail-stats{
+    grid-template-columns:1fr;
+  }
+
+  .players-summary,
+  .teams-summary,
+  .coaches-summary,
+  .seasons-summary{
+    gap:12px;
+  }
+}
+
+/* Landscape phones/tablets: keep the mobile nav compact. */
+@media (max-width: 900px) and (orientation: landscape){
+  .dashboard-sidebar.mobile-open .dashboard-nav{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
