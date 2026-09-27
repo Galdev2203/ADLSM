@@ -38,7 +38,7 @@ export function initJugadores(){
   const populateTeams=()=>{
     const sid=String(els.season.value || '');
     const rows=teams
-      .filter(t => String(t.season_id || '') === sid && t.team)
+      .filter(t => String(t.season_id || '') === sid)
       .sort((a,b)=>String(a.display_name || a.team?.name || '').localeCompare(String(b.display_name || b.team?.name || ''), 'es'));
     els.teamSeason.innerHTML='<option value="">Selecciona un equipo</option>'+rows.map(t=>`<option value="${t.id}">${esc(t.display_name||t.team?.name||'Equipo')}${t.team?.category ? ` · ${esc(t.team.category)}` : ''}</option>`).join('');
   };
