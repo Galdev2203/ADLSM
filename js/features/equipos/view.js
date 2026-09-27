@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
 
 export const EQUIPOS_VIEW = `
 <section class="teams-page">
@@ -7,6 +7,7 @@ export const EQUIPOS_VIEW = `
     summary: [
       { id: 'teamTotal', label: 'equipos' }, { id: 'teamActive', label: 'activos' }, { id: 'teamSeasonCount', label: 'en temporada' }
     ],
+    viewToggle: { cardsId: 'teamCardsView', tableId: 'teamTableView', label: 'Vista de equipos' },
     primaryAction: { id: 'newTeamButton', label: '+ Nuevo equipo' },
     search: { id: 'teamSearch', placeholder: 'Buscar equipo…' },
     filters: [{ id: 'teamSeasonFilter', label: 'Temporada', options: [{ value: '', label: 'Todas' }] }]

@@ -1,23 +1,37 @@
 /* Shared toolbar used by all data sections except Horarios and Perfil. */
 .section-toolbar{width:100%;margin:0 0 14px;padding:14px 16px;border:1px solid #e3e9f1;border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(16,24,40,.035)}
-.section-toolbar-main{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:18px}
+.section-toolbar-main{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px}
 .section-toolbar-summary{display:flex;align-items:center;gap:24px;min-width:0}
 .section-toolbar-stat{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
 .section-toolbar-stat strong{color:#082957;font-size:19px}.section-toolbar-stat span{color:#667085;font-size:11px}
+.section-toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
 .section-toolbar-toggle{height:38px;border:1px solid #d8e0ea;border-radius:9px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fbfcfe;color:#344054;font:inherit;font-size:11px;font-weight:750;cursor:pointer;user-select:none;white-space:nowrap}
 .section-toolbar-toggle:hover{background:#f5f8fb;border-color:#c9d4e1}
 .section-toolbar-toggle:focus-visible{outline:none;border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
 .section-toolbar-filter-icon{color:#174a9a;font-size:17px;line-height:1;transform:rotate(-20deg)}
 .section-toolbar-close-label{display:none}.section-toolbar.is-open .section-toolbar-open-label{display:none}.section-toolbar.is-open .section-toolbar-close-label{display:inline}
-.section-toolbar-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end;padding:14px 0 2px;border-top:1px solid #edf0f4;margin-top:14px}
+.section-toolbar-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:end;padding:14px 0 2px;border-top:1px solid #edf0f4;margin-top:14px}
 .section-toolbar-field{display:grid;gap:6px;min-width:0;color:#667085;font-size:10px;font-weight:750}
 .section-toolbar-field input,.section-toolbar-field select{width:100%;height:38px;min-width:0;border:1px solid #d8e0ea;border-radius:9px;padding:0 12px;outline:none;color:#1d2939;background:#fbfcfe;font:inherit;font-size:12px}
 .section-toolbar-field input:focus,.section-toolbar-field select:focus{border-color:#174a9a;box-shadow:0 0 0 3px rgba(23,74,154,.08)}
 .section-toolbar-search{min-width:220px}
-.section-toolbar-view{display:flex;align-items:center;gap:4px;height:38px;padding:3px;border:1px solid #d8e0ea;border-radius:9px;background:#fbfcfe}
+.section-toolbar-view{display:flex;align-items:center;gap:3px;height:38px;padding:3px;border:1px solid #d8e0ea;border-radius:9px;background:#fbfcfe}
 .section-toolbar-view .list-view-button{height:30px;border:0;border-radius:6px;padding:0 11px;background:transparent;color:#667085;font-size:10px;font-weight:750;cursor:pointer}
 .section-toolbar-view .list-view-button.active{background:#082f70;color:#fff}
 .section-toolbar-primary{min-height:38px;border:0;border-radius:9px;padding:0 16px;background:#082f70;color:#fff;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap;box-shadow:0 7px 16px rgba(8,47,112,.16);transition:.18s ease}
 .section-toolbar-primary:hover{background:#06275d;transform:translateY(-1px)}.section-toolbar-primary:disabled{opacity:.6;cursor:wait;transform:none}
-@media(max-width:900px){.section-toolbar-main{grid-template-columns:minmax(0,1fr) auto}.section-toolbar-summary{grid-column:1}.section-toolbar-toggle{grid-column:2}.section-toolbar-primary{grid-column:1/-1}}
-@media(max-width:760px){.section-toolbar{padding:12px}.section-toolbar-main{grid-template-columns:1fr}.section-toolbar-summary,.section-toolbar-toggle,.section-toolbar-primary{grid-column:1}.section-toolbar-summary{gap:16px;flex-wrap:wrap}.section-toolbar-toggle{width:100%}.section-toolbar-panel{grid-template-columns:1fr}.section-toolbar-search{min-width:0}.section-toolbar-primary{width:100%;min-height:42px}}
+
+/* Table-style presentation for sections that render cards. */
+.teams-page .list-view-table .team-card,.coaches-page .list-view-table .coach-card,.seasons-page .list-view-table .season-card{display:grid;grid-template-columns:minmax(220px,2fr) minmax(150px,1.2fr) minmax(180px,1.3fr) auto;align-items:center;gap:18px;border-radius:10px;margin:0;border-left:0;border-right:0;border-top:0;border-bottom:1px solid #edf0f4;box-shadow:none;background:#fff}
+.teams-page .list-view-table .team-card:last-child,.coaches-page .list-view-table .coach-card:last-child,.seasons-page .list-view-table .season-card:last-child{border-bottom:0}
+.teams-page .list-view-table .team-card-main,.coaches-page .list-view-table .coach-card-main,.seasons-page .list-view-table .season-card-main{display:contents}
+.teams-page .list-view-table .team-icon,.coaches-page .list-view-table .coach-avatar,.seasons-page .list-view-table .season-year-badge{display:none}
+.teams-page .list-view-table .team-card-info,.coaches-page .list-view-table .coach-card-info,.seasons-page .list-view-table .season-card-info{display:contents}
+.teams-page .list-view-table .team-card-title-row,.coaches-page .list-view-table .coach-title-row,.seasons-page .list-view-table .season-card-title-row{display:contents}
+.teams-page .list-view-table .team-card-title-row h3,.coaches-page .list-view-table .coach-title-row h3,.seasons-page .list-view-table .season-card-title-row h3{grid-column:1;margin:0}
+.teams-page .list-view-table .team-card-info>p,.coaches-page .list-view-table .coach-card-info>p,.seasons-page .list-view-table .season-card-info>p{grid-column:2;margin:0}
+.teams-page .list-view-table .team-card-meta,.coaches-page .list-view-table .coach-card-meta,.seasons-page .list-view-table .season-card-meta{grid-column:3;margin:0;display:flex;gap:12px;flex-wrap:wrap}
+.teams-page .list-view-table .team-status,.coaches-page .list-view-table .coach-status,.seasons-page .list-view-table .season-status{grid-column:3;justify-self:start}
+.teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:4;justify-self:end;margin:0}
+@media(max-width:900px){.section-toolbar-main{grid-template-columns:1fr}.section-toolbar-summary{grid-column:1}.section-toolbar-actions{grid-column:1;justify-content:flex-start;flex-wrap:wrap}.section-toolbar-panel{grid-column:1}.teams-page .list-view-table .team-card,.coaches-page .list-view-table .coach-card,.seasons-page .list-view-table .season-card{grid-template-columns:minmax(160px,1.4fr) minmax(120px,1fr) auto}.teams-page .list-view-table .team-card-meta,.coaches-page .list-view-table .coach-card-meta,.seasons-page .list-view-table .season-card-meta{grid-column:2}.teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:3}}
+@media(max-width:760px){.section-toolbar{padding:12px}.section-toolbar-summary{gap:16px;flex-wrap:wrap}.section-toolbar-actions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.section-toolbar-actions .section-toolbar-view{grid-column:1/-1;width:max-content}.section-toolbar-actions .section-toolbar-toggle{width:100%}.section-toolbar-actions .section-toolbar-primary{width:100%;min-height:42px}.section-toolbar-panel{grid-template-columns:1fr}.section-toolbar-search{min-width:0}.teams-page .list-view-table .team-card,.coaches-page .list-view-table .coach-card,.seasons-page .list-view-table .season-card{grid-template-columns:1fr;gap:8px}.teams-page .list-view-table .team-card-title-row h3,.teams-page .list-view-table .team-card-info>p,.teams-page .list-view-table .team-card-meta,.coaches-page .list-view-table .coach-title-row h3,.coaches-page .list-view-table .coach-card-info>p,.coaches-page .list-view-table .coach-card-meta,.seasons-page .list-view-table .season-card-title-row h3,.seasons-page .list-view-table .season-card-info>p,.seasons-page .list-view-table .season-card-meta,.teams-page .list-view-table .team-status,.coaches-page .list-view-table .coach-status,.seasons-page .list-view-table .season-status{grid-column:1}.teams-page .list-view-table .team-card-actions,.coaches-page .list-view-table .coach-card-actions,.seasons-page .list-view-table .season-card-actions{grid-column:1;justify-self:start}}

@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
 
 export const PERSONAS_VIEW = `
 <section class="panel personas-panel">

@@ -1,4 +1,4 @@
-import { createSectionToolbar } from '../../components/section-toolbar.js';
+import { createSectionToolbar } from '../../components/section-toolbar.js?v=20260927-2';
 
 export const ENTRENADORES_VIEW = `
 <section class="coaches-page">
@@ -7,6 +7,7 @@ export const ENTRENADORES_VIEW = `
     summary: [
       { id: 'coachTotal', label: 'entrenadores' }, { id: 'coachActive', label: 'activos' }, { id: 'coachTeamCount', label: 'equipos' }
     ],
+    viewToggle: { cardsId: 'coachCardsView', tableId: 'coachTableView', label: 'Vista de entrenadores' },
     primaryAction: { id: 'newCoachButton', label: '+ Nuevo entrenador' },
     search: { id: 'coachSearch', placeholder: 'Buscar entrenador…' },
     filters: [{ id: 'coachSeasonFilter', label: 'Temporada', options: [{ value: '', label: 'Todas' }] }]

@@ -31,29 +31,46 @@ export function createSectionToolbar({
       <button id="${viewToggle.tableId}" type="button" class="list-view-button">Tabla</button>
     </div>` : '';
 
-  const hasFilters = Boolean(searchHtml || filtersHtml || viewHtml);
+  const hasFilters = Boolean(searchHtml || filtersHtml);
 
   return `
     <div class="section-toolbar ${className}" id="${id || ''}">
       <div class="section-toolbar-main">
         <div class="section-toolbar-summary">${summaryHtml}</div>
+        <div class="section-toolbar-actions">
+          ${viewHtml}
+          ${hasFilters ? `
+            <button class="section-toolbar-toggle" type="button" aria-expanded="false" aria-controls="${id || 'sectionToolbar'}Filters">
+              <span class="section-toolbar-filter-icon">⌕</span>
+              <span class="section-toolbar-open-label">Buscar y filtrar</span>
+              <span class="section-toolbar-close-label">Ocultar filtros</span>
+            </button>` : ''}
+          ${primaryAction ? `<button class="${primaryAction.className || 'section-toolbar-primary'}" id="${primaryAction.id}" type="button">${primaryAction.label}</button>` : ''}
+        </div>
         ${hasFilters ? `
-          <button class="section-toolbar-toggle" type="button" aria-expanded="false" aria-controls="${id || 'sectionToolbar'}Filters">
-            <span class="section-toolbar-filter-icon">⌕</span>
-            <span class="section-toolbar-open-label">Buscar y filtrar</span>
-            <span class="section-toolbar-close-label">Ocultar filtros</span>
-          </button>
           <div class="section-toolbar-panel" id="${id || 'sectionToolbar'}Filters" hidden>
             ${searchHtml}
             ${filtersHtml}
-            ${viewHtml}
-          </div>` : ''}
-        ${primaryAction ? `<button class="${primaryAction.className || 'section-toolbar-primary'}" id="${primaryAction.id}" type="button">${primaryAction.label}</button>` : ''}
+          </div>` : ''}}
       </div>
     </div>`;
 }
 
 document.addEventListener('click', (event) => {
+  const viewButton = event.target.closest('.section-toolbar-view .list-view-button');
+  if (viewButton) {
+    const toolbar = viewButton.closest('.section-toolbar');
+    const section = toolbar?.closest('section');
+    const list = section?.querySelector('[id$="List"]');
+    if (toolbar && list) {
+      const tableMode = viewButton.id.toLowerCase().includes('table');
+      list.classList.toggle('list-view-table', tableMode);
+      toolbar.querySelectorAll('.section-toolbar-view .list-view-button').forEach((button) => {
+        button.classList.toggle('active', button === viewButton);
+      });
+    }
+  }
+
   const toggle = event.target.closest('.section-toolbar-toggle');
   if (!toggle) return;
   const toolbar = toggle.closest('.section-toolbar');
