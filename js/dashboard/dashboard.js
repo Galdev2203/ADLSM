@@ -8,7 +8,7 @@ import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
 import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
-import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-2';
+import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-3';
 import { initPersonas } from '../features/personas/controller.js?v=20260927-1';
 import { initEquipos } from '../features/equipos/controller.js?v=20260926-4';
 import { confirmDialog } from '../core/dialogs.js';
@@ -38,7 +38,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260926-3', 'equipos-styles');
   ensureStylesheet('./js/features/jugadores/jugadores.css?v=20260927-5', 'jugadores-styles');
   ensureStylesheet('./js/features/entrenadores/entrenadores.css?v=20260927-1', 'entrenadores-styles');
-  ensureStylesheet('./js/features/personas/personas.css?v=20260927-6', 'personas-styles');
+  ensureStylesheet('./js/features/personas/personas.css?v=20260927-7', 'personas-styles');
 
   app.innerHTML = `
     <main class="dashboard-shell">
