@@ -51,23 +51,26 @@ export async function initDashboard(app, user, onLogout) {
         </div>
 
         <nav class="dashboard-nav" id="dashboardNav" aria-label="Navegación principal">
-          <button class="dashboard-nav-item active" data-section="horarios">
-            <span>Horarios</span>
-          </button>
-          <button class="dashboard-nav-item" data-section="temporadas">
-            <span>Temporadas</span>
+          <button class="dashboard-nav-item active" data-section="inicio">
+            <span>Inicio</span>
           </button>
           <button class="dashboard-nav-item" data-section="equipos">
             <span>Equipos</span>
-          </button>
-          <button class="dashboard-nav-item" data-section="personas">
-            <span>Personas</span>
           </button>
           <button class="dashboard-nav-item" data-section="jugadores">
             <span>Jugadores</span>
           </button>
           <button class="dashboard-nav-item" data-section="entrenadores">
             <span>Entrenadores</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="temporadas">
+            <span>Temporadas</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="personas">
+            <span>Personas</span>
+          </button>
+          <button class="dashboard-nav-item" data-section="horarios">
+            <span>Horarios</span>
           </button>
           <button class="dashboard-nav-item" data-section="perfil">
             <span>Perfil</span>
@@ -85,13 +88,14 @@ export async function initDashboard(app, user, onLogout) {
         <header class="dashboard-topbar">
           <div>
             <span class="dashboard-kicker">PANEL DE CONTROL</span>
-            <h1 id="dashboardTitle">Horarios</h1>
+            <h1 id="dashboardTitle">Inicio</h1>
           </div>
           <div class="dashboard-status"><span></span>Conectado</div>
         </header>
 
         <div id="dashboardContent" class="dashboard-content">
-          <section id="sectionHorarios" class="dashboard-section"></section>
+          <section id="sectionInicio" class="dashboard-section"></section>
+          <section id="sectionHorarios" class="dashboard-section" hidden></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
           <section id="sectionEquipos" class="dashboard-section" hidden></section>
           <section id="sectionPersonas" class="dashboard-section" hidden></section>
@@ -103,6 +107,7 @@ export async function initDashboard(app, user, onLogout) {
     </main>
   `;
 
+  const inicioSection = document.querySelector('#sectionInicio');
   const horariosSection = document.querySelector('#sectionHorarios');
   const perfilSection = document.querySelector('#sectionPerfil');
   const temporadasSection = document.querySelector('#sectionTemporadas');
@@ -172,6 +177,7 @@ export async function initDashboard(app, user, onLogout) {
   horariosCleanup = initHorarios();
 
   const showSection = async (sectionName) => {
+    const isInicio = sectionName === 'inicio';
     const isPerfil = sectionName === 'perfil';
     const isTemporadas = sectionName === 'temporadas';
     const isEquipos = sectionName === 'equipos';
@@ -179,7 +185,8 @@ export async function initDashboard(app, user, onLogout) {
     const isJugadores = sectionName === 'jugadores';
     const isEntrenadores = sectionName === 'entrenadores';
 
-    horariosSection.hidden = isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
+    inicioSection.hidden = !isInicio;
+    horariosSection.hidden = isInicio || isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
     equiposSection.hidden = !isEquipos;
@@ -187,6 +194,7 @@ export async function initDashboard(app, user, onLogout) {
     jugadoresSection.hidden = !isJugadores;
     entrenadoresSection.hidden = !isEntrenadores;
     const sectionTitles = {
+      inicio: 'Inicio',
       horarios: 'Horarios',
       temporadas: 'Temporadas',
       equipos: 'Equipos',
@@ -200,6 +208,32 @@ export async function initDashboard(app, user, onLogout) {
     navItems.forEach((item) => {
       item.classList.toggle('active', item.dataset.section === sectionName);
     });
+
+    if (isInicio && !inicioSection.dataset.loaded) {
+      inicioSection.innerHTML = `
+        <section class="dashboard-home">
+          <div class="dashboard-home-hero">
+            <div>
+              <span class="dashboard-home-kicker">ADLSM · GESTIÓN DEPORTIVA</span>
+              <h2>Bienvenido a ADLSM</h2>
+              <p>Desde aquí puedes acceder rápidamente a la gestión deportiva de la agrupación.</p>
+            </div>
+          </div>
+          <div class="dashboard-home-grid">
+            <button class="dashboard-home-card" type="button" data-home-section="equipos"><span class="dashboard-home-card-icon">E</span><span><strong>Equipos</strong><small>Gestiona los equipos y sus temporadas.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+            <button class="dashboard-home-card" type="button" data-home-section="jugadores"><span class="dashboard-home-card-icon">J</span><span><strong>Jugadores</strong><small>Consulta y gestiona las plantillas.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+            <button class="dashboard-home-card" type="button" data-home-section="entrenadores"><span class="dashboard-home-card-icon">E</span><span><strong>Entrenadores</strong><small>Gestiona entrenadores y asignaciones.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+            <button class="dashboard-home-card" type="button" data-home-section="temporadas"><span class="dashboard-home-card-icon">T</span><span><strong>Temporadas</strong><small>Consulta y administra las temporadas.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+            <button class="dashboard-home-card" type="button" data-home-section="personas"><span class="dashboard-home-card-icon">P</span><span><strong>Personas</strong><small>Gestiona las personas de la agrupación.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+            <button class="dashboard-home-card" type="button" data-home-section="horarios"><span class="dashboard-home-card-icon">H</span><span><strong>Horarios</strong><small>Consulta y organiza los horarios.</small></span><span class="dashboard-home-card-arrow">→</span></button>
+          </div>
+          <div class="dashboard-home-session"><span>Sesión iniciada como</span><strong>${String(user?.email || '')}</strong></div>
+        </section>`;
+      inicioSection.dataset.loaded = 'true';
+      inicioSection.querySelectorAll('[data-home-section]').forEach((button) => {
+        button.addEventListener('click', () => showSection(button.dataset.homeSection));
+      });
+    }
 
     if (isTemporadas && !temporadasCleanup) {
       temporadasSection.innerHTML = TEMPORADAS_VIEW;
