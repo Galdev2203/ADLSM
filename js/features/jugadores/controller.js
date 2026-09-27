@@ -8,7 +8,8 @@ const initials = p => [p?.first_name,p?.last_name].map(normalize).filter(Boolean
 const supabaseErrorText = error => [error?.message,error?.details,error?.hint].filter(Boolean).join(' · ') || 'Error desconocido';
 
 let seasons=[], teamSeasons=[], teamSeasonById=new Map(), people=[], profiles=[], assignments=[];
-let selectedSeasonId='', searchTerm='', saving=false, editingPlayerId=null, editingAssignmentId=null;
+let selectedSeasonId='', searchTerm='', saving=false, editingPlayerId=null, editingAssignmentId=null, currentPage=1, viewMode='cards';
+const PAGE_SIZE=8;
 
 const timeout = async (promise, ms=15000) => {
   let timer;
@@ -19,7 +20,7 @@ const timeout = async (promise, ms=15000) => {
 export function initJugadores(){
   const els={
     toolbar:document.querySelector('#playersToolbar'), list:document.querySelector('#playerList'), detail:document.querySelector('#playerDetail'),
-    total:document.querySelector('#playerTotal'), active:document.querySelector('#playerActive'), seasonCount:document.querySelector('#playerSeasonCount'),
+    total:document.querySelector('#playerTotal'), active:document.querySelector('#playerActive'), seasonCount:document.querySelector('#playerSeasonCount'), pagination:document.querySelector('#playerPagination'), cardsView:document.querySelector('#playersCardsView'), tableView:document.querySelector('#playersTableView'),
     seasonFilter:document.querySelector('#playerSeasonFilter'), search:document.querySelector('#playerSearch'), modal:document.querySelector('#playerModal'),
     form:document.querySelector('#playerForm'), close:document.querySelector('#closePlayerModal'), cancel:document.querySelector('#cancelPlayer'),
     newButton:document.querySelector('#newPlayerButton'), save:document.querySelector('#savePlayer'), modalTitle:document.querySelector('#playerModalTitle'),
@@ -78,15 +79,38 @@ export function initJugadores(){
     const hay=normalize([a.person?.first_name,a.person?.last_name,a.person?.email,a.profile?.federation_license,a.profile?.position,a.team?.display_name,a.team?.team?.name].join(' '));
     return hay.includes(searchTerm);
   });
+  const renderPagination=(total)=>{
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+    currentPage=Math.min(currentPage,pages);
+    if(total<=PAGE_SIZE){els.pagination.hidden=true;els.pagination.innerHTML='';return}
+    els.pagination.hidden=false;
+    els.pagination.innerHTML=`<div class="player-pagination-info">Mostrando ${((currentPage-1)*PAGE_SIZE)+1}–${Math.min(currentPage*PAGE_SIZE,total)} de ${total}</div><div class="player-pagination-buttons"><button type="button" class="player-page-button" data-page="${currentPage-1}" ${currentPage===1?'disabled':''}>‹</button>${Array.from({length:pages},(_,i)=>i+1).map(p=>`<button type="button" class="player-page-button ${p===currentPage?'active':''}" data-page="${p}">${p}</button>`).join('')}<button type="button" class="player-page-button" data-page="${currentPage+1}" ${currentPage===pages?'disabled':''}>›</button></div>`;
+    els.pagination.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{const page=Number(button.dataset.page);if(page>=1&&page<=pages&&page!==currentPage){currentPage=page;render()}}));
+  };
   const render=()=>{
     const rows=filtered();
     els.total.textContent=new Set(rows.map(r=>r.player_id)).size;
     els.active.textContent=new Set(rows.filter(r=>r.person?.is_active!==false).map(r=>r.player_id)).size;
     els.seasonCount.textContent=selectedSeasonId ? rows.length : assignments.filter(a=>teamSeasonById.get(String(a.team_season_id))?.season?.is_active).length;
-    if(!rows.length){els.list.innerHTML=`<div class="player-empty"><h3>${assignments.length?'No hay jugadores que coincidan':'Todavía no hay jugadores'}</h3><p>${assignments.length?'Prueba con otra temporada o búsqueda.':'Crea el primer jugador para empezar a gestionar las plantillas.'}</p><button class="players-primary" id="emptyNewPlayer" type="button">Crear jugador</button></div>`;document.querySelector('#emptyNewPlayer')?.addEventListener('click',openModal);return}
-    els.list.innerHTML=rows.map(r=>{const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Jugador';const avatar=r.person?.photo_url?`<img class="player-avatar player-avatar-image" src="${esc(r.person.photo_url)}" alt="" loading="lazy">`:`<div class="player-avatar">${esc(initials(r.person))}</div>`;const teamName=r.team?.display_name||r.team?.team?.name||'Sin equipo';const position=r.profile?.position||'Sin posición';const shirt=r.profile?.shirt_number!=null?r.profile.shirt_number:'—';return `<article class="player-card"><div class="player-card-main">${avatar}<div class="player-card-info"><div class="player-title-row"><h3>${esc(name)}</h3><span class="player-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p class="player-card-team">${esc(teamName)}</p><div class="player-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span><span>${esc(position)}</span><span>Dorsal ${esc(shirt)}</span></div></div></div><div class="player-card-actions"><button class="player-action" data-player="${r.player_id}" data-assignment="${r.id}" type="button">Ver jugador</button><button class="player-action player-action-light" data-edit-player="${r.player_id}" data-assignment="${r.id}" type="button">Editar</button></div></article>`}).join('');
+    if(!rows.length){
+      els.list.innerHTML=`<div class="player-empty"><h3>${assignments.length?'No hay jugadores que coincidan':'Todavía no hay jugadores'}</h3><p>${assignments.length?'Prueba con otra temporada o búsqueda.':'Crea el primer jugador para empezar a gestionar las plantillas.'}</p><button class="players-primary" id="emptyNewPlayer" type="button">Crear jugador</button></div>`;
+      els.pagination.hidden=true;
+      document.querySelector('#emptyNewPlayer')?.addEventListener('click',openModal);
+      return;
+    }
+    const pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+    currentPage=Math.min(currentPage,pages);
+    const pageRows=rows.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
+    if(viewMode==='table'){
+      els.list.className='player-list player-list-table';
+      els.list.innerHTML=`<div class="player-table-wrap"><table class="player-table"><thead><tr><th>Jugador</th><th>Equipo</th><th>Temporada</th><th>Posición</th><th>Dorsal</th><th>Estado</th><th></th></tr></thead><tbody>${pageRows.map(r=>{const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Jugador';const teamName=r.team?.display_name||r.team?.team?.name||'Sin equipo';const position=r.profile?.position||'—';const shirt=r.profile?.shirt_number!=null?r.profile.shirt_number:'—';return `<tr><td><div class="player-table-person"><span class="player-table-avatar">${esc(initials(r.person))}</span><strong>${esc(name)}</strong></div></td><td>${esc(teamName)}</td><td>${esc(seasonLabel(r.team?.season))}</td><td>${esc(position)}</td><td>${esc(shirt)}</td><td><span class="player-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></td><td><div class="player-table-actions"><button class="player-action player-action-light" data-player="${r.player_id}" data-assignment="${r.id}" type="button">Ver</button><button class="player-action player-action-light" data-edit-player="${r.player_id}" data-assignment="${r.id}" type="button">Editar</button></div></td></tr>`}).join('')}</tbody></table></div>`;
+    }else{
+      els.list.className='player-list';
+      els.list.innerHTML=pageRows.map(r=>{const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Jugador';const avatar=r.person?.photo_url?`<img class="player-avatar player-avatar-image" src="${esc(r.person.photo_url)}" alt="" loading="lazy">`:`<div class="player-avatar">${esc(initials(r.person))}</div>`;const teamName=r.team?.display_name||r.team?.team?.name||'Sin equipo';const position=r.profile?.position||'Sin posición';const shirt=r.profile?.shirt_number!=null?r.profile.shirt_number:'—';return `<article class="player-card"><div class="player-card-main">${avatar}<div class="player-card-info"><div class="player-title-row"><h3>${esc(name)}</h3><span class="player-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p class="player-card-team">${esc(teamName)}</p><div class="player-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span><span>${esc(position)}</span><span>Dorsal ${esc(shirt)}</span></div></div></div><div class="player-card-actions"><button class="player-action" data-player="${r.player_id}" data-assignment="${r.id}" type="button">Ver jugador</button><button class="player-action player-action-light" data-edit-player="${r.player_id}" data-assignment="${r.id}" type="button">Editar</button></div></article>`}).join('');
+    }
     els.list.querySelectorAll('[data-player]').forEach(b=>b.addEventListener('click',()=>showDetail(b.dataset.player,b.dataset.assignment)));
     els.list.querySelectorAll('[data-edit-player]').forEach(b=>b.addEventListener('click',()=>openEditModal(b.dataset.editPlayer,b.dataset.assignment)));
+    renderPagination(rows.length);
   };
   const openModal=async()=>{
     editingPlayerId=null; editingAssignmentId=null;
@@ -113,7 +137,7 @@ export function initJugadores(){
     const history=assignments.filter(a=>a.player_id===personId).map(rowData).sort((a,b)=>Number(b.team?.season?.start_year||0)-Number(a.team?.season?.start_year||0));
     if(!p||!prof)return;
     const current=history.find(x=>x.id===assignmentId)||history[0];
-    els.toolbar.hidden=true;els.list.hidden=true;els.detail.hidden=false;
+    els.toolbar.hidden=true;els.list.hidden=true;els.pagination.hidden=true;els.detail.hidden=false;
     const currentTeam=current?.team;
     const currentTeamName=currentTeam?.display_name||currentTeam?.team?.name||'Sin equipo';
     const currentSeason=seasonLabel(currentTeam?.season);
@@ -211,8 +235,10 @@ export function initJugadores(){
   els.newButton.addEventListener('click',openModal);els.close.addEventListener('click',closeModal);els.cancel.addEventListener('click',closeModal);
   els.modal.addEventListener('click',e=>{if(e.target===els.modal)closeModal()});
   els.form.addEventListener('submit',save);els.season.addEventListener('change',()=>populateTeams());
-  els.seasonFilter.addEventListener('change',()=>{selectedSeasonId=els.seasonFilter.value;render()});
-  els.search.addEventListener('input',()=>{searchTerm=normalize(els.search.value);render()});
+  els.seasonFilter.addEventListener('change',()=>{selectedSeasonId=els.seasonFilter.value;currentPage=1;render()});
+  els.search.addEventListener('input',()=>{searchTerm=normalize(els.search.value);currentPage=1;render()});
+  els.cardsView.addEventListener('click',()=>{viewMode='cards';els.cardsView.classList.add('active');els.tableView.classList.remove('active');currentPage=1;render()});
+  els.tableView.addEventListener('click',()=>{viewMode='table';els.tableView.classList.add('active');els.cardsView.classList.remove('active');currentPage=1;render()});
   load();
   return ()=>{els.form?.removeEventListener('submit',save)};
 }
