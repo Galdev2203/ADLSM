@@ -1,15 +1,16 @@
+import { createSectionToolbar } from '../../components/section-toolbar.js';
+
 export const ENTRENADORES_VIEW = `
 <section class="coaches-page">
-  <div class="coaches-toolbar" id="coachesToolbar">
-    <button class="coaches-primary" id="newCoachButton" type="button">+ Nuevo entrenador</button>
-    <div class="coaches-summary">
-      <div><strong id="coachTotal">0</strong><span>entrenadores</span></div>
-      <div><strong id="coachActive">0</strong><span>activos</span></div>
-      <div><strong id="coachTeamCount">0</strong><span>equipos</span></div>
-    </div>
-    <label class="coaches-filter"><span>Temporada</span><select id="coachSeasonFilter"><option value="">Todas</option></select></label>
-    <label class="coaches-search"><span>Buscar</span><input id="coachSearch" type="search" placeholder="Buscar entrenador…"></label>
-  </div>
+    ${createSectionToolbar({
+    className: 'coaches-toolbar', id: 'coachesToolbar',
+    summary: [
+      { id: 'coachTotal', label: 'entrenadores' }, { id: 'coachActive', label: 'activos' }, { id: 'coachTeamCount', label: 'equipos' }
+    ],
+    primaryAction: { id: 'newCoachButton', label: '+ Nuevo entrenador' },
+    search: { id: 'coachSearch', placeholder: 'Buscar entrenador…' },
+    filters: [{ id: 'coachSeasonFilter', label: 'Temporada', options: [{ value: '', label: 'Todas' }] }]
+  })}
 
   <div id="coachList" class="coach-list"><div class="coach-loading">Cargando entrenadores…</div></div>
   <section id="coachDetail" class="coach-detail" hidden></section>
