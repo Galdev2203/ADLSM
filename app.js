@@ -1,5 +1,5 @@
 import { supabase } from './js/core/supabase.js';
-import { initDashboard } from './js/dashboard/dashboard.js?v=20260927-16';
+import { initDashboard } from './js/dashboard/dashboard.js?v=20260927-17';
 
 const app = document.querySelector('#app');
 
