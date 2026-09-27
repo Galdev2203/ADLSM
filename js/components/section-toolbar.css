@@ -1,0 +1,176 @@
+/* Shared toolbar used by all data sections except Horarios and Perfil. */
+.section-toolbar{
+  width:100%;
+  margin:0 0 14px;
+  padding:14px 16px;
+  border:1px solid #e3e9f1;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(16,24,40,.035);
+}
+.section-toolbar-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:18px;
+}
+.section-toolbar-summary{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  min-width:0;
+}
+.section-toolbar-stat{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  white-space:nowrap;
+}
+.section-toolbar-stat strong{
+  color:#082957;
+  font-size:19px;
+}
+.section-toolbar-stat span{
+  color:#667085;
+  font-size:11px;
+}
+.section-toolbar-details{
+  min-width:0;
+}
+.section-toolbar-details > summary{
+  list-style:none;
+  height:38px;
+  padding:0 13px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid #d8e0ea;
+  border-radius:9px;
+  background:#fbfcfe;
+  color:#344054;
+  font-size:11px;
+  font-weight:750;
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+}
+.section-toolbar-details > summary::-webkit-details-marker{display:none}
+.section-toolbar-details > summary:hover{background:#f5f8fb;border-color:#c9d4e1}
+.section-toolbar-details > summary:focus-visible{
+  outline:none;
+  border-color:#174a9a;
+  box-shadow:0 0 0 3px rgba(23,74,154,.08);
+}
+.section-toolbar-filter-icon{
+  color:#174a9a;
+  font-size:17px;
+  line-height:1;
+  transform:rotate(-20deg);
+}
+.section-toolbar-close-label{display:none}
+.section-toolbar-details[open] .section-toolbar-open-label{display:none}
+.section-toolbar-details[open] .section-toolbar-close-label{display:inline}
+.section-toolbar-panel{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:12px;
+  align-items:end;
+  padding:14px 0 2px;
+  border-top:1px solid #edf0f4;
+  margin-top:14px;
+}
+.section-toolbar-field{
+  display:grid;
+  gap:6px;
+  min-width:0;
+  color:#667085;
+  font-size:10px;
+  font-weight:750;
+}
+.section-toolbar-field input,
+.section-toolbar-field select{
+  width:100%;
+  height:38px;
+  min-width:0;
+  border:1px solid #d8e0ea;
+  border-radius:9px;
+  padding:0 12px;
+  outline:none;
+  color:#1d2939;
+  background:#fbfcfe;
+  font:inherit;
+  font-size:12px;
+}
+.section-toolbar-field input:focus,
+.section-toolbar-field select:focus{
+  border-color:#174a9a;
+  box-shadow:0 0 0 3px rgba(23,74,154,.08);
+}
+.section-toolbar-search{min-width:220px}
+.section-toolbar-view{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  height:38px;
+  padding:3px;
+  border:1px solid #d8e0ea;
+  border-radius:9px;
+  background:#fbfcfe;
+}
+.section-toolbar-view .list-view-button{
+  height:30px;
+  border:0;
+  border-radius:6px;
+  padding:0 11px;
+  background:transparent;
+  color:#667085;
+  font-size:10px;
+  font-weight:750;
+  cursor:pointer;
+}
+.section-toolbar-view .list-view-button.active{
+  background:#082f70;
+  color:#fff;
+}
+.section-toolbar-primary{
+  min-height:38px;
+  border:0;
+  border-radius:9px;
+  padding:0 16px;
+  background:#082f70;
+  color:#fff;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+  white-space:nowrap;
+  box-shadow:0 7px 16px rgba(8,47,112,.16);
+  transition:.18s ease;
+}
+.section-toolbar-primary:hover{
+  background:#06275d;
+  transform:translateY(-1px);
+}
+.section-toolbar-primary:disabled{opacity:.6;cursor:wait;transform:none}
+
+@media(max-width:900px){
+  .section-toolbar-main{
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  .section-toolbar-summary{grid-column:1}
+  .section-toolbar-details{grid-column:2}
+  .section-toolbar-primary{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .section-toolbar{padding:12px}
+  .section-toolbar-main{grid-template-columns:1fr}
+  .section-toolbar-summary,
+  .section-toolbar-details,
+  .section-toolbar-primary{grid-column:1}
+  .section-toolbar-summary{gap:16px;flex-wrap:wrap}
+  .section-toolbar-details > summary{width:100%}
+  .section-toolbar-panel{grid-template-columns:1fr}
+  .section-toolbar-search{min-width:0}
+  .section-toolbar-primary{width:100%;min-height:42px}
+}
