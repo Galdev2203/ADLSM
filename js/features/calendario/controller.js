@@ -57,20 +57,57 @@ function parseMatches(lines, filename) {
   return matches;
 }
 
+function getWeekKey(isoDate) {
+  const date = new Date(isoDate + 'T12:00:00');
+  const day = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - day);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatDate(isoDate, options = { weekday: 'long', day: 'numeric', month: 'long' }) {
+  return new Intl.DateTimeFormat('es-ES', options).format(new Date(isoDate + 'T12:00:00'));
+}
+
 function renderCalendar(matches, results, status) {
   const unique = new Map();
-  matches.forEach(m => unique.set([m.date,m.venue,norm(m.rival)].join('|'), m));
-  const all = [...unique.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.rival.localeCompare(b.rival,'es'));
-  const groups = new Map();
-  all.forEach(m=>{ if(!groups.has(m.date)) groups.set(m.date,[]); groups.get(m.date).push(m); });
-  status.textContent = all.length ? 'Se han encontrado '+all.length+' partidos en '+groups.size+' fechas. Los datos solo permanecen en esta página.' : 'No se han encontrado partidos de La Salle en los documentos seleccionados.';
-  results.innerHTML = all.length ? [...groups.entries()].map(([date, games])=>{
-    const d = new Date(date+'T12:00:00');
-    const label = new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(d);
-    const homeCount = games.filter(g=>g.venue==='Casa').length;
-    return '<article class="calendar-day"><header><div><h3>'+esc(label)+'</h3><span>'+games.length+' partido(s) · '+homeCount+' en casa</span></div>'+(homeCount>1?'<b class="calendar-conflict">Coincidencia en casa</b>':'')+'</header><div class="calendar-games">'+games.map(g=>'<div class="calendar-game"><div><strong>La Salle Montemolín – '+esc(g.rival)+'</strong><small>Jornada '+esc(g.jornada||'—')+' · '+esc(g.source)+'</small></div><span class="calendar-venue '+(g.venue==='Casa'?'is-home':'is-away')+'">'+g.venue+'</span></div>').join('')+'</div></article>';
-  }).join('')+'<button type="button" class="calendar-clear" id="calendarClear">Limpiar resultados</button>' : '';
-  document.getElementById('calendarClear')?.addEventListener('click',()=>{results.innerHTML='';status.textContent='Resultados eliminados. Puedes subir otros documentos.';});
+  matches.forEach(m => unique.set([m.date, m.venue, norm(m.rival)].join('|'), m));
+  const all = [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || a.rival.localeCompare(b.rival, 'es'));
+  const weekends = new Map();
+  all.forEach(match => {
+    const key = getWeekKey(match.date);
+    if (!weekends.has(key)) weekends.set(key, new Map());
+    const days = weekends.get(key);
+    if (!days.has(match.date)) days.set(match.date, []);
+    days.get(match.date).push(match);
+  });
+
+  if (!all.length) {
+    status.textContent = 'No se han encontrado partidos de La Salle en los documentos seleccionados.';
+    results.innerHTML = '';
+    return;
+  }
+
+  const firstDate = all[0].date;
+  const lastDate = all[all.length - 1].date;
+  status.innerHTML = '<div class="calendar-summary"><div><strong>' + all.length + '</strong><span>partidos encontrados</span></div><div><strong>' + weekends.size + '</strong><span>fines de semana</span></div><div class="calendar-summary-range"><strong>Periodo detectado</strong><span>' + esc(formatDate(firstDate, { day: 'numeric', month: 'short', year: 'numeric' })) + ' — ' + esc(formatDate(lastDate, { day: 'numeric', month: 'short', year: 'numeric' })) + '</span></div></div><p class="calendar-private-note">Procesado localmente · No se guarda ningún dato</p>';
+
+  results.innerHTML = [...weekends.entries()].map(([weekStart, days]) => {
+    const weekEnd = new Date(weekStart + 'T12:00:00');
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekEndIso = weekEnd.toISOString().slice(0, 10);
+    const games = [...days.values()].flat();
+    const homeCount = games.filter(game => game.venue === 'Casa').length;
+    const dayCards = [...days.entries()].map(([date, dayGames]) => {
+      const dayHomeCount = dayGames.filter(game => game.venue === 'Casa').length;
+      return '<section class="calendar-day"><header><div><h4>' + esc(formatDate(date)) + '</h4><span>' + dayGames.length + ' partido(s) · ' + dayHomeCount + ' en casa</span></div>' + (dayHomeCount > 1 ? '<b class="calendar-conflict">Coincidencia en casa</b>' : '') + '</header><div class="calendar-games">' + dayGames.map(game => '<div class="calendar-game"><div class="calendar-game-main"><strong>La Salle Montemolín <span>vs.</span> ' + esc(game.rival) + '</strong><small>Jornada ' + esc(game.jornada || '—') + ' · ' + esc(game.source) + '</small></div><span class="calendar-venue ' + (game.venue === 'Casa' ? 'is-home' : 'is-away') + '">' + (game.venue === 'Casa' ? 'LOCAL' : 'VISITANTE') + '</span></div>').join('') + '</div></section>';
+    }).join('');
+    return '<article class="calendar-week"><div class="calendar-week-heading"><div><span class="calendar-week-kicker">FIN DE SEMANA</span><h3>' + esc(formatDate(weekStart, { day: 'numeric', month: 'long' })) + ' — ' + esc(formatDate(weekEndIso, { day: 'numeric', month: 'long', year: 'numeric' })) + '</h3></div><div class="calendar-week-count"><strong>' + games.length + '</strong><span>partidos</span></div>' + (homeCount > 1 ? '<b class="calendar-conflict">Varios partidos en casa</b>' : '') + '</div>' + dayCards + '</article>';
+  }).join('') + '<button type="button" class="calendar-clear" id="calendarClear">Limpiar resultados</button>';
+
+  document.getElementById('calendarClear')?.addEventListener('click', () => {
+    results.innerHTML = '';
+    status.textContent = 'Resultados eliminados. Puedes subir otros documentos.';
+  });
 }
 
 export function initCalendario() {
