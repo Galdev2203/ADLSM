@@ -70,6 +70,18 @@ async function loadSavedMatches() {
   }).filter(match => match.date && match.rival);
 }
 
+function categoryLabel(match) {
+  const source = (match.source || '').toLowerCase();
+  if (source.includes('2a-mas')) return '2.ª Aragonesa Masculina';
+  if (source.includes('a2-mas')) return '1.ª Aragonesa A2';
+  if (source.includes('3a-mas-01')) return 'Tercera Aragonesa Formación';
+  if (source.includes('3a-mas-04')) return 'Tercera Aragonesa Veteranos';
+  if (source.includes('cojf2a')) return 'Junior Femenino Segunda · Primer Año';
+  if (source.includes('jf2a')) return 'Junior Femenino Segunda · Segundo Año';
+  if (source.includes('2a-fem')) return '2.ª Aragonesa Femenina';
+  return match.competition || '';
+}
+
 function getWeekKey(isoDate) {
   const date = new Date(isoDate + 'T12:00:00');
   date.setDate(date.getDate() - ((date.getDay()+6)%7));
@@ -82,7 +94,7 @@ function formatDate(isoDate, options={weekday:'long',day:'numeric',month:'long'}
 function renderCalendar(matches, results, status, { saved = false } = {}) {
   const unique = new Map();
   matches.forEach(m => unique.set([m.date,m.venue,norm(m.rival),m.team].join('|'),m));
-  const all = [...unique.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.rival.localeCompare(b.rival,'es'));
+  const all = [...unique.values()].sort((a,b)=>a.date.localeCompare(b.date)||((a.venue==='Casa'?0:1)-(b.venue==='Casa'?0:1))||a.rival.localeCompare(b.rival,'es'));
   const weeks = new Map();
   all.forEach(match => {
     const key=getWeekKey(match.date);
@@ -106,7 +118,7 @@ function renderCalendar(matches, results, status, { saved = false } = {}) {
     const homeCount=games.filter(g=>g.venue==='Casa').length;
     const dayCards=[...days.entries()].map(([date,dayGames])=>{
       const dayHome=dayGames.filter(g=>g.venue==='Casa').length;
-      return '<section class="calendar-day"><header><div><h4>'+esc(formatDate(date))+'</h4><span>'+dayGames.length+' partido(s) · '+dayHome+' en casa</span></div>'+(dayHome>1?'<b class="calendar-conflict">Coincidencia en casa</b>':'')+'</header><div class="calendar-games">'+dayGames.map(game=>'<div class="calendar-game"><div class="calendar-game-main"><strong>'+esc(game.team||'La Salle Montemolín')+' <span>vs.</span> '+esc(game.rival)+'</strong><small>'+esc(game.competition||'')+(game.competition?' · ':'')+'Jornada '+esc(game.jornada||'—')+' · '+esc(game.source||'')+'</small></div><span class="calendar-venue '+(game.venue==='Casa'?'is-home':'is-away')+'">'+(game.venue==='Casa'?'LOCAL':'VISITANTE')+'</span></div>').join('')+'</div></section>';
+      return '<section class="calendar-day"><header><div><h4>'+esc(formatDate(date))+'</h4><span>'+dayGames.length+' partido(s) · '+dayHome+' en casa</span></div>'+(dayHome>1?'<b class="calendar-conflict">Coincidencia en casa</b>':'')+'</header><div class="calendar-games">'+dayGames.sort((a,b)=>(a.venue==='Casa'?0:1)-(b.venue==='Casa'?0:1)||a.rival.localeCompare(b.rival,'es')).map(game=>'<div class="calendar-game"><div class="calendar-game-main"><strong>'+(game.venue==='Casa'?esc(game.team||'La Salle Montemolín')+' <span>vs.</span> '+esc(game.rival):esc(game.rival)+' <span>vs.</span> '+esc(game.team||'La Salle Montemolín'))+'</strong><small>'+esc(categoryLabel(game))+' · Jornada '+esc(game.jornada||'—')+'</small></div><span class="calendar-venue '+(game.venue==='Casa'?'is-home':'is-away')+'">'+(game.venue==='Casa'?'LOCAL':'VISITANTE')+'</span></div>').join('')+'</div></section>';
     }).join('');
     return '<article class="calendar-week"><div class="calendar-week-heading"><div><span class="calendar-week-kicker">FIN DE SEMANA</span><h3>'+esc(formatDate(weekStart,{day:'numeric',month:'long'}))+' — '+esc(formatDate(weekEndIso,{day:'numeric',month:'long',year:'numeric'}))+'</h3></div><div class="calendar-week-count"><strong>'+games.length+'</strong><span>partidos</span></div>'+(homeCount>1?'<b class="calendar-conflict">Varios partidos en casa</b>':'')+'</div>'+dayCards+'</article>';
   }).join('')+'<button type="button" class="calendar-clear" id="calendarClear">'+(saved?'Volver al calendario guardado':'Limpiar resultados')+'</button>';
