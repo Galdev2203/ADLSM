@@ -72,7 +72,7 @@ export async function initDashboard(app, user, onLogout) {
           <button class="dashboard-nav-item" data-section="personas">
             <span>Personas</span>
           </button>
-          <button class="dashboard-nav-item" data-section="calendario"><span>Calendario conjunto</span></button>
+          <button class="dashboard-nav-item" data-section="calendario"><span>Calendarios federados</span></button>
           <button class="dashboard-nav-item" data-section="horarios">
             <span>Horarios</span>
           </button>
@@ -204,7 +204,7 @@ export async function initDashboard(app, user, onLogout) {
     const sectionTitles = {
       inicio: 'Inicio',
       horarios: 'Horarios',
-      calendario: 'Calendario conjunto',
+      calendario: 'Calendarios federados',
       temporadas: 'Temporadas',
       equipos: 'Equipos',
       personas: 'Personas',
