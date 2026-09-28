@@ -35,7 +35,7 @@ function ensureStylesheet(href, id) {
 export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/dashboard/dashboard.css?v=20260927-2', 'dashboard-styles');
   ensureStylesheet('./js/dashboard/responsive.css?v=20260927-1', 'responsive-styles');
-  ensureStylesheet('./js/features/calendario/calendario.css?v=20260928-1', 'calendario-styles');
+  ensureStylesheet('./js/features/calendario/calendario.css?v=20260928-2', 'calendario-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260927-2', 'equipos-styles');
