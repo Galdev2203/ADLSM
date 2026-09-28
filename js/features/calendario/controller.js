@@ -20,21 +20,31 @@ async function extractLines(pdfjs, file) {
   for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
     const page = await pdf.getPage(pageNo);
     const content = await page.getTextContent();
-    const rows = new Map();
+    const midpoint = (page.view[0] + page.view[2]) / 2;
+    const columns = [new Map(), new Map()];
+
     for (const item of content.items) {
       if (!item.str?.trim()) continue;
+      const x = item.transform[4];
       const y = Math.round(item.transform[5] * 2) / 2;
+      const columnIndex = x < midpoint ? 0 : 1;
+      const rows = columns[columnIndex];
       if (!rows.has(y)) rows.set(y, []);
-      rows.get(y).push({ x: item.transform[4], text: item.str.trim() });
+      rows.get(y).push({ x, text: item.str.trim() });
     }
-    [...rows.entries()].sort((a,b) => b[0]-a[0]).forEach(([, items]) => {
-      const line = items.sort((a,b)=>a.x-b.x).map(x=>x.text).join(' ').replace(/\s+/g,' ').trim();
-      if (line) lines.push(line);
-    });
+
+    // FAB/FEB PDFs may place the calendar in two columns. Read each column
+    // independently from top to bottom to avoid mixing different jornadas
+    // that happen to share the same vertical position.
+    for (const rows of columns) {
+      [...rows.entries()].sort((a, b) => b[0] - a[0]).forEach(([, items]) => {
+        const line = items.sort((a, b) => a.x - b.x).map(item => item.text).join(' ').replace(/\\s+/g, ' ').trim();
+        if (line) lines.push(line);
+      });
+    }
   }
   return lines;
 }
-
 function parseMatches(lines, filename) {
   const matches = [];
   let date = null, jornada = '';
