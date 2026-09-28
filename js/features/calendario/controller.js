@@ -92,8 +92,11 @@ function formatDate(isoDate, options={weekday:'long',day:'numeric',month:'long'}
 }
 
 function renderCalendar(matches, results, status, { saved = false } = {}) {
+  const now = new Date();
+  const today = [now.getFullYear(), String(now.getMonth()+1).padStart(2,'0'), String(now.getDate()).padStart(2,'0')].join('-');
+  const upcoming = matches.filter(match => match.date >= today);
   const unique = new Map();
-  matches.forEach(m => unique.set([m.date,m.venue,norm(m.rival),m.team].join('|'),m));
+  upcoming.forEach(m => unique.set([m.date,m.venue,norm(m.rival),m.team].join('|'),m));
   const all = [...unique.values()].sort((a,b)=>a.date.localeCompare(b.date)||((a.venue==='Casa'?0:1)-(b.venue==='Casa'?0:1))||a.rival.localeCompare(b.rival,'es'));
   const weeks = new Map();
   all.forEach(match => {
@@ -104,7 +107,7 @@ function renderCalendar(matches, results, status, { saved = false } = {}) {
     days.get(match.date).push(match);
   });
   if(!all.length) {
-    status.textContent='No se han encontrado partidos de La Salle en los documentos seleccionados.';
+    status.textContent=matches.length ? 'No quedan partidos pendientes a partir de hoy.' : 'No se han encontrado partidos de La Salle en los documentos seleccionados.';
     results.innerHTML='';
     return;
   }
