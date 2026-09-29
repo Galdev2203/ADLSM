@@ -457,8 +457,10 @@ export function initEquipos() {
         return;
       }
 
+      const updatedRowId = editingId;
       closeModal();
       await load(false);
+      showDetail(updatedRowId);
       showMessage('Equipo actualizado correctamente.', 'success');
       return;
     }
