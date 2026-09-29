@@ -36,11 +36,12 @@ export async function initCalendariosFederadosV2(){
   const {data:rows,error:me}=await supabase.from('matches').select('id,team_season_id,match_date,match_time,opponent_name,is_home,home_score,away_score,jornada,status').in('team_season_id',[...byId.keys()]).gte('match_date',todayISO()).order('match_date',{ascending:true}).order('match_time',{ascending:true});if(me)throw me;
   const upcoming=(rows||[]).filter(m=>m.status!=='cancelled').map(m=>({...m,teamLabel:byId.get(m.team_season_id)?.display_name||'La Salle Montemolín'})).sort((a,b)=>a.match_date.localeCompare(b.match_date)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
   if(!upcoming.length){status.textContent='No hay partidos por jugar en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
-  // Por equipo, identificar la jornada más próxima y reunir todos sus partidos de esa jornada.
-  const nextMatches=[];const seen=new Set();const byTeam=new Map();upcoming.forEach(m=>{if(!byTeam.has(m.team_season_id))byTeam.set(m.team_season_id,[]);byTeam.get(m.team_season_id).push(m);});
-  for(const teamMatches of byTeam.values()){const first=teamMatches[0],round=first.jornada;const selected=teamMatches.filter(m=>round!==null&&round!==undefined?String(m.jornada)===String(round):m.match_date===first.match_date);selected.forEach(m=>{if(!seen.has(m.id)){seen.add(m.id);nextMatches.push(m);}});}
+  // La siguiente jornada es el primer bloque semanal con partidos, no el próximo partido individual de cada equipo.
+  const firstWeek=weekKey(upcoming[0].match_date);
+  const nextMatches=upcoming.filter(m=>weekKey(m.match_date)===firstWeek);
+  const nextIds=new Set(nextMatches.map(m=>m.id));
   nextMatches.sort((a,b)=>a.match_date.localeCompare(b.match_date)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
-  const rest=upcoming.filter(m=>!seen.has(m.id));renderNext(next,nextMatches);renderPagedCalendar(all,rest,0);
+  const rest=upcoming.filter(m=>!nextIds.has(m.id));renderNext(next,nextMatches);renderPagedCalendar(all,rest,0);
   const seasonText=(seasons||[]).map(s=>s.name||String(s.start_year||'')+'/'+String(s.end_year||'')).join(', ');status.textContent='Temporada '+seasonText+' · '+upcoming.length+' partidos futuros · '+relevant.length+' equipos federados';
  }catch(error){status.textContent=error?.message||'No se pudieron cargar los calendarios federados.';next.innerHTML='';all.innerHTML='';}
 }
