@@ -10,7 +10,7 @@ import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
 import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
-import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260929-2';
+import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260929-3';
 import { initPersonas } from '../features/personas/controller.js?v=20260927-4';
 import { initEquipos } from '../features/equipos/controller.js?v=20260929-7';
 import { confirmDialog } from '../core/dialogs.js';
