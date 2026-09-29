@@ -301,7 +301,7 @@ export function initEquipos() {
         <div><strong>${escapeHtml(row.group_name || '—')}</strong><span>grupo</span></div>
       </div>
 
-      <article class="team-detail-card team-detail-card-wide team-coaches-card"><span class="teams-kicker">CUERPO TÉCNICO</span><h3>Entrenadores del equipo</h3><div id="teamCoachesList"><p class="team-detail-notes">Cargando entrenadores…</p></div></article>
+      <article class="team-detail-card team-detail-card-wide team-coaches-card"><span class="teams-kicker">CUERPO TÉCNICO</span><h3>Entrenadores del equipo</h3><div id="teamCoachesList"><p class="team-detail-notes">Cargando entrenadores…</p></div><div class="team-coach-assignment"><label>Entrenador<select id="teamCoachSelect"><option value="">Selecciona un entrenador</option></select></label><label>Rol<select id="teamCoachRole"><option value="principal">Primer entrenador</option><option value="second">Segundo entrenador</option><option value="assistant">Ayudante</option></select></label><button type="button" class="team-action" id="addTeamCoach">Añadir entrenador</button></div></article>
 
       <div class="team-detail-grid">
         <article class="team-detail-card">
@@ -344,6 +344,21 @@ export function initEquipos() {
       const peopleById = new Map(people.map(p => [p.id, p]));
       const roleLabels = { principal:'Primer entrenador', second:'Segundo entrenador', assistant:'Ayudante' };
       coachesHost.innerHTML = assignments?.length ? '<div class="team-coaches-list">' + assignments.map(a => { const person=peopleById.get(a.coach_id); return '<div class="team-coach-row"><button type="button" class="team-coach-link" data-open-coach="'+escapeHtml(a.coach_id)+'" data-assignment="'+escapeHtml(a.id)+'">' + escapeHtml([person?.first_name,person?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</button><span>' + escapeHtml(roleLabels[a.role] || (a.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>'; }).join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
+      const { data: coachProfiles, error: profilesError } = await supabase.from('coach_profiles').select('person_id');
+      if (profilesError) throw profilesError;
+      const { data: allPeople, error: allPeopleError } = await supabase.from('people').select('id,first_name,last_name').in('id',(coachProfiles||[]).map(p=>p.person_id));
+      if (allPeopleError) throw allPeopleError;
+      const assignedIds = new Set((assignments||[]).map(a=>a.coach_id));
+      const availableCoaches = (allPeople||[]).filter(p=>!assignedIds.has(p.id)).sort((a,b)=>[a.last_name,a.first_name].join(' ').localeCompare([b.last_name,b.first_name].join(' '),'es'));
+      const coachSelect = els.detail.querySelector('#teamCoachSelect');
+      coachSelect.innerHTML='<option value="">Selecciona un entrenador</option>'+availableCoaches.map(p=>'<option value="'+escapeHtml(p.id)+'">'+escapeHtml([p.first_name,p.last_name].filter(Boolean).join(' '))+'</option>').join('');
+      els.detail.querySelector('#addTeamCoach').addEventListener('click',async()=>{
+        const coachId=coachSelect.value, role=els.detail.querySelector('#teamCoachRole').value;
+        if(!coachId){notify('Selecciona un entrenador.','warning');return}
+        const button=els.detail.querySelector('#addTeamCoach');button.disabled=true;
+        try{const {error}=await supabase.from('team_coaches').insert({team_season_id:row.id,coach_id:coachId,role,is_primary:role==='principal'});if(error)throw error;notify('Entrenador asignado al equipo.','success');await showDetail(row.id)}
+        catch(err){notify('No se pudo asignar el entrenador: '+(err.message||'Error desconocido'),'error');button.disabled=false}
+      });
     } catch (error) {
       coachesHost.innerHTML = '<p class="team-detail-notes">No se pudieron cargar los entrenadores: ' + escapeHtml(error.message || 'Error desconocido') + '</p>';
     }
