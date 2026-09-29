@@ -48,7 +48,8 @@ export function mountTeamCalendarImport(container, teamSeason) {
   let rows=[];
   let matches=[];
   let displayMode='cards';
-  let editingMatchId=null;\n  let editModal=null;
+  let editingMatchId=null;
+  let editModal=null;
 
   const say=(message,error=false)=>{feedback.textContent=message;feedback.classList.toggle('is-error',error);};
   const fetchMatches=async()=>{
