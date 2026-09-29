@@ -10,7 +10,7 @@ function gameCard(m){
  const club=m.teamLabel||'La Salle Montemolín';
  const home=m.is_home?club:m.opponent_name, away=m.is_home?m.opponent_name:club;
  const round=Number(m.jornada)===0?'Amistoso':m.jornada?'Jornada '+esc(m.jornada):'Partido';
- const result=m.home_score!==null&&m.away_score!==null?'<b class="federated-v2-score">'+esc(m.home_score)+' - '+esc(m.away_score)+'</b>':'<span class="federated-v2-pending">Pendiente</span>';
+ const result=m.home_score!==null&&m.away_score!==null?'<b class="federated-v2-score">'+esc(m.home_score)+' - '+esc(m.away_score)+'</b>':'<span class="federated-v2-pending">Sin resultado</span>';
  return '<article class="federated-v2-game"><div class="federated-v2-game-date"><strong>'+esc(dateLabel(m.match_date,{weekday:'short',day:'numeric',month:'short'}))+'</strong><small>'+round+(m.match_time?' · '+esc(String(m.match_time).slice(0,5)):'')+'</small></div><div class="federated-v2-teams"><strong>'+esc(home)+'</strong><span>vs.</span><strong>'+esc(away)+'</strong></div><div class="federated-v2-result">'+result+'</div></article>';
 }
 function groupByDate(matches){const map=new Map();matches.forEach(m=>{if(!map.has(m.match_date))map.set(m.match_date,[]);map.get(m.match_date).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
