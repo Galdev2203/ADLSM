@@ -12,7 +12,7 @@ import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
 import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-5';
 import { initPersonas } from '../features/personas/controller.js?v=20260927-4';
-import { initEquipos } from '../features/equipos/controller.js?v=20260929-1';
+import { initEquipos } from '../features/equipos/controller.js?v=20260929-2';
 import { confirmDialog } from '../core/dialogs.js';
 
 let horariosCleanup = null;
