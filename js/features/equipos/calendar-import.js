@@ -63,11 +63,37 @@ export function mountTeamCalendarImport(container, teamSeason) {
       ? '<div class="team-calendar-cards">'+matches.map(m=>'<article class="team-match-card"><div class="team-match-card-date"><strong>'+esc(displayDate(m.match_date))+'</strong><span>'+(m.jornada?'Jornada '+esc(m.jornada):'Partido')+'</span></div><div class="team-match-card-game"><strong>'+esc(m.is_home?'La Salle Montemolín':m.opponent_name)+'</strong><span>vs</span><strong>'+esc(m.is_home?m.opponent_name:'La Salle Montemolín')+'</strong></div><div class="team-match-card-actions"><span class="team-match-status">'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'Pendiente')+'</span><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></div></article>').join('')+'</div>'
       : '<div class="team-calendar-table-wrap"><table class="team-calendar-table team-saved-table"><thead><tr><th>Fecha</th><th>Jornada</th><th>Local</th><th>Visitante</th><th>Resultado</th><th></th></tr></thead><tbody>'+matches.map(m=>'<tr><td>'+esc(displayDate(m.match_date))+'</td><td>'+esc(m.jornada||'—')+'</td><td>'+(m.is_home?'La Salle Montemolín':esc(m.opponent_name))+'</td><td>'+(m.is_home?esc(m.opponent_name):'La Salle Montemolín')+'</td><td>'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'—')+'</td><td><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></td></tr>').join('')+'</tbody></table></div>')
       : '<p class="team-calendar-empty">Todavía no hay partidos guardados para este equipo.</p>';
-    saved.innerHTML='<div class="team-calendar-saved-head"><div><strong>'+matches.length+' partidos</strong><span>Ordenados por fecha de juego</span></div><div class="team-calendar-view-toggle"><button type="button" data-mode="cards" class="'+(displayMode==='cards'?'active':'')+'">Cards</button><button type="button" data-mode="table" class="'+(displayMode==='table'?'active':'')+'">Tabla</button></div></div>'+content;
+    saved.innerHTML='<div class="team-calendar-saved-head"><div><strong>'+matches.length+' partidos</strong><span>Ordenados por fecha de juego</span></div><div class="team-calendar-saved-actions"><button type="button" class="team-action" id="teamCalendarManualAdd">+ Añadir partido</button><div class="team-calendar-view-toggle"><button type="button" data-mode="cards" class="'+(displayMode==='cards'?'active':'')+'">Cards</button><button type="button" data-mode="table" class="'+(displayMode==='table'?'active':'')+'">Tabla</button></div></div></div>'+content;
+    saved.querySelector('#teamCalendarManualAdd').addEventListener('click',renderCreateForm);
     saved.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{displayMode=b.dataset.mode;renderSaved();}));
     saved.querySelectorAll('[data-edit-match]').forEach(b=>b.addEventListener('click',()=>{editingMatchId=b.dataset.editMatch;renderSaved();}));
     if(editingMatchId)renderEditForm();
   };
+  const renderCreateForm=()=>{
+    editModal?.remove();editingMatchId=null;
+    editModal=document.createElement('div');editModal.className='team-match-modal-backdrop';
+    editModal.innerHTML='<section class="team-match-modal" role="dialog" aria-modal="true" aria-labelledby="teamMatchModalTitle"><div class="team-match-modal-head"><h3 id="teamMatchModalTitle">Añadir partido</h3><button type="button" class="team-match-modal-close" aria-label="Cerrar">×</button></div><form class="team-match-edit"><div class="team-match-edit-grid">'+
+      '<label>Fecha<input name="match_date" type="date" required></label>'+
+      '<label>Jornada<input name="jornada" type="number" min="1"></label>'+
+      '<label>Rival<input name="opponent_name" required maxlength="160" placeholder="Nombre del equipo rival"></label>'+
+      '<label>Localía<select name="is_home"><option value="true" selected>En casa</option><option value="false">Fuera</option></select></label>'+
+      '<label>Puntos equipo local<input name="home_score" type="number" min="0" step="1" placeholder="Dejar vacío si está pendiente"></label>'+
+      '<label>Puntos equipo visitante<input name="away_score" type="number" min="0" step="1" placeholder="Dejar vacío si está pendiente"></label>'+
+      '</div><div class="team-calendar-actions"><button type="button" class="team-secondary" data-cancel-edit>Cancelar</button><button type="submit" class="teams-primary">Añadir partido</button></div></form></section>';
+    container.appendChild(editModal);
+    editModal.querySelector('.team-match-modal-close').addEventListener('click',closeEditModal);
+    editModal.querySelector('[data-cancel-edit]').addEventListener('click',closeEditModal);
+    editModal.addEventListener('click',event=>{if(event.target===editModal)closeEditModal();});
+    const form=editModal.querySelector('form');
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='Guardando…';
+      const fd=new FormData(form);const toScore=value=>value===''?null:Number(value);
+      const payload={team_season_id:teamSeason.id,match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada')?Number(fd.get('jornada')):null,opponent_name:String(fd.get('opponent_name')).trim(),is_home:fd.get('is_home')==='true',home_score:toScore(fd.get('home_score')),away_score:toScore(fd.get('away_score')),status:'scheduled'};
+      try{const {error}=await supabase.from('matches').insert(payload);if(error)throw error;closeEditModal();await fetchMatches();say('Partido añadido correctamente.');}
+      catch(error){say(error.message||'No se pudo añadir el partido.',true);button.disabled=false;button.textContent='Añadir partido';}
+    });
+  };
+
   const closeEditModal=()=>{editModal?.remove();editModal=null;editingMatchId=null;};
   const renderEditForm=()=>{
     const m=matches.find(x=>x.id===editingMatchId);if(!m)return;
