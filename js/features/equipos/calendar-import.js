@@ -1,5 +1,5 @@
 import { supabase } from '../../core/supabase.js';
-import { parsePdfFile } from '../horarios/fab/fab-parser.js';
+import { parseFabCalendarPdf, parsePdfFile } from '../horarios/fab/fab-parser.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateToSunday = (iso) => {
