@@ -192,6 +192,13 @@ export async function initDashboard(app, user, onLogout) {
     const isJugadores = sectionName === 'jugadores';
     const isEntrenadores = sectionName === 'entrenadores';
 
+    // Al abandonar Equipos, volver a su vista inicial para que no se conserve
+    // abierto el detalle cuando el usuario regrese a la sección.
+    if (!isEquipos && !equiposSection.hidden) {
+      const backButton = equiposSection.querySelector('#backToTeams');
+      if (backButton) backButton.click();
+    }
+
     inicioSection.hidden = !isInicio;
     horariosSection.hidden = isInicio || isCalendario || isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
     calendarioSection.hidden = !isCalendario;
