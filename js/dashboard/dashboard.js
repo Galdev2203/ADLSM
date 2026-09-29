@@ -1,7 +1,7 @@
 import { CALENDARIO_VIEW } from '../features/calendario/view.js';
 import { initCalendario } from '../features/calendario/controller.js';
 import { CALENDARIOS_FEDERADOS_V2_VIEW } from '../features/calendarios-federados-v2/view.js?v=20260929-1';
-import { initCalendariosFederadosV2 } from '../features/calendarios-federados-v2/controller.js?v=20260929-5';
+import { initCalendariosFederadosV2 } from '../features/calendarios-federados-v2/controller.js?v=20260929-8';
 import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
@@ -38,7 +38,7 @@ export async function initDashboard(app, user, onLogout) {
   ensureStylesheet('./js/dashboard/dashboard.css?v=20260927-2', 'dashboard-styles');
   ensureStylesheet('./js/dashboard/responsive.css?v=20260927-1', 'responsive-styles');
   ensureStylesheet('./js/features/calendario/calendario.css?v=20260928-3', 'calendario-styles');
-  ensureStylesheet('./js/features/calendarios-federados-v2/calendarios-federados-v2.css?v=20260929-3', 'federated-v2-styles');
+  ensureStylesheet('./js/features/calendarios-federados-v2/calendarios-federados-v2.css?v=20260929-7', 'federated-v2-styles');
   ensureStylesheet('./js/features/perfil/profile.css?v=20260926-1', 'perfil-styles');
   ensureStylesheet('./js/features/temporadas/temporadas.css?v=20260926-2', 'temporadas-styles');
   ensureStylesheet('./js/features/equipos/equipos.css?v=20260927-2', 'equipos-styles');
