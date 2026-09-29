@@ -343,7 +343,7 @@ export function initEquipos() {
       }
       const peopleById = new Map(people.map(p => [p.id, p]));
       const roleLabels = { principal:'Primer entrenador', second:'Segundo entrenador', assistant:'Ayudante' };
-      coachesHost.innerHTML = assignments?.length ? '<div class="team-coaches-list">' + assignments.map(a => { const person=peopleById.get(a.coach_id); return '<div class="team-coach-row"><strong>' + escapeHtml([person?.first_name,person?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</strong><span>' + escapeHtml(roleLabels[a.role] || (a.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>'; }).join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
+      coachesHost.innerHTML = assignments?.length ? '<div class="team-coaches-list">' + assignments.map(a => { const person=peopleById.get(a.coach_id); return '<div class="team-coach-row"><button type="button" class="team-coach-link" data-open-coach="'+escapeHtml(a.coach_id)+'" data-assignment="'+escapeHtml(a.id)+'">' + escapeHtml([person?.first_name,person?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</button><span>' + escapeHtml(roleLabels[a.role] || (a.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>'; }).join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
     } catch (error) {
       coachesHost.innerHTML = '<p class="team-detail-notes">No se pudieron cargar los entrenadores: ' + escapeHtml(error.message || 'Error desconocido') + '</p>';
     }
@@ -353,6 +353,7 @@ export function initEquipos() {
     els.detail.appendChild(calendarHost);
     mountTeamCalendarImport(calendarHost, { ...row, team: row.team });
 
+    els.detail.querySelectorAll('[data-open-coach]').forEach(button => button.addEventListener('click', () => window.dispatchEvent(new CustomEvent('adlsm:navigate-detail', { detail:{ section:'entrenadores', personId:button.dataset.openCoach, assignmentId:button.dataset.assignment } }))));
     els.detail.querySelector('#backToTeams').addEventListener('click', hideDetail);
     els.detail.querySelector('#detailEdit').addEventListener('click', () => openModal(row));
     els.detail.querySelector('#detailDelete').addEventListener('click', () => deleteTeam(row.id));
@@ -562,6 +563,7 @@ export function initEquipos() {
     if (event.target === els.modal) closeModal();
   });
 
+  window.addEventListener('adlsm:open-team-detail', async (event) => { const row = teamSeasonRows.find(item => item.id === event.detail?.teamSeasonId); if (row) await showDetail(row.id); });
   load();
 
   return () => {
