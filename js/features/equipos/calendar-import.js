@@ -16,7 +16,7 @@ const displayDate = value => {
   return parts.length===3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : value;
 };
 const jornadaLabel = value => Number(value)===0 ? 'Amistoso' : value ? 'Jornada '+value : '—';
-const parseJornada = value => String(value??'').trim().toLowerCase()==='amistoso' ? 0 : (String(value??'').trim() ? Number(value) : null);
+const parseJornada = value => { const v=String(value??'').trim().toLowerCase(); if(!v)return null; if(v==='amistoso')return 0; const n=Number(v); return Number.isInteger(n)&&n>0?n:null; };
 const sortByDate = rows => rows.sort((a,b) => String(a.match_date || a.date).localeCompare(String(b.match_date || b.date)) || Number(a.jornada||0)-Number(b.jornada||0));
 
 function parseCsv(text) {
@@ -117,7 +117,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     form.addEventListener('submit',async event=>{
       event.preventDefault();const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='Guardando…';
       const fd=new FormData(form);const toScore=value=>value===''?null:Number(value);
-      const patch={match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada')?Number(fd.get('jornada')):null,opponent_name:String(fd.get('opponent_name')).trim(),is_home:fd.get('is_home')==='true',home_score:toScore(fd.get('home_score')),away_score:toScore(fd.get('away_score'))};
+      const patch={match_date:sunday(fd.get('match_date')),jornada:parseJornada(fd.get('jornada')),opponent_name:String(fd.get('opponent_name')).trim(),is_home:fd.get('is_home')==='true',home_score:toScore(fd.get('home_score')),away_score:toScore(fd.get('away_score'))};
       try{const {error}=await supabase.from('matches').update(patch).eq('id',m.id);if(error)throw error;closeEditModal();await fetchMatches();say('Partido actualizado correctamente.');}
       catch(error){say(error.message||'No se pudo actualizar el partido.',true);button.disabled=false;button.textContent='Guardar cambios';}
     });
