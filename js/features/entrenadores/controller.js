@@ -56,15 +56,18 @@ export function initEntrenadores(){
   });
   const render=()=>{
     const rows=filtered();
-    els.total.textContent=new Set(rows.map(r=>r.coach_id)).size;
-    els.active.textContent=new Set(rows.filter(r=>r.person?.is_active!==false).map(r=>r.coach_id)).size;
+    const grouped=new Map();
+    rows.forEach(row=>{if(!grouped.has(row.coach_id))grouped.set(row.coach_id,[]);grouped.get(row.coach_id).push(row)});
+    const coaches=[...grouped.entries()].map(([coachId,coachRows])=>({coachId,rows:coachRows,person:coachRows[0].person,profile:coachRows[0].profile})).sort((a,b)=>normalize([a.person?.last_name,a.person?.first_name].join(' ')).localeCompare(normalize([b.person?.last_name,b.person?.first_name].join(' ')),'es'));
+    els.total.textContent=coaches.length;
+    els.active.textContent=coaches.filter(c=>c.person?.is_active!==false).length;
     els.teamCount.textContent=new Set(rows.map(r=>r.team_season_id).filter(Boolean)).size;
-    if(!rows.length){els.list.innerHTML=`<div class="coach-empty"><h3>${assignments.length?'No hay entrenadores que coincidan':'Todavía no hay entrenadores'}</h3><p>${assignments.length?'Prueba con otra temporada o búsqueda.':'Crea el primer entrenador para empezar a gestionar los cuerpos técnicos.'}</p><button class="coaches-primary" id="emptyNewCoach" type="button">Crear entrenador</button></div>`;document.querySelector('#emptyNewCoach')?.addEventListener('click',openModal);return}
-    els.list.innerHTML=rows.map(r=>{
-      const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Entrenador';
-      const avatar=r.person?.photo_url?`<img class="coach-avatar coach-avatar-image" src="${esc(r.person.photo_url)}" alt="" loading="lazy">`:`<div class="coach-avatar">${esc(initials(r.person))}</div>`;
-      const role=({principal:'Primer entrenador',second:'Segundo entrenador',assistant:'Ayudante'})[r.role]||'Ayudante';
-      return `<article class="coach-card"><div class="coach-card-main">${avatar}<div class="coach-card-info"><div class="coach-title-row"><h3>${esc(name)}</h3><span class="coach-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p class="coach-card-team">${esc(r.team?.display_name||r.team?.team?.name||'Sin equipo')}</p><div class="coach-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span><span>${esc(role)}</span>${r.profile?.qualification?`<span>${esc(r.profile.qualification)}</span>`:''}</div></div></div><div class="coach-card-actions"><button class="coach-action" data-coach="${r.coach_id}" data-assignment="${r.id}" type="button">Ver entrenador</button><button class="coach-action coach-action-light" data-edit-coach="${r.coach_id}" data-assignment="${r.id}" type="button">Editar</button></div></article>`
+    if(!coaches.length){els.list.innerHTML=`<div class="coach-empty"><h3>${assignments.length?'No hay entrenadores que coincidan':'Todavía no hay entrenadores'}</h3><p>${assignments.length?'Prueba con otra temporada o búsqueda.':'Crea el primer entrenador para empezar a gestionar los cuerpos técnicos.'}</p><button class="coaches-primary" id="emptyNewCoach" type="button">Crear entrenador</button></div>`;document.querySelector('#emptyNewCoach')?.addEventListener('click',openModal);return}
+    els.list.innerHTML=coaches.map(c=>{
+      const first=c.rows[0],name=[c.person?.first_name,c.person?.last_name].filter(Boolean).join(' ')||'Entrenador';
+      const avatar=c.person?.photo_url?`<img class="coach-avatar coach-avatar-image" src="${esc(c.person.photo_url)}" alt="" loading="lazy">`:`<div class="coach-avatar">${esc(initials(c.person))}</div>`;
+      const teams=c.rows.map(r=>{const role=({principal:'Primer entrenador',second:'Segundo entrenador',assistant:'Ayudante'})[r.role]||'Ayudante';return `<div class="coach-card-team-entry"><span class="coach-card-team">${esc(r.team?.display_name||r.team?.team?.name||'Sin equipo')}</span><span class="coach-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span><span>${esc(role)}</span></span></div>`}).join('');
+      return `<article class="coach-card"><div class="coach-card-main">${avatar}<div class="coach-card-info"><div class="coach-title-row"><h3>${esc(name)}</h3><span class="coach-status ${c.person?.is_active!==false?'active':''}">${c.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><div class="coach-card-teams">${teams}</div>${c.profile?.qualification?`<div class="coach-card-meta"><span>${esc(c.profile.qualification)}</span></div>`:''}</div></div><div class="coach-card-actions"><button class="coach-action" data-coach="${c.coachId}" data-assignment="${first.id}" type="button">Ver entrenador</button><button class="coach-action coach-action-light" data-edit-coach="${c.coachId}" data-assignment="${first.id}" type="button">Editar</button></div></article>`
     }).join('');
     els.list.querySelectorAll('[data-coach]').forEach(b=>b.addEventListener('click',()=>showDetail(b.dataset.coach,b.dataset.assignment)));
     els.list.querySelectorAll('[data-edit-coach]').forEach(b=>b.addEventListener('click',()=>openEditModal(b.dataset.editCoach,b.dataset.assignment)));
