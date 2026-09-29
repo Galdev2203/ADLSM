@@ -11,7 +11,7 @@ function gameCard(m){
  const home=m.is_home?club:m.opponent_name, away=m.is_home?m.opponent_name:club;
  const round=Number(m.jornada)===0?'Amistoso':m.jornada?'Jornada '+esc(m.jornada):'Partido';
  const result=m.home_score!==null&&m.away_score!==null?'<b class="federated-v2-score">'+esc(m.home_score)+' - '+esc(m.away_score)+'</b>':'<span class="federated-v2-pending">Sin resultado</span>';
- return '<article class="federated-v2-game"><div class="federated-v2-game-date"><strong>'+esc(dateLabel(m.match_date,{weekday:'short',day:'numeric',month:'short'}))+'</strong><small>'+round+(m.match_time?' · '+esc(String(m.match_time).slice(0,5)):'')+'</small></div><div class="federated-v2-teams"><strong>'+esc(home)+'</strong><span>vs.</span><strong>'+esc(away)+'</strong></div><div class="federated-v2-result">'+result+'</div></article>';
+ return '<article class="federated-v2-game"><div class="federated-v2-game-date"><small>'+round+(m.match_time?' · '+esc(String(m.match_time).slice(0,5)):'')+'</small></div><div class="federated-v2-teams"><strong>'+esc(home)+'</strong><span>vs.</span><strong>'+esc(away)+'</strong></div><div class="federated-v2-result">'+result+'</div></article>';
 }
 function groupByDate(matches){const map=new Map();matches.forEach(m=>{if(!map.has(m.match_date))map.set(m.match_date,[]);map.get(m.match_date).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
 function renderDay(date,matches){const homes=matches.filter(m=>m.is_home).length;return '<section class="federated-v2-day"><header><div><h4>'+esc(dateLabel(date))+'</h4><span>'+matches.length+' partidos · '+homes+' en casa</span></div>'+(homes>1?'<b class="federated-v2-conflict">Coincidencia en casa</b>':'')+'</header>'+matches.map(gameCard).join('')+'</section>';}
@@ -35,7 +35,7 @@ export async function initCalendariosFederadosV2(){
   if(!byId.size){status.textContent='No hay equipos federados asociados a la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
   const {data:rows,error:me}=await supabase.from('matches').select('id,team_season_id,match_date,match_time,opponent_name,is_home,home_score,away_score,jornada,status').in('team_season_id',[...byId.keys()]).gte('match_date',todayISO()).order('match_date',{ascending:true}).order('match_time',{ascending:true});if(me)throw me;
   const upcoming=(rows||[]).filter(m=>m.status!=='cancelled').map(m=>({...m,teamLabel:byId.get(m.team_season_id)?.display_name||'La Salle Montemolín'})).sort((a,b)=>a.match_date.localeCompare(b.match_date)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
-  if(!upcoming.length){status.textContent='No hay partidos pendientes en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
+  if(!upcoming.length){status.textContent='No hay partidos por jugar en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
   // Por equipo, identificar la jornada más próxima y reunir todos sus partidos de esa jornada.
   const nextMatches=[];const seen=new Set();const byTeam=new Map();upcoming.forEach(m=>{if(!byTeam.has(m.team_season_id))byTeam.set(m.team_season_id,[]);byTeam.get(m.team_season_id).push(m);});
   for(const teamMatches of byTeam.values()){const first=teamMatches[0],round=first.jornada;const selected=teamMatches.filter(m=>round!==null&&round!==undefined?String(m.jornada)===String(round):m.match_date===first.match_date);selected.forEach(m=>{if(!seen.has(m.id)){seen.add(m.id);nextMatches.push(m);}});}
