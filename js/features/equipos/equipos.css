@@ -136,3 +136,29 @@
  .team-calendar-upload input[type="file"] { min-width:0; width:100%; }
  .team-calendar-actions > button { flex:1; }
 }
+
+/* Calendario guardado del equipo */
+.team-calendar-import-tools{margin-top:24px;padding-top:22px;border-top:1px solid #e8edf3}
+.team-calendar-saved-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 14px;flex-wrap:wrap}
+.team-calendar-saved-head>div:first-child{display:flex;align-items:baseline;gap:12px}
+.team-calendar-saved-head strong{color:#082957;font-size:15px}
+.team-calendar-saved-head span{color:#667085;font-size:12px}
+.team-calendar-view-toggle{display:flex;gap:4px;padding:3px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc}
+.team-calendar-view-toggle button{border:0;border-radius:6px;padding:7px 12px;background:transparent;color:#667085;font-size:11px;font-weight:750;cursor:pointer}
+.team-calendar-view-toggle button.active{background:#082f70;color:#fff}
+.team-calendar-cards{display:grid;gap:9px}
+.team-match-card{display:grid;grid-template-columns:minmax(110px,.7fr) minmax(0,2fr) minmax(110px,.7fr);align-items:center;gap:14px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.team-match-card-date strong,.team-match-card-date span{display:block}
+.team-match-card-date strong{color:#082957;font-size:13px}
+.team-match-card-date span,.team-match-status{margin-top:4px;color:#667085;font-size:11px}
+.team-match-card-game{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center;color:#172b4d;font-size:13px}
+.team-match-card-game span{color:#98a2b3;font-size:11px}
+.team-match-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.team-calendar-empty,.team-calendar-loading{padding:22px;text-align:center;color:#667085;font-size:13px}
+.team-match-edit{margin-top:16px;padding:18px;border:1px solid #dbe5f1;border-radius:12px;background:#f8fbff}
+.team-match-edit h4{margin:0 0 14px;color:#082957;font-size:14px}
+.team-match-edit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.team-match-edit label{display:block;color:#344054;font-size:11px;font-weight:700}
+.team-match-edit input,.team-match-edit select{display:block;width:100%;box-sizing:border-box;height:38px;margin-top:6px;padding:0 9px;border:1px solid #d7e0ea;border-radius:7px;background:#fff;color:#1d2939}
+.team-saved-table{min-width:620px}
+@media(max-width:680px){.team-match-card{grid-template-columns:1fr;gap:9px}.team-match-card-game{justify-content:flex-start}.team-match-card-actions{justify-content:space-between}.team-match-edit-grid{grid-template-columns:1fr 1fr}}
