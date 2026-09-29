@@ -23,7 +23,6 @@ export function initEntrenadores(){
     phone:document.querySelector('#coachPhone'),email:document.querySelector('#coachEmail'),license:document.querySelector('#coachLicense'),
     qualification:document.querySelector('#coachQualification'),notes:document.querySelector('#coachNotes'),season:document.querySelector('#coachSeason'),
     teamSeason:document.querySelector('#coachTeamSeason'),role:document.querySelector('#coachRole'),
-    primary:document.querySelector('#coachPrimary')
   };
 
   const populateSeasons=()=>{
@@ -64,7 +63,7 @@ export function initEntrenadores(){
     els.list.innerHTML=rows.map(r=>{
       const name=[r.person?.first_name,r.person?.last_name].filter(Boolean).join(' ')||'Entrenador';
       const avatar=r.person?.photo_url?`<img class="coach-avatar coach-avatar-image" src="${esc(r.person.photo_url)}" alt="" loading="lazy">`:`<div class="coach-avatar">${esc(initials(r.person))}</div>`;
-      const role=r.role==='principal'?'Entrenador principal':'Ayudante';
+      const role=({principal:'Primer entrenador',second:'Segundo entrenador',assistant:'Ayudante'})[r.role]||'Ayudante';
       return `<article class="coach-card"><div class="coach-card-main">${avatar}<div class="coach-card-info"><div class="coach-title-row"><h3>${esc(name)}</h3><span class="coach-status ${r.person?.is_active!==false?'active':''}">${r.person?.is_active!==false?'ACTIVO':'INACTIVO'}</span></div><p class="coach-card-team">${esc(r.team?.display_name||r.team?.team?.name||'Sin equipo')}</p><div class="coach-card-meta"><span>${esc(seasonLabel(r.team?.season))}</span><span>${esc(role)}</span>${r.profile?.qualification?`<span>${esc(r.profile.qualification)}</span>`:''}</div></div></div><div class="coach-card-actions"><button class="coach-action" data-coach="${r.coach_id}" data-assignment="${r.id}" type="button">Ver entrenador</button><button class="coach-action coach-action-light" data-edit-coach="${r.coach_id}" data-assignment="${r.id}" type="button">Editar</button></div></article>`
     }).join('');
     els.list.querySelectorAll('[data-coach]').forEach(b=>b.addEventListener('click',()=>showDetail(b.dataset.coach,b.dataset.assignment)));
@@ -73,7 +72,7 @@ export function initEntrenadores(){
 
   const openModal=async()=>{
     editingCoachId=null;editingAssignmentId=null;els.form.reset();els.modalTitle.textContent='Nuevo entrenador';els.save.textContent='Crear entrenador';
-    els.season.value=selectedSeasonId||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';els.primary.checked=true;els.modal.hidden=false;await populateTeams();requestAnimationFrame(()=>els.firstName.focus());
+    els.season.value=selectedSeasonId||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';els.modal.hidden=false;await populateTeams();requestAnimationFrame(()=>els.firstName.focus());
   };
   const openEditModal=async(personId,assignmentId)=>{
     const p=people.find(x=>x.id===personId),prof=profiles.find(x=>x.person_id===personId),a=assignments.find(x=>x.id===assignmentId)||assignments.find(x=>x.coach_id===personId);
@@ -82,7 +81,7 @@ export function initEntrenadores(){
     els.firstName.value=p.first_name||'';els.lastName.value=p.last_name||'';els.birthDate.value=p.birth_date||'';els.phone.value=p.phone||'';els.email.value=p.email||'';
     els.license.value=prof.federation_license||'';els.qualification.value=prof.qualification||'';els.notes.value=prof.notes||a.notes||'';
     const team=teamSeasonById.get(String(a.team_season_id))||a.embeddedTeamSeason||null;els.season.value=team?.season_id||seasons.find(s=>s.is_active)?.id||seasons[0]?.id||'';
-    els.role.value=a.role||'assistant';els.primary.checked=!!a.is_primary;els.modal.hidden=false;await populateTeams();els.teamSeason.value=a.team_season_id||'';requestAnimationFrame(()=>els.firstName.focus());
+    els.role.value=a.role||'assistant';els.modal.hidden=false;await populateTeams();els.teamSeason.value=a.team_season_id||'';requestAnimationFrame(()=>els.firstName.focus());
   };
   const closeModal=()=>{els.modal.hidden=true;els.form.reset();editingCoachId=null;editingAssignmentId=null};
   const showDetail=(personId,assignmentId)=>{
@@ -93,7 +92,7 @@ export function initEntrenadores(){
     const team=current?.team?.display_name||current?.team?.team?.name||'Sin equipo';
     const avatar=p.photo_url?`<img class="coach-avatar coach-avatar-image" src="${esc(p.photo_url)}" alt="">`:`<div class="coach-avatar">${esc(initials(p))}</div>`;
     els.toolbar.hidden=true;els.list.hidden=true;els.detail.hidden=false;
-    els.detail.innerHTML=`<button class="coach-back" id="backCoaches">← Volver a entrenadores</button><div class="coach-detail-title">${avatar}<div class="coach-detail-heading"><span class="coaches-kicker">ENTRENADOR</span><h2>${esc([p.first_name,p.last_name].filter(Boolean).join(' '))}</h2><p>${esc(team)} · ${esc(seasonLabel(current?.team?.season))}</p></div><span class="coach-status ${p.is_active!==false?'active':''}">${p.is_active!==false?'ACTIVO':'INACTIVO'}</span><div class="coach-detail-actions"><button class="coach-secondary" id="editCoachDetail" type="button">Editar entrenador</button><button class="coach-delete" id="deleteCoachDetail" type="button">Eliminar entrenador</button></div></div><div class="coach-detail-grid"><article class="coach-detail-card"><h3>Datos personales</h3><dl><div><dt>Fecha de nacimiento</dt><dd>${esc(p.birth_date||'—')}</dd></div><div><dt>Teléfono</dt><dd>${esc(p.phone||'—')}</dd></div><div><dt>Email</dt><dd>${esc(p.email||'—')}</dd></div></dl></article><article class="coach-detail-card"><h3>Perfil profesional</h3><dl><div><dt>Licencia</dt><dd>${esc(prof.federation_license||'—')}</dd></div><div><dt>Cualificación</dt><dd>${esc(prof.qualification||'—')}</dd></div></dl></article><article class="coach-detail-card coach-detail-card-wide"><h3>Equipos</h3><div class="coach-history">${history.length?history.map(r=>`<div class="coach-history-row"><strong>${esc(r.team?.display_name||r.team?.team?.name||'Equipo')}</strong><span>${esc(seasonLabel(r.team?.season))} · ${esc(r.role==='principal'?'Principal':'Ayudante')}${r.is_primary?' · Principal':''}</span></div>`).join(''):'<span>No hay equipos.</span>'}</div></article></div>`;
+    els.detail.innerHTML=`<button class="coach-back" id="backCoaches">← Volver a entrenadores</button><div class="coach-detail-title">${avatar}<div class="coach-detail-heading"><span class="coaches-kicker">ENTRENADOR</span><h2>${esc([p.first_name,p.last_name].filter(Boolean).join(' '))}</h2><p>${esc(team)} · ${esc(seasonLabel(current?.team?.season))}</p></div><span class="coach-status ${p.is_active!==false?'active':''}">${p.is_active!==false?'ACTIVO':'INACTIVO'}</span><div class="coach-detail-actions"><button class="coach-secondary" id="editCoachDetail" type="button">Editar entrenador</button><button class="coach-delete" id="deleteCoachDetail" type="button">Eliminar entrenador</button></div></div><div class="coach-detail-grid"><article class="coach-detail-card"><h3>Datos personales</h3><dl><div><dt>Fecha de nacimiento</dt><dd>${esc(p.birth_date||'—')}</dd></div><div><dt>Teléfono</dt><dd>${esc(p.phone||'—')}</dd></div><div><dt>Email</dt><dd>${esc(p.email||'—')}</dd></div></dl></article><article class="coach-detail-card"><h3>Perfil profesional</h3><dl><div><dt>Licencia</dt><dd>${esc(prof.federation_license||'—')}</dd></div><div><dt>Cualificación</dt><dd>${esc(prof.qualification||'—')}</dd></div></dl></article><article class="coach-detail-card coach-detail-card-wide"><h3>Equipos</h3><div class="coach-history">${history.length?history.map(r=>`<div class="coach-history-row"><strong>${esc(r.team?.display_name||r.team?.team?.name||'Equipo')}</strong><span>${esc(seasonLabel(r.team?.season))} · ${esc(({principal:'Primer entrenador',second:'Segundo entrenador',assistant:'Ayudante'})[r.role]||'Ayudante')}</span></div>`).join(''):'<span>No hay equipos.</span>'}</div></article></div>`;
     document.querySelector('#backCoaches').onclick=hideDetail;document.querySelector('#editCoachDetail').onclick=()=>openEditModal(personId,current?.id);document.querySelector('#deleteCoachDetail').onclick=()=>deleteCoach(personId);
   };
   const hideDetail=()=>{els.detail.hidden=true;els.toolbar.hidden=false;els.list.hidden=false;render()};
@@ -134,7 +133,7 @@ export function initEntrenadores(){
       if(editingCoachId){
         let result=await timeout(supabase.from('people').update({first_name:first,last_name:last,phone,email,birth_date:els.birthDate.value||null,updated_at:new Date().toISOString()}).eq('id',editingCoachId));if(result.error)throw result.error;
         result=await timeout(supabase.from('coach_profiles').update(profileData).eq('person_id',editingCoachId));if(result.error)throw result.error;
-        result=await timeout(supabase.from('team_coaches').update({team_season_id:teamSeasonId,role:els.role.value,is_primary:els.primary.checked,notes:els.notes.value.trim()||null}).eq('id',editingAssignmentId));if(result.error)throw result.error;
+        result=await timeout(supabase.from('team_coaches').update({team_season_id:teamSeasonId,role:els.role.value,is_primary:els.role.value==='principal',notes:els.notes.value.trim()||null}).eq('id',editingAssignmentId));if(result.error)throw result.error;
         closeModal();await load();notify('Entrenador actualizado correctamente.','success');return;
       }
       let person=null;
@@ -150,7 +149,7 @@ export function initEntrenadores(){
       const {data:existing,error:lookupError}=await timeout(supabase.from('coach_profiles').select('person_id').eq('person_id',person.id).maybeSingle());if(lookupError)throw lookupError;
       if(existing)throw new Error('Esta persona ya está registrada como entrenador.');
       let result=await timeout(supabase.from('coach_profiles').insert({...profileData,person_id:person.id}));if(result.error)throw result.error;createdProfile=true;
-      result=await timeout(supabase.from('team_coaches').insert({team_season_id:teamSeasonId,coach_id:person.id,role:els.role.value,is_primary:els.primary.checked,notes:els.notes.value.trim()||null}));if(result.error)throw result.error;
+      result=await timeout(supabase.from('team_coaches').insert({team_season_id:teamSeasonId,coach_id:person.id,role:els.role.value,is_primary:els.role.value==='principal',notes:els.notes.value.trim()||null}));if(result.error)throw result.error;
       closeModal();await load();notify('Entrenador creado correctamente.','success');
     }catch(e){
       if(createdProfile&&createdPersonId)await supabase.from('coach_profiles').delete().eq('person_id',createdPersonId);
