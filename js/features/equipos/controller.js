@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
 import { confirmDialog } from '../../core/dialogs.js';
+import { mountTeamCalendarImport } from './calendar-import.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -322,6 +323,11 @@ export function initEquipos() {
           <p class="team-detail-notes">${escapeHtml(row.notes || row.team?.notes || 'Sin notas registradas.')}</p>
         </article>
       </div>`;
+
+    const calendarHost = document.createElement('div');
+    calendarHost.className = 'team-calendar-host';
+    els.detail.appendChild(calendarHost);
+    mountTeamCalendarImport(calendarHost, { ...row, team: row.team });
 
     els.detail.querySelector('#backToTeams').addEventListener('click', hideDetail);
     els.detail.querySelector('#detailEdit').addEventListener('click', () => openModal(row));
