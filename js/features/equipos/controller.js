@@ -173,10 +173,11 @@ export function initEquipos() {
                 ${row.team?.is_active !== false ? 'ACTIVO' : 'INACTIVO'}
               </span>
             </div>
-            <p>${escapeHtml(row.competition_name || row.team?.category || 'Sin competición')}</p>
+            <p>${escapeHtml(row.competition_name || 'Sin competición')}</p>
             <div class="team-card-meta">
               <span>${escapeHtml(formatSeason(row.season))}</span>
-              <span>${escapeHtml(genderLabel(row.gender || row.team?.gender))}</span>\n              <span>${escapeHtml(row.team?.category || 'Sin clasificar')}</span>
+              <span>${escapeHtml(genderLabel(row.gender || row.team?.gender))}</span>
+              <span>${escapeHtml(row.team?.category || 'Sin clasificar')}</span>
               ${row.group_name ? `<span>${escapeHtml(row.group_name)}</span>` : ''}
             </div>
           </div>
