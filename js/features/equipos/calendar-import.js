@@ -2,6 +2,8 @@ import { supabase } from '../../core/supabase.js';
 import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normaliseTeamName = (value) => String(value ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const isLaSalleMontemolinTeam = (value) => normaliseTeamName(value).includes('lasallemontemolin');
 const dateToSunday = (iso) => {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return '';
@@ -56,7 +58,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     try{
       if(file.name.toLowerCase().endsWith('.pdf')) {
         const parsed=await parseFabCalendarPdf(file);
-        rows=parsed.map((m,i)=>({jornada:'',homeTeam:m.homeTeam,awayTeam:m.awayTeam,date:dateToSunday(m.date)})).filter(m=>m.date);
+        rows=parsed.filter(m=>isLaSalleMontemolinTeam(m.homeTeam)||isLaSalleMontemolinTeam(m.awayTeam)).map(m=>({jornada:m.jornada,homeTeam:m.homeTeam,awayTeam:m.awayTeam,date:dateToSunday(m.date)})).filter(m=>m.date);
       } else if(file.name.toLowerCase().endsWith('.csv')||file.name.toLowerCase().endsWith('.txt')) {
         rows=parseCsv(await file.text());
       } else {
