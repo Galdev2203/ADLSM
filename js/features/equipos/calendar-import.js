@@ -1,5 +1,5 @@
 import { supabase } from '../../core/supabase.js';
-import { parseFabCalendarPdf, parsePdfFile } from '../horarios/fab/fab-parser.js';
+import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateToSunday = (iso) => {
@@ -33,7 +33,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
   container.innerHTML = `
     <article class="team-detail-card team-detail-card-wide team-calendar-import">
       <div class="team-calendar-heading"><div><span class="teams-kicker">CALENDARIO</span><h3>Importar partidos</h3><p>Sube el calendario del equipo. Podrás revisar y editar todos los encuentros antes de guardarlos.</p></div></div>
-      <div class="team-calendar-upload"><input type="file" id="teamCalendarFile" accept=".pdf,.csv,.txt,.xls,.xlsx"><button type="button" class="team-action" id="teamCalendarAnalyze">Analizar archivo</button></div>
+      <div class="team-calendar-upload"><input type="file" id="teamCalendarFile" accept=".pdf,.csv,.txt"><button type="button" class="team-action" id="teamCalendarAnalyze">Analizar archivo</button></div>
       <p class="team-calendar-feedback" id="teamCalendarFeedback" role="status" aria-live="polite"></p>
       <div id="teamCalendarPreview" hidden></div>
     </article>`;
