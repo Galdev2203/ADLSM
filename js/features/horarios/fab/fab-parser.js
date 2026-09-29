@@ -228,3 +228,54 @@ export async function parsePdfFile(input, sourceName = '') {
 
   return parsePdfBytes(bytes, sourceName);
 }
+
+
+/**
+ * Reads FAB "Equipos y Calendario" PDFs, where each Jornada heading
+ * is followed by plain-text fixtures in "LOCAL - VISITANTE" format.
+ */
+export async function parseFabCalendarPdf(input) {
+  let bytes;
+  if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
+  else if (ArrayBuffer.isView(input)) bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  else if (input?.arrayBuffer) bytes = new Uint8Array(await input.arrayBuffer());
+  else throw new Error('Formato de documento no compatible.');
+
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const rows = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    rows.push(...groupTextItems(content.items).map(row => clean(row.text)));
+  }
+
+  const fixtures = [];
+  let currentJornada = null;
+  let currentDate = '';
+  for (const line of rows) {
+    const heading = line.match(/Jornada\s+(\d+)\s*[-–—]\s*(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/i);
+    if (heading) {
+      currentJornada = Number(heading[1]);
+      const year = heading[4].length === 2 ? `20${heading[4]}` : heading[4];
+      currentDate = `${year}-${String(heading[3]).padStart(2, '0')}-${String(heading[2]).padStart(2, '0')}`;
+      continue;
+    }
+    if (currentJornada === null || !currentDate) continue;
+
+    const match = line.replace(/\s+[–—]\s+/g, ' - ').match(/^(.+?)\s+-\s+(.+)$/);
+    if (!match) continue;
+    const homeTeam = clean(match[1]);
+    const awayTeam = clean(match[2]);
+    if (!homeTeam || !awayTeam || /^(vuelta|temporada:|categoría:|fase:|grupo:|equipos y calendario|federación aragonesa|\d+\s+)/i.test(line)) continue;
+    if (/^DESCANSA$/i.test(homeTeam) || /^DESCANSA$/i.test(awayTeam)) continue;
+    fixtures.push({ jornada: currentJornada, homeTeam, awayTeam, date: currentDate });
+  }
+
+  const seen = new Set();
+  return fixtures.filter(fixture => {
+    const key = [fixture.jornada, fixture.date, fixture.homeTeam, fixture.awayTeam].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
