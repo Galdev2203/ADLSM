@@ -80,9 +80,9 @@ export function mountTeamCalendarImport(container, teamSeason) {
       const keys=new Set((existing||[]).map(m=>[m.match_date,m.opponent_name.toLowerCase(),String(m.is_home)].join('|')));
       const payload=[];
       for(const r of cleaned){
-        const home=r.homeTeam.toLocaleLowerCase()===teamName.toLocaleLowerCase();
-        const away=r.awayTeam.toLocaleLowerCase()===teamName.toLocaleLowerCase();
-        if(home===away) throw new Error(`No se puede identificar a ${teamName} en el partido ${r.homeTeam} - ${r.awayTeam}. Revisa el nombre del equipo.`);
+        const home=isLaSalleMontemolinTeam(r.homeTeam);
+        const away=isLaSalleMontemolinTeam(r.awayTeam);
+        if(home===away) throw new Error(`No se puede identificar a La Salle Montemolín en el partido ${r.homeTeam} - ${r.awayTeam}. Revisa el nombre del equipo.`);
         const opponent=home?r.awayTeam:r.homeTeam, isHome=home;
         const key=[r.date,opponent.toLowerCase(),String(isHome)].join('|');
         if(!keys.has(key)){payload.push({team_season_id:teamSeason.id,match_date:r.date,opponent_name:opponent,is_home:isHome,status:'scheduled',jornada:r.jornada?Number(r.jornada):null,external_source:'FAB'});keys.add(key);}
