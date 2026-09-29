@@ -260,7 +260,7 @@ export async function parseFabCalendarPdf(input) {
     }
   }
   const escapeRegex = value => value.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
-  const teamPattern = teams.sort((a, b) => b.length - a.length).map(escapeRegex).join('|');
+  const teamPattern = [...teams, 'Descansa'].sort((a, b) => b.length - a.length).map(escapeRegex).join('|');
   const fixturePattern = teamPattern ? new RegExp(teamPattern, 'gi') : null;
   const fixtures = [];
   let currentJornadas = [];
@@ -286,7 +286,7 @@ export async function parseFabCalendarPdf(input) {
       if (!round) continue;
       const homeTeam = clean(names[i]);
       const awayTeam = clean(names[i + 1]);
-      if (!homeTeam || !awayTeam || homeTeam.toLowerCase() === 'descansa' || awayTeam.toLowerCase() === 'descansa') continue;
+      if (!homeTeam || !awayTeam) continue;
       fixtures.push({ jornada: round.jornada, homeTeam, awayTeam, date: round.date });
     }
   }
