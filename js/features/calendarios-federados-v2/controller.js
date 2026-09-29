@@ -34,14 +34,22 @@ export async function initCalendariosFederadosV2() {
     const upcoming=(matches||[]).filter(m=>m.status!=='cancelled').map(m=>({...m,teamLabel:relationById.get(m.team_season_id)?.display_name||'La Salle Montemolín'}));
     if(!upcoming.length){status.textContent='No hay partidos pendientes en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
     upcoming.sort((a,b)=>a.match_date.localeCompare(b.match_date)||(String(a.match_time||'').localeCompare(String(b.match_time||'')))||Number(a.jornada||999)-Number(b.jornada||999));
-    const first=upcoming[0];
-    const nextRound=first.jornada;
-    const nextGames=nextRound!==null&&nextRound!==undefined
-      ? upcoming.filter(m=>String(m.jornada)===String(nextRound))
-      : upcoming.filter(m=>m.match_date===first.match_date);
-    const remaining=upcoming.filter(m=>!nextGames.some(n=>n.id===m.id));
-    const roundTitle=Number(nextRound)===0?'Próximos amistosos':nextRound?`Jornada ${esc(nextRound)}`:'Partidos de la siguiente fecha';
-    next.innerHTML=`<div class="federated-v2-round-title"><h3>${roundTitle}</h3><span>${nextGames.length} partido(s)</span></div>${nextGames.map(gameCard).join('')}`;
+    const nextGames=[];
+    const nextByTeam=new Map();
+    for(const match of upcoming){
+      if(!nextByTeam.has(match.team_season_id)){
+        const teamRound=match.jornada;
+        nextByTeam.set(match.team_season_id,teamRound);
+        nextGames.push(...upcoming.filter(candidate=>candidate.team_season_id===match.team_season_id&&(
+          teamRound!==null&&teamRound!==undefined
+            ? String(candidate.jornada)===String(teamRound)
+            : candidate.match_date===match.match_date
+        )));
+      }
+    }
+    const uniqueNext=[...new Map(nextGames.map(m=>[m.id,m])).values()].sort((a,b)=>a.match_date.localeCompare(b.match_date));
+    const remaining=upcoming.filter(m=>!uniqueNext.some(n=>n.id===m.id));
+    next.innerHTML=`<div class="federated-v2-round-title"><h3>Próximos partidos por equipo</h3><span>${uniqueNext.length} partido(s)</span></div>${uniqueNext.map(gameCard).join('')}`;
     all.innerHTML=remaining.length?remaining.map(gameCard).join(''):'<div class="federated-v2-empty">No hay más partidos pendientes.</div>';
     status.textContent=`Temporada ${seasons.map(s=>s.name||`${s.start_year}/${s.end_year}`).join(', ')} · ${upcoming.length} partidos pendientes · ${federatedRelations.length} equipos federados`;
   } catch(error) {
