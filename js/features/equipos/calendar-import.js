@@ -48,7 +48,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
   let rows=[];
   let matches=[];
   let displayMode='cards';
-  let editingMatchId=null;
+  let editingMatchId=null;\n  let editModal=null;
 
   const say=(message,error=false)=>{feedback.textContent=message;feedback.classList.toggle('is-error',error);};
   const fetchMatches=async()=>{
@@ -67,25 +67,30 @@ export function mountTeamCalendarImport(container, teamSeason) {
     saved.querySelectorAll('[data-edit-match]').forEach(b=>b.addEventListener('click',()=>{editingMatchId=b.dataset.editMatch;renderSaved();}));
     if(editingMatchId)renderEditForm();
   };
+  const closeEditModal=()=>{editModal?.remove();editModal=null;editingMatchId=null;};
   const renderEditForm=()=>{
     const m=matches.find(x=>x.id===editingMatchId);if(!m)return;
-    const form=document.createElement('form');form.className='team-match-edit';
-    form.innerHTML='<h4>Editar partido</h4><div class="team-match-edit-grid">'+
+    editModal?.remove();
+    editModal=document.createElement('div');editModal.className='team-match-modal-backdrop';
+    editModal.innerHTML='<section class="team-match-modal" role="dialog" aria-modal="true" aria-labelledby="teamMatchModalTitle"><div class="team-match-modal-head"><h3 id="teamMatchModalTitle">Editar partido</h3><button type="button" class="team-match-modal-close" aria-label="Cerrar">×</button></div><form class="team-match-edit"><div class="team-match-edit-grid">'+
       '<label>Fecha<input name="match_date" type="date" required value="'+esc(m.match_date)+'"></label>'+
       '<label>Jornada<input name="jornada" type="number" min="1" value="'+esc(m.jornada||'')+'"></label>'+
       '<label>Rival<input name="opponent_name" required maxlength="160" value="'+esc(m.opponent_name)+'"></label>'+
       '<label>Localía<select name="is_home"><option value="true" '+(m.is_home?'selected':'')+'>En casa</option><option value="false" '+(!m.is_home?'selected':'')+'>Fuera</option></select></label>'+
       '<label>Puntos La Salle<input name="club_score" type="number" min="0" value="'+esc(m.is_home?(m.home_score??''):(m.away_score??''))+'"></label>'+
       '<label>Puntos rival<input name="opponent_score" type="number" min="0" value="'+esc(m.is_home?(m.away_score??''):(m.home_score??''))+'"></label>'+
-      '</div><div class="team-calendar-actions"><button type="button" class="team-secondary" data-cancel-edit>Cancelar</button><button type="submit" class="teams-primary">Guardar cambios</button></div>';
-    saved.appendChild(form);
-    form.querySelector('[data-cancel-edit]').addEventListener('click',()=>{editingMatchId=null;renderSaved();});
+      '</div><div class="team-calendar-actions"><button type="button" class="team-secondary" data-cancel-edit>Cancelar</button><button type="submit" class="teams-primary">Guardar cambios</button></div></form></section>';
+    container.appendChild(editModal);
+    editModal.querySelector('.team-match-modal-close').addEventListener('click',closeEditModal);
+    editModal.querySelector('[data-cancel-edit]').addEventListener('click',closeEditModal);
+    editModal.addEventListener('click',event=>{if(event.target===editModal)closeEditModal();});
+    const form=editModal.querySelector('form');
     form.addEventListener('submit',async event=>{
       event.preventDefault();const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='Guardando…';
       const fd=new FormData(form);const home=fd.get('is_home')==='true';
       const clubScore=fd.get('club_score'),oppScore=fd.get('opponent_score');
       const patch={match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada')?Number(fd.get('jornada')):null,opponent_name:String(fd.get('opponent_name')).trim(),is_home:home,home_score:clubScore===''?null:Number(home?clubScore:oppScore),away_score:oppScore===''?null:Number(home?oppScore:clubScore)};
-      try{const {error}=await supabase.from('matches').update(patch).eq('id',m.id);if(error)throw error;editingMatchId=null;await fetchMatches();say('Partido actualizado correctamente.');}
+      try{const {error}=await supabase.from('matches').update(patch).eq('id',m.id);if(error)throw error;closeEditModal();await fetchMatches();say('Partido actualizado correctamente.');}
       catch(error){say(error.message||'No se pudo actualizar el partido.',true);button.disabled=false;button.textContent='Guardar cambios';}
     });
   };
