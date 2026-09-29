@@ -17,3 +17,5 @@
 .federated-v2-pagination button:disabled{opacity:.35;cursor:not-allowed}
 .federated-v2-pagination span{font-size:13px;color:#64748b;text-align:center}
 @media(max-width:600px){.federated-v2-day>header{align-items:flex-start;flex-direction:column}.federated-v2-day .federated-v2-game{padding:12px}.federated-v2-week{padding:10px}.federated-v2-pagination{gap:8px;flex-wrap:wrap}.federated-v2-pagination button{padding:8px 10px}}
+
+.federated-v2-venue{padding:0 14px 8px}.federated-v2-venue h5{display:flex;align-items:center;gap:8px;margin:12px 2px 0;padding-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#475569}.federated-v2-venue h5 span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#eef2f7;color:#475569;font-size:11px}.federated-v2-venue-home h5{color:#1453a3}.federated-v2-venue-away h5{color:#64748b}.federated-v2-venue .federated-v2-game{padding:10px 2px}.federated-v2-venue+.federated-v2-venue{border-top:1px solid #e7edf5}@media(max-width:600px){.federated-v2-venue{padding:0 10px 6px}}
