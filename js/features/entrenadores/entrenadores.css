@@ -2,3 +2,5 @@
 .coach-team-link{font-size:12px}.coach-team-link:hover{text-decoration:underline;color:#082f70}
 
 .coach-add-team{grid-column:1/-1}.coach-add-team label{font-size:12px}.coach-remove-assignment{font-size:12px}
+
+.coach-card-teams{display:grid;gap:8px;margin-top:8px}.coach-card-team-entry{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.coach-card-team-entry+.coach-card-team-entry{padding-top:8px;border-top:1px solid #e8edf4}.coach-card-team-entry .coach-card-team{margin:0}.coach-card-team-entry .coach-card-meta{margin:0}
