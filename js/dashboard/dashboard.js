@@ -1,5 +1,7 @@
 import { CALENDARIO_VIEW } from '../features/calendario/view.js';
 import { initCalendario } from '../features/calendario/controller.js';
+import { CALENDARIOS_FEDERADOS_V2_VIEW } from '../features/calendarios-federados-v2/view.js';
+import { initCalendariosFederadosV2 } from '../features/calendarios-federados-v2/controller.js';
 import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
@@ -73,6 +75,7 @@ export async function initDashboard(app, user, onLogout) {
             <span>Personas</span>
           </button>
           <button class="dashboard-nav-item" data-section="calendario"><span>Calendarios federados</span></button>
+          <button class="dashboard-nav-item" data-section="calendarios-federados-v2"><span>Calendarios Federados V2</span></button>
           <button class="dashboard-nav-item" data-section="horarios">
             <span>Horarios</span>
           </button>
@@ -101,6 +104,7 @@ export async function initDashboard(app, user, onLogout) {
           <section id="sectionInicio" class="dashboard-section"></section>
           <section id="sectionHorarios" class="dashboard-section" hidden></section>
           <section id="sectionCalendario" class="dashboard-section" hidden></section>
+          <section id="sectionCalendariosFederadosV2" class="dashboard-section" hidden></section>
           <section id="sectionTemporadas" class="dashboard-section" hidden></section>
           <section id="sectionEquipos" class="dashboard-section" hidden></section>
           <section id="sectionPersonas" class="dashboard-section" hidden></section>
@@ -115,6 +119,7 @@ export async function initDashboard(app, user, onLogout) {
   const inicioSection = document.querySelector('#sectionInicio');
   const horariosSection = document.querySelector('#sectionHorarios');
   const calendarioSection = document.querySelector('#sectionCalendario');
+  const federatedV2Section = document.querySelector('#sectionCalendariosFederadosV2');
   const perfilSection = document.querySelector('#sectionPerfil');
   const temporadasSection = document.querySelector('#sectionTemporadas');
   const equiposSection = document.querySelector('#sectionEquipos');
@@ -185,6 +190,7 @@ export async function initDashboard(app, user, onLogout) {
   const showSection = async (sectionName) => {
     const isInicio = sectionName === 'inicio';
     const isCalendario = sectionName === 'calendario';
+    const isFederatedV2 = sectionName === 'calendarios-federados-v2';
     const isPerfil = sectionName === 'perfil';
     const isTemporadas = sectionName === 'temporadas';
     const isEquipos = sectionName === 'equipos';
@@ -200,8 +206,9 @@ export async function initDashboard(app, user, onLogout) {
     }
 
     inicioSection.hidden = !isInicio;
-    horariosSection.hidden = isInicio || isCalendario || isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
+    horariosSection.hidden = isInicio || isCalendario || isFederatedV2 || isPerfil || isTemporadas || isEquipos || isPersonas || isJugadores || isEntrenadores;
     calendarioSection.hidden = !isCalendario;
+    federatedV2Section.hidden = !isFederatedV2;
     perfilSection.hidden = !isPerfil;
     temporadasSection.hidden = !isTemporadas;
     equiposSection.hidden = !isEquipos;
@@ -212,6 +219,7 @@ export async function initDashboard(app, user, onLogout) {
       inicio: 'Inicio',
       horarios: 'Horarios',
       calendario: 'Calendarios federados',
+      'calendarios-federados-v2': 'Calendarios Federados V2',
       temporadas: 'Temporadas',
       equipos: 'Equipos',
       personas: 'Personas',
@@ -249,6 +257,12 @@ export async function initDashboard(app, user, onLogout) {
       inicioSection.querySelectorAll('[data-home-section]').forEach((button) => {
         button.addEventListener('click', () => showSection(button.dataset.homeSection));
       });
+    }
+
+    if (isFederatedV2 && !federatedV2Section.dataset.loaded) {
+      federatedV2Section.innerHTML = CALENDARIOS_FEDERADOS_V2_VIEW;
+      await initCalendariosFederadosV2();
+      federatedV2Section.dataset.loaded = 'true';
     }
 
     if (isCalendario && !calendarioSection.dataset.loaded) {
