@@ -173,5 +173,6 @@ export function initEntrenadores(){
   els.newButton.addEventListener('click',openModal);els.close.addEventListener('click',closeModal);els.cancel.addEventListener('click',closeModal);
   els.modal.addEventListener('click',e=>{if(e.target===els.modal)closeModal()});els.form.addEventListener('submit',save);els.season.addEventListener('change',populateTeams);
   els.seasonFilter.addEventListener('change',()=>{selectedSeasonId=els.seasonFilter.value;render()});els.search.addEventListener('input',()=>{searchTerm=normalize(els.search.value);render()});
+  window.addEventListener('adlsm:open-coach-detail', async event => { const {personId,assignmentId}=event.detail||{}; if(personId){ await load(); showDetail(personId,assignmentId); } });
   load();return()=>{els.form?.removeEventListener('submit',save)};
 }
