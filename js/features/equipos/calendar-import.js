@@ -15,6 +15,8 @@ const displayDate = value => {
   const parts=String(value).slice(0,10).split('-');
   return parts.length===3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : value;
 };
+const jornadaLabel = value => Number(value)===0 ? 'Amistoso' : value ? 'Jornada '+value : '—';
+const parseJornada = value => String(value??'').trim().toLowerCase()==='amistoso' ? 0 : (String(value??'').trim() ? Number(value) : null);
 const sortByDate = rows => rows.sort((a,b) => String(a.match_date || a.date).localeCompare(String(b.match_date || b.date)) || Number(a.jornada||0)-Number(b.jornada||0));
 
 function parseCsv(text) {
@@ -47,7 +49,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
   const preview=container.querySelector('#teamCalendarPreview');
   let rows=[];
   let matches=[];
-  let displayMode='cards';
+  let displayMode='table';
   let editingMatchId=null;
   let editModal=null;
 
@@ -60,8 +62,8 @@ export function mountTeamCalendarImport(container, teamSeason) {
   };
   const renderSaved=()=>{
     const content=matches.length ? (displayMode==='cards'
-      ? '<div class="team-calendar-cards">'+matches.map(m=>'<article class="team-match-card"><div class="team-match-card-date"><strong>'+esc(displayDate(m.match_date))+'</strong><span>'+(m.jornada?'Jornada '+esc(m.jornada):'Partido')+'</span></div><div class="team-match-card-game"><strong>'+esc(m.is_home?'La Salle Montemolín':m.opponent_name)+'</strong><span>vs</span><strong>'+esc(m.is_home?m.opponent_name:'La Salle Montemolín')+'</strong></div><div class="team-match-card-actions"><span class="team-match-status">'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'Pendiente')+'</span><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></div></article>').join('')+'</div>'
-      : '<div class="team-calendar-table-wrap"><table class="team-calendar-table team-saved-table"><thead><tr><th>Fecha</th><th>Jornada</th><th>Local</th><th>Visitante</th><th>Resultado</th><th></th></tr></thead><tbody>'+matches.map(m=>'<tr><td>'+esc(displayDate(m.match_date))+'</td><td>'+esc(m.jornada||'—')+'</td><td>'+(m.is_home?'La Salle Montemolín':esc(m.opponent_name))+'</td><td>'+(m.is_home?esc(m.opponent_name):'La Salle Montemolín')+'</td><td>'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'—')+'</td><td><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></td></tr>').join('')+'</tbody></table></div>')
+      ? '<div class="team-calendar-cards">'+matches.map(m=>'<article class="team-match-card"><div class="team-match-card-date"><strong>'+esc(displayDate(m.match_date))+'</strong><span>'+(m.jornada===0?'Amistoso':m.jornada?'Jornada '+esc(m.jornada):'Partido')+'</span></div><div class="team-match-card-game"><strong>'+esc(m.is_home?'La Salle Montemolín':m.opponent_name)+'</strong><span>vs</span><strong>'+esc(m.is_home?m.opponent_name:'La Salle Montemolín')+'</strong></div><div class="team-match-card-actions"><span class="team-match-status">'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'Pendiente')+'</span><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></div></article>').join('')+'</div>'
+      : '<div class="team-calendar-table-wrap"><table class="team-calendar-table team-saved-table"><thead><tr><th>Fecha</th><th>Jornada / tipo</th><th>Local</th><th>Visitante</th><th>Resultado</th><th></th></tr></thead><tbody>'+matches.map(m=>'<tr><td>'+esc(displayDate(m.match_date))+'</td><td>'+esc(jornadaLabel(m.jornada))+'</td><td>'+(m.is_home?'La Salle Montemolín':esc(m.opponent_name))+'</td><td>'+(m.is_home?esc(m.opponent_name):'La Salle Montemolín')+'</td><td>'+(m.home_score!==null&&m.away_score!==null?esc(m.home_score)+' - '+esc(m.away_score):'—')+'</td><td><button type="button" class="team-action" data-edit-match="'+m.id+'">Editar</button></td></tr>').join('')+'</tbody></table></div>')
       : '<p class="team-calendar-empty">Todavía no hay partidos guardados para este equipo.</p>';
     saved.innerHTML='<div class="team-calendar-saved-head"><div><strong>'+matches.length+' partidos</strong><span>Ordenados por fecha de juego</span></div><div class="team-calendar-saved-actions"><button type="button" class="team-action" id="teamCalendarManualAdd">+ Añadir partido</button><div class="team-calendar-view-toggle"><button type="button" data-mode="cards" class="'+(displayMode==='cards'?'active':'')+'">Cards</button><button type="button" data-mode="table" class="'+(displayMode==='table'?'active':'')+'">Tabla</button></div></div></div>'+content;
     saved.querySelector('#teamCalendarManualAdd').addEventListener('click',renderCreateForm);
@@ -74,7 +76,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     editModal=document.createElement('div');editModal.className='team-match-modal-backdrop';
     editModal.innerHTML='<section class="team-match-modal" role="dialog" aria-modal="true" aria-labelledby="teamMatchModalTitle"><div class="team-match-modal-head"><h3 id="teamMatchModalTitle">Añadir partido</h3><button type="button" class="team-match-modal-close" aria-label="Cerrar">×</button></div><form class="team-match-edit"><div class="team-match-edit-grid">'+
       '<label>Fecha<input name="match_date" type="date" required></label>'+
-      '<label>Jornada<input name="jornada" type="number" min="1"></label>'+
+      '<label>Jornada / tipo<input name="jornada" type="text" inputmode="numeric" placeholder="N.º de jornada o Amistoso"></label>'+
       '<label>Rival<input name="opponent_name" required maxlength="160" placeholder="Nombre del equipo rival"></label>'+
       '<label>Localía<select name="is_home"><option value="true" selected>En casa</option><option value="false">Fuera</option></select></label>'+
       '<label>Puntos equipo local<input name="home_score" type="number" min="0" step="1" placeholder="Dejar vacío si está pendiente"></label>'+
@@ -88,7 +90,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     form.addEventListener('submit',async event=>{
       event.preventDefault();const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='Guardando…';
       const fd=new FormData(form);const toScore=value=>value===''?null:Number(value);
-      const payload={team_season_id:teamSeason.id,match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada')?Number(fd.get('jornada')):null,opponent_name:String(fd.get('opponent_name')).trim(),is_home:fd.get('is_home')==='true',home_score:toScore(fd.get('home_score')),away_score:toScore(fd.get('away_score')),status:'scheduled'};
+      const payload={team_season_id:teamSeason.id,match_date:sunday(fd.get('match_date')),jornada:parseJornada(fd.get('jornada')),opponent_name:String(fd.get('opponent_name')).trim(),is_home:fd.get('is_home')==='true',home_score:toScore(fd.get('home_score')),away_score:toScore(fd.get('away_score')),status:'scheduled'};
       try{const {error}=await supabase.from('matches').insert(payload);if(error)throw error;closeEditModal();await fetchMatches();say('Partido añadido correctamente.');}
       catch(error){say(error.message||'No se pudo añadir el partido.',true);button.disabled=false;button.textContent='Añadir partido';}
     });
@@ -101,7 +103,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     editModal=document.createElement('div');editModal.className='team-match-modal-backdrop';
     editModal.innerHTML='<section class="team-match-modal" role="dialog" aria-modal="true" aria-labelledby="teamMatchModalTitle"><div class="team-match-modal-head"><h3 id="teamMatchModalTitle">Editar partido</h3><button type="button" class="team-match-modal-close" aria-label="Cerrar">×</button></div><form class="team-match-edit"><div class="team-match-edit-grid">'+
       '<label>Fecha<input name="match_date" type="date" required value="'+esc(m.match_date)+'"></label>'+
-      '<label>Jornada<input name="jornada" type="number" min="1" value="'+esc(m.jornada||'')+'"></label>'+
+      '<label>Jornada / tipo<input name="jornada" type="text" inputmode="numeric" placeholder="N.º de jornada o Amistoso" value="'+esc(Number(m.jornada)===0?'Amistoso':m.jornada||'')+'"></label>'+
       '<label>Rival<input name="opponent_name" required maxlength="160" value="'+esc(m.opponent_name)+'"></label>'+
       '<label>Localía<select name="is_home"><option value="true" '+(m.is_home?'selected':'')+'>En casa</option><option value="false" '+(!m.is_home?'selected':'')+'>Fuera</option></select></label>'+
       '<label>Puntos equipo local<input name="home_score" type="number" min="0" step="1" placeholder="—" value="'+esc(m.home_score??'')+'"></label>'+
@@ -124,7 +126,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
   const renderPreview=()=>{
     sortByDate(rows);
     preview.hidden=false;
-    preview.innerHTML='<div class="team-calendar-preview-head"><strong>'+rows.length+' partidos detectados</strong><span>Ordenados por fecha de juego. Revisa antes de guardar.</span></div><div class="team-calendar-table-wrap"><table class="team-calendar-table"><thead><tr><th>Jornada</th><th>Local</th><th>Visitante</th><th>Fecha</th><th></th></tr></thead><tbody>'+rows.map((r,i)=>'<tr data-row="'+i+'"><td><input data-field="jornada" type="number" min="1" value="'+esc(r.jornada||'')+'"></td><td><input data-field="homeTeam" value="'+esc(r.homeTeam)+'"></td><td><input data-field="awayTeam" value="'+esc(r.awayTeam)+'"></td><td><input data-field="date" type="date" value="'+esc(r.date)+'"></td><td><button type="button" class="team-calendar-remove" data-remove="'+i+'">Eliminar</button></td></tr>').join('')+'</tbody></table></div><div class="team-calendar-actions"><button type="button" class="team-action" id="teamCalendarAdd">Añadir partido</button><button type="button" class="teams-primary" id="teamCalendarSave">Guardar partidos</button></div>';
+    preview.innerHTML='<div class="team-calendar-preview-head"><strong>'+rows.length+' partidos detectados</strong><span>Ordenados por fecha de juego. Revisa antes de guardar.</span></div><div class="team-calendar-table-wrap"><table class="team-calendar-table"><thead><tr><th>Jornada</th><th>Local</th><th>Visitante</th><th>Fecha</th><th></th></tr></thead><tbody>'+rows.map((r,i)=>'<tr data-row="'+i+'"><td><input data-field="jornada" type="text" inputmode="numeric" placeholder="Jornada o Amistoso" value="'+esc(Number(r.jornada)===0?'Amistoso':r.jornada||'')+'"></td><td><input data-field="homeTeam" value="'+esc(r.homeTeam)+'"></td><td><input data-field="awayTeam" value="'+esc(r.awayTeam)+'"></td><td><input data-field="date" type="date" value="'+esc(r.date)+'"></td><td><button type="button" class="team-calendar-remove" data-remove="'+i+'">Eliminar</button></td></tr>').join('')+'</tbody></table></div><div class="team-calendar-actions"><button type="button" class="team-action" id="teamCalendarAdd">Añadir partido</button><button type="button" class="teams-primary" id="teamCalendarSave">Guardar partidos</button></div>';
     preview.querySelectorAll('tbody tr').forEach(tr=>tr.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{const r=rows[Number(tr.dataset.row)];r[input.dataset.field]=input.value;if(input.dataset.field==='date')r.date=sunday(input.value);sortByDate(rows);renderPreview();})));
     preview.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{rows.splice(Number(b.dataset.remove),1);renderPreview();}));
     preview.querySelector('#teamCalendarAdd').addEventListener('click',()=>{rows.push({jornada:'',homeTeam:teamSeason.display_name||teamSeason.team?.name||'La Salle Montemolín',awayTeam:'',date:''});renderPreview();});
@@ -158,7 +160,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
         const home=isClub(r.homeTeam),away=isClub(r.awayTeam);
         if(home===away)throw new Error('No se puede identificar a La Salle Montemolín en: '+r.homeTeam+' - '+r.awayTeam+'.');
         const opponent=home?r.awayTeam:r.homeTeam,isHome=home,key=[r.date,opponent.toLowerCase(),String(isHome)].join('|');
-        if(!keys.has(key)){payload.push({team_season_id:teamSeason.id,match_date:r.date,opponent_name:opponent,is_home:isHome,status:'scheduled',jornada:r.jornada?Number(r.jornada):null,external_source:'FAB'});keys.add(key);}
+        if(!keys.has(key)){payload.push({team_season_id:teamSeason.id,match_date:r.date,opponent_name:opponent,is_home:isHome,status:'scheduled',jornada:parseJornada(r.jornada),external_source:'FAB'});keys.add(key);}
       }
       if(payload.length){const {error}=await supabase.from('matches').insert(payload);if(error)throw error;}
       preview.hidden=true;rows=[];fileInput.value='';
