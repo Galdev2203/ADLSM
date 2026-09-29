@@ -94,7 +94,7 @@ export function initEquipos() {
       els.name.value = row.team?.name || '';
       els.displayName.value = row.display_name || row.team?.name || '';
       els.gender.value = row.gender || row.team?.gender || '';
-      els.category.value = row.team?.category || '';
+      els.category.value = ['Federado','Escolar'].includes(row.team?.category) ? row.team.category : '';
       els.competition.value = row.competition_name || '';
       els.group.value = row.group_name || '';
       els.venue.value = row.venue_name || '';
@@ -176,7 +176,7 @@ export function initEquipos() {
             <p>${escapeHtml(row.competition_name || row.team?.category || 'Sin competición')}</p>
             <div class="team-card-meta">
               <span>${escapeHtml(formatSeason(row.season))}</span>
-              <span>${escapeHtml(genderLabel(row.gender || row.team?.gender))}</span>
+              <span>${escapeHtml(genderLabel(row.gender || row.team?.gender))}</span>\n              <span>${escapeHtml(row.team?.category || 'Sin clasificar')}</span>
               ${row.group_name ? `<span>${escapeHtml(row.group_name)}</span>` : ''}
             </div>
           </div>
@@ -295,7 +295,7 @@ export function initEquipos() {
 
       <div class="team-detail-stats">
         <div><strong>${escapeHtml(genderLabel(row.gender || row.team?.gender))}</strong><span>género</span></div>
-        <div><strong>${escapeHtml(row.team?.category || '—')}</strong><span>categoría</span></div>
+        <div><strong>${escapeHtml(row.team?.category || 'Sin clasificar')}</strong><span>tipo de equipo</span></div>
         <div><strong>${escapeHtml(row.competition_name || '—')}</strong><span>competición</span></div>
         <div><strong>${escapeHtml(row.group_name || '—')}</strong><span>grupo</span></div>
       </div>
@@ -400,8 +400,8 @@ export function initEquipos() {
     const address = els.address.value.trim();
     const notes = els.notes.value.trim();
 
-    if (!seasonId || !name || !gender) {
-      showMessage('Completa la temporada, el nombre del equipo y el género.');
+    if (!seasonId || !name || !gender || !category) {
+      showMessage('Completa la temporada, el nombre del equipo, el género y el tipo de equipo.');
       return;
     }
 
