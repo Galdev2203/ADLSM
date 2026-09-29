@@ -1,5 +1,5 @@
 import { supabase } from '../../core/supabase.js';
-import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js?v=20260929-4';
+import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js?v=20260929-6';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = value => String(value ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -84,7 +84,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
       event.preventDefault();const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='Guardando…';
       const fd=new FormData(form);const home=fd.get('is_home')==='true';
       const clubScore=fd.get('club_score'),oppScore=fd.get('opponent_score');
-      const patch={match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada'?Number(fd.get('jornada')):null),opponent_name:String(fd.get('opponent_name')).trim(),is_home:home,home_score:clubScore===''?null:Number(home?clubScore:oppScore),away_score:oppScore===''?null:Number(home?oppScore:clubScore)};
+      const patch={match_date:sunday(fd.get('match_date')),jornada:fd.get('jornada')?Number(fd.get('jornada')):null,opponent_name:String(fd.get('opponent_name')).trim(),is_home:home,home_score:clubScore===''?null:Number(home?clubScore:oppScore),away_score:oppScore===''?null:Number(home?oppScore:clubScore)};
       try{const {error}=await supabase.from('matches').update(patch).eq('id',m.id);if(error)throw error;editingMatchId=null;await fetchMatches();say('Partido actualizado correctamente.');}
       catch(error){say(error.message||'No se pudo actualizar el partido.',true);button.disabled=false;button.textContent='Guardar cambios';}
     });
@@ -106,7 +106,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
       if(file.name.toLowerCase().endsWith('.pdf')){
         const parsed=await parseFabCalendarPdf(file);
         rows=parsed.filter(m=>isClub(m.homeTeam)||isClub(m.awayTeam)).map(m=>({jornada:m.jornada,homeTeam:m.homeTeam,awayTeam:m.awayTeam,date:sunday(m.date)})).filter(m=>m.date);
-      }else if(file.name.toLowerCase().endsWith('.csv')||file.name.toLowerCase().endsWith('.txt'))rows=parseCsv(await file.text());
+      }else if(file.name.toLowerCase().endsWith('.csv')||file.name.toLowerCase().endsWith('.txt'))rows=parseCsv(await file.text()).filter(m=>isClub(m.homeTeam)||isClub(m.awayTeam));
       else throw new Error('Formato no admitido. Utiliza PDF, CSV o TXT.');
       if(!rows.length)throw new Error('No se encontraron partidos de La Salle Montemolín con fecha válida.');
       sortByDate(rows);renderPreview();say('Análisis completado. No se ha guardado ningún partido todavía.');
