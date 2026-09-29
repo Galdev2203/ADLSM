@@ -242,13 +242,15 @@ export async function parseFabCalendarPdf(input) {
   else throw new Error('Formato de documento no compatible.');
 
   const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-  const fixtures = [];
   const lines = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
     lines.push(...groupTextItems(content.items).map(row => clean(row.text)).filter(Boolean));
   }
+
+  // The FAB PDF lists all teams on its first page and shows each round
+  // in two side-by-side columns (first and second half of the season).
   const teams = [];
   for (const line of lines) {
     const roster = line.match(/^\s*\d{1,2}\s+(.+?)\s*$/);
@@ -257,32 +259,38 @@ export async function parseFabCalendarPdf(input) {
       if (name && !teams.includes(name)) teams.push(name);
     }
   }
-  const teamNames = teams.sort((a, b) => b.length - a.length);
-    const escapeRegex = value => value.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
-    const fixturePattern = teamNames.length ? new RegExp(teamNames.map(escapeRegex).join('|'), 'gi') : null;
+  const escapeRegex = value => value.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+  const teamPattern = teams.sort((a, b) => b.length - a.length).map(escapeRegex).join('|');
+  const fixturePattern = teamPattern ? new RegExp(teamPattern, 'gi') : null;
+  const fixtures = [];
   let currentJornadas = [];
-    for (const line of lines) {
-      const headings = [...line.matchAll(/Jornada\s*(\d+)\s*[-–—]\s*(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/gi)];
-      if (headings.length) {
+
+  for (const line of lines) {
+    const headings = [...line.matchAll(/Jornada\s*(\d+)\s*[-–—]\s*(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/gi)];
+    if (headings.length) {
       currentJornadas = headings.map(h => {
-          const year = h[4].length === 2 ? '20' + h[4] : h[4];
-          return { jornada: Number(h[1]), date: year + '-' + String(h[3]).padStart(2, '0') + '-' + String(h[2]).padStart(2, '0') };
-        });
-        continue;
-      }
-      if (!currentJornadas.length || !fixturePattern) continue;
-    const names = [...line.matchAll(fixturePattern)].map(m => ({ name: m[0], index: m.index }));
+        const year = h[4].length === 2 ? '20' + h[4] : h[4];
+        return {
+          jornada: Number(h[1]),
+          date: year + '-' + String(h[3]).padStart(2, '0') + '-' + String(h[2]).padStart(2, '0')
+        };
+      });
+      continue;
+    }
+    if (!currentJornadas.length || !fixturePattern) continue;
+
+    const names = [...line.matchAll(fixturePattern)].map(m => m[0]);
     if (names.length < 2) continue;
     for (let i = 0; i + 1 < names.length; i += 2) {
       const round = currentJornadas[i / 2];
       if (!round) continue;
-      const homeTeam = clean(names[i].name);
-      const awayTeam = clean(names[i + 1].name);
+      const homeTeam = clean(names[i]);
+      const awayTeam = clean(names[i + 1]);
       if (!homeTeam || !awayTeam || homeTeam.toLowerCase() === 'descansa' || awayTeam.toLowerCase() === 'descansa') continue;
       fixtures.push({ jornada: round.jornada, homeTeam, awayTeam, date: round.date });
-      }
     }
   }
+
   const seen = new Set();
   return fixtures.filter(fixture => {
     const key = [fixture.jornada, fixture.date, fixture.homeTeam, fixture.awayTeam].join('|');
