@@ -266,7 +266,7 @@ export function initEquipos() {
     }
   };
 
-  const showDetail = (id) => {
+  const showDetail = async (id) => {
     const row = teamSeasonRows.find((item) => item.id === id);
     if (!row) return;
 
@@ -301,6 +301,8 @@ export function initEquipos() {
         <div><strong>${escapeHtml(row.group_name || '—')}</strong><span>grupo</span></div>
       </div>
 
+      <article class="team-detail-card team-detail-card-wide team-coaches-card"><span class="teams-kicker">CUERPO TÉCNICO</span><h3>Entrenadores del equipo</h3><div id="teamCoachesList"><p class="team-detail-notes">Cargando entrenadores…</p></div></article>
+
       <div class="team-detail-grid">
         <article class="team-detail-card">
           <span class="teams-kicker">COMPETICIÓN</span>
@@ -327,6 +329,16 @@ export function initEquipos() {
           <p class="team-detail-notes">${escapeHtml(row.notes || row.team?.notes || 'Sin notas registradas.')}</p>
         </article>
       </div>`;
+
+    const coachesHost = els.detail.querySelector('#teamCoachesList');
+    try {
+      const { data: coaches, error } = await supabase.from('team_coaches').select('id,role,is_primary,coach:people(first_name,last_name)').eq('team_season_id', row.id).is('left_at', null);
+      if (error) throw error;
+      const roleLabels = { principal:'Primer entrenador', second:'Segundo entrenador', assistant:'Ayudante' };
+      coachesHost.innerHTML = coaches?.length ? '<div class="team-coaches-list">' + coaches.map(c => '<div class="team-coach-row"><strong>' + escapeHtml([c.coach?.first_name,c.coach?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</strong><span>' + escapeHtml(roleLabels[c.role] || (c.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>').join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
+    } catch (error) {
+      coachesHost.innerHTML = '<p class="team-detail-notes">No se pudieron cargar los entrenadores: ' + escapeHtml(error.message || 'Error desconocido') + '</p>';
+    }
 
     const calendarHost = document.createElement('div');
     calendarHost.className = 'team-calendar-host';
