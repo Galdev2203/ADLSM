@@ -46,6 +46,7 @@ export function initEquipos() {
     search: document.querySelector('#teamSearch'),
     message: document.querySelector('#teamMessage'),
     detail: document.querySelector('#teamDetail'),
+    toolbar: document.querySelector('#teamsToolbar'),
     modal: document.querySelector('#teamModal'),
     form: document.querySelector('#teamForm'),
     modalTitle: document.querySelector('#teamModalTitle'),
@@ -120,6 +121,7 @@ export function initEquipos() {
   const hideDetail = () => {
     els.detail.hidden = true;
     els.list.hidden = false;
+    els.toolbar.hidden = false;
     render();
   };
 
@@ -269,6 +271,7 @@ export function initEquipos() {
 
     els.list.hidden = true;
     els.detail.hidden = false;
+    els.toolbar.hidden = true;
     els.detail.innerHTML = `
       <div class="team-detail-header">
         <div>
