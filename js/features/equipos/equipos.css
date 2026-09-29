@@ -175,3 +175,5 @@
 
 .team-calendar-saved-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 @media(max-width:520px){.team-calendar-saved-actions{width:100%;justify-content:space-between}.team-calendar-saved-actions>#teamCalendarManualAdd{flex:1}}
+
+.team-coaches-card{margin-top:18px}.team-coaches-list{display:flex;flex-direction:column}.team-coach-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #edf1f6}.team-coach-row strong{font-size:14px;color:#1e293b}.team-coach-row span{font-size:12px;color:#64748b;background:#f1f5f9;border-radius:20px;padding:6px 10px;white-space:nowrap}@media(max-width:600px){.team-coach-row{align-items:flex-start;flex-direction:column;gap:6px}}
