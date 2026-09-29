@@ -1,59 +1,46 @@
 import { supabase } from '../../core/supabase.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const PAGE_WEEKS = 4;
 const todayISO = () => { const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
-const dateLabel = value => new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(value+'T12:00:00'));
-
-function gameCard(match) {
-  const home=match.is_home ? 'La Salle Montemolín' : match.opponent_name;
-  const away=match.is_home ? match.opponent_name : 'La Salle Montemolín';
-  const score=match.home_score!==null&&match.away_score!==null ? `<b class="federated-v2-score">${esc(match.home_score)} - ${esc(match.away_score)}</b>` : '<span class="federated-v2-pending">Pendiente</span>';
-  const round=Number(match.jornada)===0?'Amistoso':match.jornada?`Jornada ${esc(match.jornada)}`:'Partido';
-  return `<article class="federated-v2-game"><div class="federated-v2-game-date"><strong>${esc(dateLabel(match.match_date))}</strong><small>${round}${match.match_time?' · '+esc(String(match.match_time).slice(0,5)):''}</small></div><div class="federated-v2-teams"><strong>${esc(home)}</strong><span>vs.</span><strong>${esc(away)}</strong></div><div class="federated-v2-result">${score}</div></article>`;
+const dateLabel = (value, options={weekday:'long',day:'numeric',month:'long',year:'numeric'}) => new Intl.DateTimeFormat('es-ES',options).format(new Date(value+'T12:00:00'));
+const weekKey = iso => { const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
+const addDays = (iso,n) => { const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
+function gameCard(m){
+ const club=m.teamLabel||'La Salle Montemolín';
+ const home=m.is_home?club:m.opponent_name, away=m.is_home?m.opponent_name:club;
+ const round=Number(m.jornada)===0?'Amistoso':m.jornada?'Jornada '+esc(m.jornada):'Partido';
+ const result=m.home_score!==null&&m.away_score!==null?'<b class="federated-v2-score">'+esc(m.home_score)+' - '+esc(m.away_score)+'</b>':'<span class="federated-v2-pending">Pendiente</span>';
+ return '<article class="federated-v2-game"><div class="federated-v2-game-date"><strong>'+esc(dateLabel(m.match_date,{weekday:'short',day:'numeric',month:'short'}))+'</strong><small>'+round+(m.match_time?' · '+esc(String(m.match_time).slice(0,5)):'')+'</small></div><div class="federated-v2-teams"><strong>'+esc(home)+'</strong><span>vs.</span><strong>'+esc(away)+'</strong></div><div class="federated-v2-result">'+result+'</div></article>';
 }
-
-export async function initCalendariosFederadosV2() {
-  const status=document.getElementById('federatedV2Status');
-  const next=document.getElementById('federatedV2Next');
-  const all=document.getElementById('federatedV2All');
-  try {
-    const {data:seasons,error:seasonError}=await supabase.from('seasons').select('id,name,start_year,end_year').eq('is_active',true);
-    if(seasonError)throw seasonError;
-    const seasonIds=(seasons||[]).map(s=>s.id);
-    if(!seasonIds.length){status.textContent='No hay una temporada activa configurada.';next.innerHTML='';all.innerHTML='';return;}
-    const {data:relations,error:relationsError}=await supabase.from('team_seasons').select('id,team_id,season_id,display_name,competition_name').in('season_id',seasonIds);
-    if(relationsError)throw relationsError;
-    const {data:teams,error:teamsError}=await supabase.from('teams').select('id,name,category').eq('category','Federado');
-    if(teamsError)throw teamsError;
-    const federatedIds=new Set((teams||[]).map(t=>t.id));
-    const federatedRelations=(relations||[]).filter(r=>federatedIds.has(r.team_id));
-    const relationById=new Map(federatedRelations.map(r=>[r.id,r]));
-    if(!relationById.size){status.textContent='No hay equipos federados asociados a la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
-    const {data:matches,error:matchesError}=await supabase.from('matches').select('id,team_season_id,match_date,match_time,opponent_name,is_home,home_score,away_score,jornada,status').in('team_season_id',[...relationById.keys()]).gte('match_date',todayISO()).order('match_date',{ascending:true}).order('match_time',{ascending:true});
-    if(matchesError)throw matchesError;
-    const upcoming=(matches||[]).filter(m=>m.status!=='cancelled').map(m=>({...m,teamLabel:relationById.get(m.team_season_id)?.display_name||'La Salle Montemolín'}));
-    if(!upcoming.length){status.textContent='No hay partidos pendientes en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
-    upcoming.sort((a,b)=>a.match_date.localeCompare(b.match_date)||(String(a.match_time||'').localeCompare(String(b.match_time||'')))||Number(a.jornada||999)-Number(b.jornada||999));
-    const nextGames=[];
-    const nextByTeam=new Map();
-    for(const match of upcoming){
-      if(!nextByTeam.has(match.team_season_id)){
-        const teamRound=match.jornada;
-        nextByTeam.set(match.team_season_id,teamRound);
-        nextGames.push(...upcoming.filter(candidate=>candidate.team_season_id===match.team_season_id&&(
-          teamRound!==null&&teamRound!==undefined
-            ? String(candidate.jornada)===String(teamRound)
-            : candidate.match_date===match.match_date
-        )));
-      }
-    }
-    const uniqueNext=[...new Map(nextGames.map(m=>[m.id,m])).values()].sort((a,b)=>a.match_date.localeCompare(b.match_date));
-    const remaining=upcoming.filter(m=>!uniqueNext.some(n=>n.id===m.id));
-    next.innerHTML=`<div class="federated-v2-round-title"><h3>Próximos partidos por equipo</h3><span>${uniqueNext.length} partido(s)</span></div>${uniqueNext.map(gameCard).join('')}`;
-    all.innerHTML=remaining.length?remaining.map(gameCard).join(''):'<div class="federated-v2-empty">No hay más partidos pendientes.</div>';
-    status.textContent=`Temporada ${seasons.map(s=>s.name||`${s.start_year}/${s.end_year}`).join(', ')} · ${upcoming.length} partidos pendientes · ${federatedRelations.length} equipos federados`;
-  } catch(error) {
-    status.textContent=error?.message||'No se pudieron cargar los calendarios federados.';
-    next.innerHTML='';all.innerHTML='';
-  }
+function groupByDate(matches){const map=new Map();matches.forEach(m=>{if(!map.has(m.match_date))map.set(m.match_date,[]);map.get(m.match_date).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
+function renderDay(date,matches){const homes=matches.filter(m=>m.is_home).length;return '<section class="federated-v2-day"><header><div><h4>'+esc(dateLabel(date))+'</h4><span>'+matches.length+' partidos · '+homes+' en casa</span></div>'+(homes>1?'<b class="federated-v2-conflict">Coincidencia en casa</b>':'')+'</header>'+matches.map(gameCard).join('')+'</section>';}
+function renderNext(next,matches){if(!matches.length){next.innerHTML='<div class="federated-v2-empty">No hay próximos partidos.</div>';return;}const groups=groupByDate(matches);const conflicts=groups.filter(([,games])=>games.filter(g=>g.is_home).length>1).length;next.innerHTML='<div class="federated-v2-round-title"><h3>Próximos encuentros de los equipos federados</h3><span>'+matches.length+' partidos · '+conflicts+' fechas con coincidencias en casa</span></div>'+groups.map(([date,games])=>renderDay(date,games)).join('');}
+function renderPagedCalendar(container,matches,page=0){
+ const weeks=new Map();matches.forEach(m=>{const key=weekKey(m.match_date);if(!weeks.has(key))weeks.set(key,[]);weeks.get(key).push(m);});
+ const entries=[...weeks.entries()].sort((a,b)=>a[0].localeCompare(b[0]));const pages=Math.max(1,Math.ceil(entries.length/PAGE_WEEKS));page=Math.min(Math.max(0,page),pages-1);
+ const visible=entries.slice(page*PAGE_WEEKS,(page+1)*PAGE_WEEKS);
+ const content=visible.map(([start,games])=>{const end=addDays(start,6),homes=games.filter(g=>g.is_home).length;return '<article class="federated-v2-week"><header class="federated-v2-week-heading"><div><span>SEMANA</span><h3>'+esc(dateLabel(start,{day:'numeric',month:'long'}))+' — '+esc(dateLabel(end,{day:'numeric',month:'long',year:'numeric'}))+'</h3></div><div class="federated-v2-week-count"><strong>'+games.length+'</strong><span>partidos</span></div>'+(homes>1?'<b class="federated-v2-conflict">Varios partidos en casa</b>':'')+'</header>'+groupByDate(games).map(([date,dayGames])=>renderDay(date,dayGames)).join('')+'</article>';}).join('');
+ container.innerHTML=content+'<nav class="federated-v2-pagination" aria-label="Paginación del calendario"><button type="button" data-page="'+(page-1)+'" '+(page===0?'disabled':'')+'>← Anterior</button><span>Página '+(page+1)+' de '+pages+' · '+entries.length+' semanas</span><button type="button" data-page="'+(page+1)+'" '+(page>=pages-1?'disabled':'')+'>Siguiente →</button></nav>';
+ container.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>renderPagedCalendar(container,matches,Number(btn.dataset.page))));
+}
+export async function initCalendariosFederadosV2(){
+ const status=document.getElementById('federatedV2Status'),next=document.getElementById('federatedV2Next'),all=document.getElementById('federatedV2All');
+ try{
+  const {data:seasons,error:se}=await supabase.from('seasons').select('id,name,start_year,end_year').eq('is_active',true);if(se)throw se;
+  const seasonIds=(seasons||[]).map(s=>s.id);if(!seasonIds.length){status.textContent='No hay una temporada activa configurada.';next.innerHTML='';all.innerHTML='';return;}
+  const {data:relations,error:re}=await supabase.from('team_seasons').select('id,team_id,season_id,display_name,competition_name').in('season_id',seasonIds);if(re)throw re;
+  const {data:teams,error:te}=await supabase.from('teams').select('id,name,category').eq('category','Federado');if(te)throw te;
+  const ids=new Set((teams||[]).map(t=>t.id));const relevant=(relations||[]).filter(r=>ids.has(r.team_id));const byId=new Map(relevant.map(r=>[r.id,r]));
+  if(!byId.size){status.textContent='No hay equipos federados asociados a la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
+  const {data:rows,error:me}=await supabase.from('matches').select('id,team_season_id,match_date,match_time,opponent_name,is_home,home_score,away_score,jornada,status').in('team_season_id',[...byId.keys()]).gte('match_date',todayISO()).order('match_date',{ascending:true}).order('match_time',{ascending:true});if(me)throw me;
+  const upcoming=(rows||[]).filter(m=>m.status!=='cancelled').map(m=>({...m,teamLabel:byId.get(m.team_season_id)?.display_name||'La Salle Montemolín'})).sort((a,b)=>a.match_date.localeCompare(b.match_date)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
+  if(!upcoming.length){status.textContent='No hay partidos pendientes en los equipos federados para la temporada activa.';next.innerHTML='';all.innerHTML='';return;}
+  // Por equipo, identificar la jornada más próxima y reunir todos sus partidos de esa jornada.
+  const nextMatches=[];const seen=new Set();const byTeam=new Map();upcoming.forEach(m=>{if(!byTeam.has(m.team_season_id))byTeam.set(m.team_season_id,[]);byTeam.get(m.team_season_id).push(m);});
+  for(const teamMatches of byTeam.values()){const first=teamMatches[0],round=first.jornada;const selected=teamMatches.filter(m=>round!==null&&round!==undefined?String(m.jornada)===String(round):m.match_date===first.match_date);selected.forEach(m=>{if(!seen.has(m.id)){seen.add(m.id);nextMatches.push(m);}});}
+  nextMatches.sort((a,b)=>a.match_date.localeCompare(b.match_date)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
+  const rest=upcoming.filter(m=>!seen.has(m.id));renderNext(next,nextMatches);renderPagedCalendar(all,rest,0);
+  const seasonText=(seasons||[]).map(s=>s.name||String(s.start_year||'')+'/'+String(s.end_year||'')).join(', ');status.textContent='Temporada '+seasonText+' · '+upcoming.length+' partidos futuros · '+relevant.length+' equipos federados';
+ }catch(error){status.textContent=error?.message||'No se pudieron cargar los calendarios federados.';next.innerHTML='';all.innerHTML='';}
 }
