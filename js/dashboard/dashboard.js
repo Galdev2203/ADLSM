@@ -289,6 +289,17 @@ export async function initDashboard(app, user, onLogout) {
     }
   };
 
+  window.addEventListener('adlsm:navigate-detail', async (event) => {
+    const detail = event.detail || {};
+    if (!detail.section) return;
+    await showSection(detail.section);
+    if (detail.section === 'equipos') {
+      window.dispatchEvent(new CustomEvent('adlsm:open-team-detail', { detail:{ teamSeasonId:detail.teamSeasonId } }));
+    } else if (detail.section === 'entrenadores') {
+      window.dispatchEvent(new CustomEvent('adlsm:open-coach-detail', { detail:{ personId:detail.personId, assignmentId:detail.assignmentId } }));
+    }
+  });
+
   navItems.forEach((item) => {
     item.addEventListener('click', () => {
       showSection(item.dataset.section);
