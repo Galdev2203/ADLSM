@@ -332,10 +332,18 @@ export function initEquipos() {
 
     const coachesHost = els.detail.querySelector('#teamCoachesList');
     try {
-      const { data: coaches, error } = await supabase.from('team_coaches').select('id,role,is_primary,coach:people(first_name,last_name)').eq('team_season_id', row.id).is('left_at', null);
-      if (error) throw error;
+      const { data: assignments, error: assignmentError } = await supabase.from('team_coaches').select('id,coach_id,role,is_primary').eq('team_season_id', row.id).is('left_at', null);
+      if (assignmentError) throw assignmentError;
+      const coachIds = (assignments || []).map(a => a.coach_id).filter(Boolean);
+      let people = [];
+      if (coachIds.length) {
+        const { data, error: peopleError } = await supabase.from('people').select('id,first_name,last_name').in('id', coachIds);
+        if (peopleError) throw peopleError;
+        people = data || [];
+      }
+      const peopleById = new Map(people.map(p => [p.id, p]));
       const roleLabels = { principal:'Primer entrenador', second:'Segundo entrenador', assistant:'Ayudante' };
-      coachesHost.innerHTML = coaches?.length ? '<div class="team-coaches-list">' + coaches.map(c => '<div class="team-coach-row"><strong>' + escapeHtml([c.coach?.first_name,c.coach?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</strong><span>' + escapeHtml(roleLabels[c.role] || (c.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>').join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
+      coachesHost.innerHTML = assignments?.length ? '<div class="team-coaches-list">' + assignments.map(a => { const person=peopleById.get(a.coach_id); return '<div class="team-coach-row"><strong>' + escapeHtml([person?.first_name,person?.last_name].filter(Boolean).join(' ') || 'Entrenador') + '</strong><span>' + escapeHtml(roleLabels[a.role] || (a.is_primary ? 'Primer entrenador' : 'Ayudante')) + '</span></div>'; }).join('') + '</div>' : '<p class="team-detail-notes">No hay entrenadores asignados a este equipo.</p>';
     } catch (error) {
       coachesHost.innerHTML = '<p class="team-detail-notes">No se pudieron cargar los entrenadores: ' + escapeHtml(error.message || 'Error desconocido') + '</p>';
     }
