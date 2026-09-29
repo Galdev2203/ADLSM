@@ -1,7 +1,7 @@
 import { supabase } from '../../core/supabase.js';
 import { notify } from '../../core/notifications.js';
 import { confirmDialog } from '../../core/dialogs.js';
-import { mountTeamCalendarImport } from './calendar-import.js?v=20260929-9';
+import { mountTeamCalendarImport } from './calendar-import.js?v=20260929-10';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
