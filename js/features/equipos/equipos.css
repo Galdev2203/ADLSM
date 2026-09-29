@@ -172,3 +172,6 @@
 .team-match-modal .team-match-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .team-match-modal .team-calendar-actions{justify-content:flex-end;margin-top:20px}
 @media(max-width:480px){.team-match-modal-backdrop{padding:10px}.team-match-modal{padding:16px}.team-match-modal .team-match-edit-grid{grid-template-columns:1fr}}
+
+.team-calendar-saved-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:520px){.team-calendar-saved-actions{width:100%;justify-content:space-between}.team-calendar-saved-actions>#teamCalendarManualAdd{flex:1}}
