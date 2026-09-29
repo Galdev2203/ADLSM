@@ -55,7 +55,7 @@ export function mountTeamCalendarImport(container, teamSeason) {
     analyze.disabled=true; analyze.textContent='Analizando…'; say('');
     try{
       if(file.name.toLowerCase().endsWith('.pdf')) {
-        const parsed=await parsePdfFile(file,file.name);
+        const parsed=await parseFabCalendarPdf(file);
         rows=parsed.map((m,i)=>({jornada:'',homeTeam:m.homeTeam,awayTeam:m.awayTeam,date:dateToSunday(m.date)})).filter(m=>m.date);
       } else if(file.name.toLowerCase().endsWith('.csv')||file.name.toLowerCase().endsWith('.txt')) {
         rows=parseCsv(await file.text());
