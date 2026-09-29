@@ -1,5 +1,5 @@
 import { supabase } from '../../core/supabase.js';
-import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js?v=20260929-6';
+import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js?v=20260929-7';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = value => String(value ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/[^a-z0-9]/g, '');
