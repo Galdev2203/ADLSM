@@ -1,8 +1,8 @@
 import { supabase } from '../../core/supabase.js';
-import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js';
+import { parseFabCalendarPdf } from '../horarios/fab/fab-parser.js?v=20260929-4';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const normaliseTeamName = (value) => String(value ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const normaliseTeamName = (value) => String(value ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const isLaSalleMontemolinTeam = (value) => normaliseTeamName(value).includes('lasallemontemolin');
 const dateToSunday = (iso) => {
   const d = new Date(`${iso}T12:00:00`);
