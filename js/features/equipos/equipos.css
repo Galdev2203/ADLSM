@@ -162,3 +162,13 @@
 .team-match-edit input,.team-match-edit select{display:block;width:100%;box-sizing:border-box;height:38px;margin-top:6px;padding:0 9px;border:1px solid #d7e0ea;border-radius:7px;background:#fff;color:#1d2939}
 .team-saved-table{min-width:620px}
 @media(max-width:680px){.team-match-card{grid-template-columns:1fr;gap:9px}.team-match-card-game{justify-content:flex-start}.team-match-card-actions{justify-content:space-between}.team-match-edit-grid{grid-template-columns:1fr 1fr}}
+
+.team-match-modal-backdrop{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,24,48,.58);backdrop-filter:blur(3px)}
+.team-match-modal{width:min(620px,100%);max-height:calc(100vh - 36px);overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);padding:22px}
+.team-match-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.team-match-modal-head h3{margin:0;color:#082957;font-size:18px;font-weight:800}
+.team-match-modal-close{width:34px;height:34px;border:0;border-radius:8px;background:#f1f5f9;color:#475467;font-size:24px;line-height:1;cursor:pointer}
+.team-match-modal .team-match-edit{margin:0;padding:0;border:0;background:transparent}
+.team-match-modal .team-match-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.team-match-modal .team-calendar-actions{justify-content:flex-end;margin-top:20px}
+@media(max-width:480px){.team-match-modal-backdrop{padding:10px}.team-match-modal{padding:16px}.team-match-modal .team-match-edit-grid{grid-template-columns:1fr}}
