@@ -111,3 +111,28 @@
 .team-delete{border:0;border-radius:9px;background:#fff1f1;color:#b42318;padding:9px 13px;font-size:11px;font-weight:800;cursor:pointer}
 .team-delete:hover{background:#ffe4e4}
 .team-delete:disabled{opacity:.6;cursor:wait}
+
+
+/* Importación de calendarios por equipo */
+.team-calendar-import { margin-top: 20px; }
+.team-calendar-import h3 { margin: 6px 0 8px; }
+.team-calendar-import p { color: var(--text-muted, #64748b); margin: 0 0 14px; }
+.team-calendar-upload { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.team-calendar-upload input[type="file"] { flex:1; min-width:220px; padding:10px; border:1px solid var(--border, #dbe2ea); background:var(--surface, #fff); }
+.team-calendar-feedback { margin:12px 0 0 !important; font-size:13px; }
+.team-calendar-feedback.is-error { color:#b42318 !important; }
+.team-calendar-preview-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:20px 0 10px; flex-wrap:wrap; }
+.team-calendar-preview-head span { color:var(--text-muted, #64748b); font-size:13px; }
+.team-calendar-table-wrap { overflow-x:auto; border:1px solid var(--border, #dbe2ea); }
+.team-calendar-table { width:100%; border-collapse:collapse; min-width:700px; }
+.team-calendar-table th,.team-calendar-table td { padding:9px; text-align:left; border-bottom:1px solid var(--border, #e5eaf0); }
+.team-calendar-table th { font-size:12px; color:var(--text-muted, #64748b); background:var(--surface-muted, #f8fafc); }
+.team-calendar-table input { width:100%; min-width:90px; padding:8px; border:1px solid var(--border, #dbe2ea); background:var(--surface, #fff); color:inherit; }
+.team-calendar-table input[type="date"] { min-width:145px; }
+.team-calendar-remove { border:0; background:transparent; color:#b42318; cursor:pointer; }
+.team-calendar-actions { display:flex; justify-content:space-between; gap:10px; margin-top:14px; flex-wrap:wrap; }
+@media(max-width:640px) {
+ .team-calendar-upload { align-items:stretch; flex-direction:column; }
+ .team-calendar-upload input[type="file"] { min-width:0; width:100%; }
+ .team-calendar-actions > button { flex:1; }
+}
