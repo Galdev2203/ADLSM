@@ -5,14 +5,14 @@ import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
 import { TEMPORADAS_VIEW } from '../features/temporadas/view.js';
 import { initTemporadas } from '../features/temporadas/controller.js?v=20260926-4';
-import { EQUIPOS_VIEW } from '../features/equipos/view.js';
+import { EQUIPOS_VIEW } from '../features/equipos/view.js?v=20260929-2';
 import { JUGADORES_VIEW } from '../features/jugadores/view.js';
 import { ENTRENADORES_VIEW } from '../features/entrenadores/view.js';
 import { PERSONAS_VIEW } from '../features/personas/view.js';
 import { initJugadores } from '../features/jugadores/controller.js?v=20260927-7';
 import { initEntrenadores } from '../features/entrenadores/controller.js?v=20260927-5';
 import { initPersonas } from '../features/personas/controller.js?v=20260927-4';
-import { initEquipos } from '../features/equipos/controller.js?v=20260929-2';
+import { initEquipos } from '../features/equipos/controller.js?v=20260929-3';
 import { confirmDialog } from '../core/dialogs.js';
 
 let horariosCleanup = null;
