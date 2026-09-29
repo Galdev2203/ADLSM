@@ -14,7 +14,11 @@ function gameCard(m){
  return '<article class="federated-v2-game"><div class="federated-v2-game-date"><small>'+round+(m.match_time?' · '+esc(String(m.match_time).slice(0,5)):'')+'</small></div><div class="federated-v2-teams"><strong>'+esc(home)+'</strong><span>vs.</span><strong>'+esc(away)+'</strong></div><div class="federated-v2-result">'+result+'</div></article>';
 }
 function groupByDate(matches){const map=new Map();matches.forEach(m=>{if(!map.has(m.match_date))map.set(m.match_date,[]);map.get(m.match_date).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
-function renderDay(date,matches){const homes=matches.filter(m=>m.is_home).length;return '<section class="federated-v2-day"><header><div><h4>'+esc(dateLabel(date))+'</h4><span>'+matches.length+' partidos · '+homes+' en casa</span></div>'+(homes>1?'<b class="federated-v2-conflict">Coincidencia en casa</b>':'')+'</header>'+matches.map(gameCard).join('')+'</section>';}
+function renderDay(date,matches){
+ const home=matches.filter(m=>m.is_home),away=matches.filter(m=>!m.is_home);
+ const section=(label,games,kind)=>games.length?'<div class="federated-v2-venue federated-v2-venue-'+kind+'"><h5>'+label+' <span>'+games.length+'</span></h5>'+games.map(gameCard).join('')+'</div>':'';
+ return '<section class="federated-v2-day"><header><div><h4>'+esc(dateLabel(date))+'</h4><span>'+home.length+' en casa · '+away.length+' fuera</span></div>'+(home.length>1?'<b class="federated-v2-conflict">Coincidencia en casa</b>':'')+'</header>'+section('Partidos en casa',home,'home')+section('Partidos fuera',away,'away')+'</section>';
+}
 function renderNext(next,matches){if(!matches.length){next.innerHTML='<div class="federated-v2-empty">No hay próximos partidos.</div>';return;}const groups=groupByDate(matches);const conflicts=groups.filter(([,games])=>games.filter(g=>g.is_home).length>1).length;next.innerHTML='<div class="federated-v2-round-title"><h3>Próximos encuentros de los equipos federados</h3><span>'+matches.length+' partidos · '+conflicts+' fechas con coincidencias en casa</span></div>'+groups.map(([date,games])=>renderDay(date,games)).join('');}
 function renderPagedCalendar(container,matches,page=0){
  const weeks=new Map();matches.forEach(m=>{const key=weekKey(m.match_date);if(!weeks.has(key))weeks.set(key,[]);weeks.get(key).push(m);});
