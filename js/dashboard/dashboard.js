@@ -1,7 +1,7 @@
 import { CALENDARIO_VIEW } from '../features/calendario/view.js';
 import { initCalendario } from '../features/calendario/controller.js';
-import { CALENDARIOS_FEDERADOS_V2_VIEW } from '../features/calendarios-federados-v2/view.js';
-import { initCalendariosFederadosV2 } from '../features/calendarios-federados-v2/controller.js?v=20260929-3';
+import { CALENDARIOS_FEDERADOS_V2_VIEW } from '../features/calendarios-federados-v2/view.js?v=20260929-1';
+import { initCalendariosFederadosV2 } from '../features/calendarios-federados-v2/controller.js?v=20260929-4';
 import { HORARIOS_VIEW } from '../features/horarios/view.js';
 import { initHorarios } from '../features/horarios/controller.js';
 import { initPerfil } from '../features/perfil/profile.js';
