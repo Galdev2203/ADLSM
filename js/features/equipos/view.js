@@ -57,8 +57,12 @@ export const EQUIPOS_VIEW = `
             <option value="mixed">Mixto</option>
           </select>
         </label>
-        <label>Categoría
-          <input id="teamCategory" name="category" type="text" placeholder="Ej.: Senior" maxlength="100">
+        <label>Tipo de equipo
+          <select id="teamCategory" name="category" required>
+            <option value="">Selecciona</option>
+            <option value="Federado">Federado</option>
+            <option value="Escolar">Escolar</option>
+          </select>
         </label>
       </div>
 
