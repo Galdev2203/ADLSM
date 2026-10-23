@@ -105,7 +105,7 @@ function parseMarkdownTables(source, sourceName, fallbackYear) {
       if (isTableHeader(joined)) headerSeen = true;
       continue;
     }
-    if (isFooter(joined)) break;
+    if (isFooter(joined)) continue;
 
     // The FAB rule: only rows containing BOTH a date and a time are matches.
     const dateIndex = cells.findIndex(cell => isDate(cell));
@@ -159,7 +159,7 @@ function parseReaderRows(source, sourceName, fallbackYear) {
       if (isTableHeader(line)) headerFound = true;
       continue;
     }
-    if (isFooter(line)) break;
+    if (isFooter(line)) continue;
 
     const dateMatch = findDateInText(line);
     const timeMatch = findTimeInText(line);
